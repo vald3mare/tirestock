@@ -18,12 +18,17 @@ import (
 	"tirestock/api/internal/db"
 	"tirestock/api/internal/httpx"
 	"tirestock/api/internal/integrations/mock"
+	"tirestock/api/internal/integrations/oldsite"
+	"tirestock/api/internal/integrations/tradesk"
 	"tirestock/api/internal/orders"
 )
 
 type config struct {
 	Addr        string
 	DatabaseURL string
+	// Доставка заявок (приоритет: oldsite-мост → прямой tradesk → мок).
+	OldSite oldsite.Config
+	Tradesk tradesk.Config
 }
 
 // Конфиг читается из env один раз в main и передаётся явно.
@@ -34,6 +39,12 @@ func loadConfig() config {
 	}
 	if v := os.Getenv("API_ADDR"); v != "" {
 		cfg.Addr = v
+	}
+	cfg.OldSite = oldsite.Config{BaseURL: os.Getenv("OLDSITE_BASE_URL")}
+	cfg.Tradesk = tradesk.Config{
+		BaseURL:  os.Getenv("TRADESK_BASE_URL"),
+		Username: os.Getenv("TRADESK_USERNAME"),
+		Password: os.Getenv("TRADESK_PASSWORD"),
 	}
 	return cfg
 }
@@ -65,9 +76,34 @@ func main() {
 	// Источники данных: пока моки (см. ARCHITECTURE.md → открытые вопросы).
 	catalogSvc := catalog.NewService(mock.NewCatalogSource())
 	ordersSvc := orders.NewService(pool)
-	delivery := mock.NewOrderDelivery()
 
-	// Фоновый контур: воркер доставки outbox → tradesk (пока мок).
+	// Доставка заявок. Приоритет: мост через старый сайт (OLDSITE_BASE_URL) →
+	// прямой tradesk (TRADESK_BASE_URL) → мок. См. ARCHITECTURE.md: мост временный,
+	// до вскрытия прямого приёмника tradesk.
+	var delivery orders.OrderDelivery
+	switch {
+	case cfg.OldSite.BaseURL != "":
+		oc, err := oldsite.NewClient(cfg.OldSite)
+		if err != nil {
+			log.Error("oldsite client", "err", err)
+			os.Exit(1)
+		}
+		delivery = oc
+		log.Info("доставка: мост через старый сайт (Битрикс)", "base_url", cfg.OldSite.BaseURL)
+	case cfg.Tradesk.BaseURL != "":
+		tc, err := tradesk.NewClient(cfg.Tradesk)
+		if err != nil {
+			log.Error("tradesk client", "err", err)
+			os.Exit(1)
+		}
+		delivery = tc
+		log.Info("доставка: прямой tradesk", "base_url", cfg.Tradesk.BaseURL)
+	default:
+		delivery = mock.NewOrderDelivery()
+		log.Info("доставка: мок (OLDSITE_BASE_URL/TRADESK_BASE_URL не заданы)")
+	}
+
+	// Фоновый контур: воркер доставки outbox → tradesk (или мок).
 	worker := orders.NewWorker(pool, delivery, orders.DefaultWorkerConfig(), log)
 	go worker.Run(ctx)
 

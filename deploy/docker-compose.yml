@@ -22,6 +22,12 @@ services:
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-tirestock}:${POSTGRES_PASSWORD:-tirestock}@postgres:5432/${POSTGRES_DB:-tirestock}?sslmode=disable
       API_ADDR: ":8080"
+      # Доставка заявок. Приоритет: мост через старый сайт → прямой tradesk → мок.
+      # OLDSITE_BASE_URL: временный мост через /ajax/call.php Битрикса (на параллельный запуск).
+      OLDSITE_BASE_URL: ${OLDSITE_BASE_URL:-}
+      TRADESK_BASE_URL: ${TRADESK_BASE_URL:-}
+      TRADESK_USERNAME: ${TRADESK_USERNAME:-}
+      TRADESK_PASSWORD: ${TRADESK_PASSWORD:-}
     ports:
       - "${API_PORT:-8080}:8080"
     depends_on:
