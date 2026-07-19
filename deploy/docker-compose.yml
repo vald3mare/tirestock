@@ -1,0 +1,47 @@
+# Локальная разработка и тестовый домен — один и тот же compose с разными env.
+# Запуск: docker compose -f deploy/docker-compose.yml --env-file deploy/.env up --build
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-tirestock}
+      POSTGRES_USER: ${POSTGRES_USER:-tirestock}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tirestock}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-tirestock} -d ${POSTGRES_DB:-tirestock}"]
+      interval: 3s
+      timeout: 3s
+      retries: 15
+
+  api:
+    build: ../api
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-tirestock}:${POSTGRES_PASSWORD:-tirestock}@postgres:5432/${POSTGRES_DB:-tirestock}?sslmode=disable
+      API_ADDR: ":8080"
+    ports:
+      - "${API_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/api/v1/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  web:
+    build: ../web
+    environment:
+      API_URL: http://api:8080
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  pgdata:

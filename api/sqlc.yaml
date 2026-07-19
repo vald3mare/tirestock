@@ -1,0 +1,14 @@
+version: "2"
+sql:
+  - engine: "postgresql"
+    schema: "internal/db/migrations"
+    queries:
+      - "internal/orders/queries.sql"
+    gen:
+      go:
+        package: "db"
+        out: "internal/db"
+        sql_package: "pgx/v5"
+        output_db_file_name: "sqlc_db.go"
+        output_models_file_name: "sqlc_models.go"
+        emit_pointers_for_null_types: true

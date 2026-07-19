@@ -1,0 +1,31 @@
+# ── env / секреты (никогда не коммитим; шаблон — deploy/.env.example) ──
+.env
+.env.*
+!.env.example
+deploy/.env
+
+# ── web (Next.js) ──
+web/node_modules/
+web/.next/
+web/out/
+web/next-env.d.ts
+web/*.tsbuildinfo
+
+# ── api (Go) ──
+# скомпилированный бинарник (go build ./cmd/api кладёт его в api/)
+api/api
+api/*.exe
+
+# ── graphify (генерируется локально: graphify claude install + git-хуки) ──
+# graph.json/html пересобираются из кода; memory/ — локальные заметки сессий
+graphify-out/
+
+# ── локальные настройки Claude Code (личные права доступа) ──
+.claude/settings.local.json
+
+# ── логи и мусор ОС/редакторов ──
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
