@@ -1,0 +1,3 @@
+DROP INDEX IF EXISTS products_code_idx;
+ALTER TABLE products DROP COLUMN IF EXISTS image_url;
+ALTER TABLE products DROP COLUMN IF EXISTS code;

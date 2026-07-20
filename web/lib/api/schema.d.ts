@@ -133,6 +133,10 @@ export interface components {
             price: number;
             /** @example 16 */
             stock: number;
+            /** @description Фото из SelectTyres (пусто → плейсхолдер) */
+            image_url: string;
+            /** @description Бейдж «Хит» (оверрайд админки) */
+            badge_hit: boolean;
         };
         ProductList: {
             items: components["schemas"]["Product"][];
@@ -220,6 +224,8 @@ export interface operations {
     listProducts: {
         parameters: {
             query?: {
+                /** @description Текстовый поиск по названию/бренду/модели */
+                q?: string;
                 /** @description Ширина, мм (205) */
                 width?: number;
                 /** @description Профиль, % (55) */

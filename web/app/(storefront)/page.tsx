@@ -52,7 +52,7 @@ export default async function Home() {
           <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             {products.map((p) => (
               // TODO: изображения товаров придут из SelectTyres; пока плейсхолдер
-              <ProductCard key={p.slug} product={p} imageSrc="/images/tire-placeholder.png" />
+              <ProductCard key={p.slug} product={p} />
             ))}
           </div>
         </section>

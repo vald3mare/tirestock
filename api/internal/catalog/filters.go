@@ -10,6 +10,7 @@ import (
 // Filters — фильтры каталога. Имена полей = имена query-параметров URL витрины
 // (width, profile, diameter, season, brand, price_min, price_max, spikes, runflat).
 type Filters struct {
+	Query    *string // текстовый поиск (q): по названию/бренду/модели
 	Width    *int
 	Profile  *int
 	Diameter *int
@@ -81,6 +82,9 @@ func ParseFilters(q url.Values) (Filters, int, int, error) {
 	if b := q.Get("brand"); b != "" {
 		f.Brand = &b
 	}
+	if s := strings.TrimSpace(q.Get("q")); s != "" {
+		f.Query = &s
+	}
 
 	page := 1
 	if s := q.Get("page"); s != "" {
@@ -113,6 +117,11 @@ func (f Filters) WhereSQL(startArg int) (string, []any) {
 		conds = append(conds, fmt.Sprintf(expr, len(args)+startArg-1))
 	}
 
+	if f.Query != nil {
+		args = append(args, "%"+*f.Query+"%")
+		n := len(args) + startArg - 1
+		conds = append(conds, fmt.Sprintf("(name ILIKE $%d OR brand ILIKE $%d OR model ILIKE $%d)", n, n, n))
+	}
 	if f.Width != nil {
 		add("width = $%d", *f.Width)
 	}
@@ -150,6 +159,12 @@ func (f Filters) WhereSQL(startArg int) (string, []any) {
 // Match проверяет товар по фильтрам в памяти (для мок-источника).
 // Семантика обязана совпадать с WhereSQL.
 func (f Filters) Match(p Product) bool {
+	if f.Query != nil {
+		hay := strings.ToLower(p.Name + " " + p.Brand + " " + p.Model)
+		if !strings.Contains(hay, strings.ToLower(*f.Query)) {
+			return false
+		}
+	}
 	if f.Width != nil && p.Width != *f.Width {
 		return false
 	}

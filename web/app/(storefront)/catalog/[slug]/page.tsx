@@ -74,7 +74,7 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
       <div className="mt-8 flex flex-col items-stretch gap-6 lg:flex-row lg:items-start lg:gap-8">
         <div className="relative aspect-[136/110] w-full shrink-0 rounded-card-lg border border-line bg-white lg:h-110 lg:w-136">
           <img
-            src="/images/tire-placeholder.png"
+            src={product.image_url || "/images/tire-placeholder.png"}
             alt={product.name}
             className="absolute inset-0 size-full object-contain p-10"
           />
@@ -145,7 +145,7 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
           </h2>
           <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             {related.map((p) => (
-              <ProductCard key={p.slug} product={p} imageSrc="/images/tire-placeholder.png" />
+              <ProductCard key={p.slug} product={p} />
             ))}
           </div>
         </section>

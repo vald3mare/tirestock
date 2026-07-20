@@ -14,11 +14,13 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
+	"tirestock/api/internal/admin"
 	"tirestock/api/internal/catalog"
 	"tirestock/api/internal/db"
 	"tirestock/api/internal/httpx"
 	"tirestock/api/internal/integrations/mock"
 	"tirestock/api/internal/integrations/oldsite"
+	"tirestock/api/internal/integrations/selecttyres"
 	"tirestock/api/internal/integrations/tradesk"
 	"tirestock/api/internal/orders"
 )
@@ -29,6 +31,13 @@ type config struct {
 	// Доставка заявок (приоритет: oldsite-мост → прямой tradesk → мок).
 	OldSite oldsite.Config
 	Tradesk tradesk.Config
+	// Сид первого пользователя админки (создаётся, только если таблица пуста).
+	AdminBootstrapUser     string
+	AdminBootstrapPassword string
+	AdminBootstrapName     string
+	// Синк каталога из SelectTyres (пусто → каталог на моке).
+	Selecttyres  selecttyres.Config
+	SyncInterval time.Duration
 }
 
 // Конфиг читается из env один раз в main и передаётся явно.
@@ -45,6 +54,16 @@ func loadConfig() config {
 		BaseURL:  os.Getenv("TRADESK_BASE_URL"),
 		Username: os.Getenv("TRADESK_USERNAME"),
 		Password: os.Getenv("TRADESK_PASSWORD"),
+	}
+	cfg.AdminBootstrapUser = os.Getenv("ADMIN_BOOTSTRAP_USER")
+	cfg.AdminBootstrapPassword = os.Getenv("ADMIN_BOOTSTRAP_PASSWORD")
+	cfg.AdminBootstrapName = os.Getenv("ADMIN_BOOTSTRAP_NAME")
+	cfg.Selecttyres = selecttyres.Config{FeedURL: os.Getenv("SELECTYRES_FEED_URL")}
+	cfg.SyncInterval = time.Hour
+	if v := os.Getenv("SELECTYRES_SYNC_INTERVAL"); v != "" {
+		if d, err := time.ParseDuration(v); err == nil {
+			cfg.SyncInterval = d
+		}
 	}
 	return cfg
 }
@@ -73,8 +92,24 @@ func main() {
 	}
 	defer pool.Close()
 
-	// Источники данных: пока моки (см. ARCHITECTURE.md → открытые вопросы).
-	catalogSvc := catalog.NewService(mock.NewCatalogSource())
+	// Источник каталога: read-модель products + синк SelectTyres, если задан фид;
+	// иначе мок (этап без интеграции). Синк-воркер стартует ниже.
+	var catSource catalog.CatalogSource
+	var syncer *selecttyres.Syncer
+	if cfg.Selecttyres.FeedURL != "" {
+		stClient, err := selecttyres.NewClient(cfg.Selecttyres)
+		if err != nil {
+			log.Error("selecttyres client", "err", err)
+			os.Exit(1)
+		}
+		syncer = selecttyres.NewSyncer(stClient, catalog.NewSyncStore(pool), cfg.SyncInterval, log)
+		catSource = catalog.NewDBSource(pool)
+		log.Info("каталог: SelectTyres (синк в read-модель)", "interval", cfg.SyncInterval.String())
+	} else {
+		catSource = mock.NewCatalogSource()
+		log.Info("каталог: мок (SELECTYRES_FEED_URL не задан)")
+	}
+	catalogSvc := catalog.NewService(catSource)
 	ordersSvc := orders.NewService(pool)
 
 	// Доставка заявок. Приоритет: мост через старый сайт (OLDSITE_BASE_URL) →
@@ -103,9 +138,21 @@ func main() {
 		log.Info("доставка: мок (OLDSITE_BASE_URL/TRADESK_BASE_URL не заданы)")
 	}
 
+	// Админка: сессии в БД, монитор заказов, оверрайды товаров.
+	adminSvc := admin.NewService(pool, catalogSvc)
+	if err := adminSvc.Bootstrap(ctx, cfg.AdminBootstrapUser, cfg.AdminBootstrapPassword, cfg.AdminBootstrapName); err != nil {
+		log.Error("сид админа", "err", err)
+		os.Exit(1)
+	}
+
 	// Фоновый контур: воркер доставки outbox → tradesk (или мок).
 	worker := orders.NewWorker(pool, delivery, orders.DefaultWorkerConfig(), log)
 	go worker.Run(ctx)
+
+	// Фоновый контур: синк каталога из SelectTyres (если включён).
+	if syncer != nil {
+		go syncer.Run(ctx)
+	}
 
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
@@ -122,6 +169,7 @@ func main() {
 		})
 		catalog.NewHandlers(catalogSvc).Mount(r)
 		orders.NewHandlers(ordersSvc).Mount(r)
+		admin.NewHandlers(adminSvc).Mount(r)
 	})
 
 	srv := &http.Server{

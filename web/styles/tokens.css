@@ -17,6 +17,14 @@
   --color-white: #ffffff;
   --color-transparent: transparent;
 
+  /* Админка: тёмный сайдбар (не встречается на витрине). */
+  --color-sidebar: #2b2b2b; /* фон сайдбара админки */
+  --color-sidebar-hover: #363636; /* ховер пункта меню */
+  --color-sidebar-text: #a3a3a3; /* неактивные пункты, подписи */
+  --color-red: #e5484d; /* статус «ошибка» доставки заказа */
+  --color-red-soft: #fdecec; /* фон бейджа «ошибка» */
+  --color-green-soft: #e6f7ec; /* фон бейджа «доставлен» */
+
   /* ── Типографика (Manrope) ───────────────────────────────── */
   --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
 

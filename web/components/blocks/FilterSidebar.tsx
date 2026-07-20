@@ -13,6 +13,8 @@ import {
   seasonOptions,
   widthOptions,
 } from "@/lib/catalog-options";
+import { formatNumber } from "@/lib/format";
+import { useLiveCount } from "@/lib/use-live-count";
 
 // Фильтр каталога = тот же набор, что в hero-поиске, вертикально в сайдбаре 264
 // + Производитель, цена от/до, чекбоксы Шипы/RunFlat. Параметры ↔ URL query
@@ -32,6 +34,20 @@ export function FilterSidebar({ total }: { total: number }) {
   const [priceMax, setPriceMax] = useState(sp.get("price_max") ?? "");
   const [spikes, setSpikes] = useState(sp.get("spikes") === "true");
   const [runflat, setRunflat] = useState(sp.get("runflat") === "true");
+
+  // Живое число под выбранные (ещё не применённые) фильтры; фолбэк — total сервера.
+  const live = useLiveCount({
+    q: sp.get("q") ?? undefined,
+    width,
+    profile,
+    diameter,
+    season,
+    brand,
+    price_min: priceMin.trim() || undefined,
+    price_max: priceMax.trim() || undefined,
+    spikes: spikes ? "true" : undefined,
+    runflat: runflat ? "true" : undefined,
+  });
 
   const apply = () => {
     const params = new URLSearchParams();
@@ -76,7 +92,7 @@ export function FilterSidebar({ total }: { total: number }) {
         <Checkbox label="Шипы" checked={spikes} onChange={(e) => setSpikes(e.target.checked)} />
         <Checkbox label="RunFlat" checked={runflat} onChange={(e) => setRunflat(e.target.checked)} />
         <Button onClick={apply} className="tnum w-full px-5">
-          Показать {total} шин →
+          Показать {formatNumber(live ?? total)} шин →
         </Button>
         <Button variant="secondary" className="w-full px-5" onClick={() => router.push("/catalog")}>
           Сбросить

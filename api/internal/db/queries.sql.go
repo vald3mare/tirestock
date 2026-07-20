@@ -52,6 +52,143 @@ func (q *Queries) ClaimOutbox(ctx context.Context, limit int32) ([]ClaimOutboxRo
 	return items, nil
 }
 
+const countAdminUsers = `-- name: CountAdminUsers :one
+
+SELECT count(*) FROM admin_users
+`
+
+// ── Пользователи / сессии ──────────────────────────────────────────────────
+func (q *Queries) CountAdminUsers(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countAdminUsers)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countSyncedProducts = `-- name: CountSyncedProducts :one
+SELECT count(*) FROM products WHERE code <> ''
+`
+
+func (q *Queries) CountSyncedProducts(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countSyncedProducts)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const createSession = `-- name: CreateSession :exec
+INSERT INTO admin_sessions (token_hash, user_id, expires_at)
+VALUES ($1, $2, $3)
+`
+
+type CreateSessionParams struct {
+	TokenHash string
+	UserID    int64
+	ExpiresAt pgtype.Timestamptz
+}
+
+func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) error {
+	_, err := q.db.Exec(ctx, createSession, arg.TokenHash, arg.UserID, arg.ExpiresAt)
+	return err
+}
+
+const deleteExpiredSessions = `-- name: DeleteExpiredSessions :exec
+DELETE FROM admin_sessions WHERE expires_at <= now()
+`
+
+func (q *Queries) DeleteExpiredSessions(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, deleteExpiredSessions)
+	return err
+}
+
+const deleteSession = `-- name: DeleteSession :exec
+DELETE FROM admin_sessions WHERE token_hash = $1
+`
+
+func (q *Queries) DeleteSession(ctx context.Context, tokenHash string) error {
+	_, err := q.db.Exec(ctx, deleteSession, tokenHash)
+	return err
+}
+
+const getAdminUserByUsername = `-- name: GetAdminUserByUsername :one
+SELECT id, username, password_hash, display_name
+FROM admin_users
+WHERE username = $1
+`
+
+type GetAdminUserByUsernameRow struct {
+	ID           int64
+	Username     string
+	PasswordHash string
+	DisplayName  string
+}
+
+func (q *Queries) GetAdminUserByUsername(ctx context.Context, username string) (GetAdminUserByUsernameRow, error) {
+	row := q.db.QueryRow(ctx, getAdminUserByUsername, username)
+	var i GetAdminUserByUsernameRow
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.PasswordHash,
+		&i.DisplayName,
+	)
+	return i, err
+}
+
+const getCatalogProductBySlug = `-- name: GetCatalogProductBySlug :one
+SELECT
+    p.id, p.slug, p.brand, p.model, p.name, p.size_label,
+    p.width, p.profile, p.diameter, p.season, p.spikes, p.runflat,
+    p.price, p.stock, p.image_url,
+    COALESCE(o.badge_hit, false) AS badge_hit
+FROM products p
+LEFT JOIN product_overrides o ON o.slug = p.slug
+WHERE p.slug = $1 AND COALESCE(o.hidden, false) = false
+`
+
+type GetCatalogProductBySlugRow struct {
+	ID        int64
+	Slug      string
+	Brand     string
+	Model     string
+	Name      string
+	SizeLabel string
+	Width     int32
+	Profile   int32
+	Diameter  int32
+	Season    string
+	Spikes    bool
+	Runflat   bool
+	Price     int32
+	Stock     int32
+	ImageUrl  string
+	BadgeHit  bool
+}
+
+func (q *Queries) GetCatalogProductBySlug(ctx context.Context, slug string) (GetCatalogProductBySlugRow, error) {
+	row := q.db.QueryRow(ctx, getCatalogProductBySlug, slug)
+	var i GetCatalogProductBySlugRow
+	err := row.Scan(
+		&i.ID,
+		&i.Slug,
+		&i.Brand,
+		&i.Model,
+		&i.Name,
+		&i.SizeLabel,
+		&i.Width,
+		&i.Profile,
+		&i.Diameter,
+		&i.Season,
+		&i.Spikes,
+		&i.Runflat,
+		&i.Price,
+		&i.Stock,
+		&i.ImageUrl,
+		&i.BadgeHit,
+	)
+	return i, err
+}
+
 const getOrderIDByIdempotencyKey = `-- name: GetOrderIDByIdempotencyKey :one
 SELECT id FROM orders WHERE idempotency_key = $1
 `
@@ -92,6 +229,45 @@ func (q *Queries) GetOutbox(ctx context.Context, id int64) (GetOutboxRow, error)
 		&i.LastError,
 	)
 	return i, err
+}
+
+const getSessionUser = `-- name: GetSessionUser :one
+SELECT u.id, u.username, u.display_name
+FROM admin_sessions s
+JOIN admin_users u ON u.id = s.user_id
+WHERE s.token_hash = $1 AND s.expires_at > now()
+`
+
+type GetSessionUserRow struct {
+	ID          int64
+	Username    string
+	DisplayName string
+}
+
+func (q *Queries) GetSessionUser(ctx context.Context, tokenHash string) (GetSessionUserRow, error) {
+	row := q.db.QueryRow(ctx, getSessionUser, tokenHash)
+	var i GetSessionUserRow
+	err := row.Scan(&i.ID, &i.Username, &i.DisplayName)
+	return i, err
+}
+
+const insertAdminUser = `-- name: InsertAdminUser :one
+INSERT INTO admin_users (username, password_hash, display_name)
+VALUES ($1, $2, $3)
+RETURNING id
+`
+
+type InsertAdminUserParams struct {
+	Username     string
+	PasswordHash string
+	DisplayName  string
+}
+
+func (q *Queries) InsertAdminUser(ctx context.Context, arg InsertAdminUserParams) (int64, error) {
+	row := q.db.QueryRow(ctx, insertAdminUser, arg.Username, arg.PasswordHash, arg.DisplayName)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }
 
 const insertOrder = `-- name: InsertOrder :one
@@ -141,6 +317,104 @@ func (q *Queries) InsertOutbox(ctx context.Context, arg InsertOutboxParams) (int
 	return id, err
 }
 
+const listOrders = `-- name: ListOrders :many
+
+SELECT
+    o.id,
+    o.customer_name,
+    o.phone,
+    o.total,
+    o.created_at,
+    COALESCE(ob.status, 'pending') AS delivery_status,
+    COALESCE(ob.attempts, 0)       AS attempts,
+    COALESCE(ob.last_error, '')    AS last_error
+FROM orders o
+LEFT JOIN outbox ob
+    ON ob.kind = 'order' AND (ob.payload->>'order_id')::bigint = o.id
+WHERE $3::text = '' OR COALESCE(ob.status, 'pending') = $3::text
+ORDER BY o.id DESC
+LIMIT $1 OFFSET $2
+`
+
+type ListOrdersParams struct {
+	Limit  int32
+	Offset int32
+	Status string
+}
+
+type ListOrdersRow struct {
+	ID             int64
+	CustomerName   string
+	Phone          string
+	Total          int32
+	CreatedAt      pgtype.Timestamptz
+	DeliveryStatus string
+	Attempts       int32
+	LastError      string
+}
+
+// ── Заказы (проекция для админки: заказ + статус доставки из outbox) ─────────
+func (q *Queries) ListOrders(ctx context.Context, arg ListOrdersParams) ([]ListOrdersRow, error) {
+	rows, err := q.db.Query(ctx, listOrders, arg.Limit, arg.Offset, arg.Status)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListOrdersRow
+	for rows.Next() {
+		var i ListOrdersRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.CustomerName,
+			&i.Phone,
+			&i.Total,
+			&i.CreatedAt,
+			&i.DeliveryStatus,
+			&i.Attempts,
+			&i.LastError,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listOverrides = `-- name: ListOverrides :many
+
+SELECT slug, hidden, badge_hit FROM product_overrides
+`
+
+type ListOverridesRow struct {
+	Slug     string
+	Hidden   bool
+	BadgeHit bool
+}
+
+// ── Оверрайды товаров ───────────────────────────────────────────────────────
+func (q *Queries) ListOverrides(ctx context.Context) ([]ListOverridesRow, error) {
+	rows, err := q.db.Query(ctx, listOverrides)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListOverridesRow
+	for rows.Next() {
+		var i ListOverridesRow
+		if err := rows.Scan(&i.Slug, &i.Hidden, &i.BadgeHit); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const markOutboxDelivered = `-- name: MarkOutboxDelivered :exec
 UPDATE outbox
 SET status = 'delivered', updated_at = now()
@@ -168,6 +442,29 @@ func (q *Queries) MarkOutboxFailed(ctx context.Context, arg MarkOutboxFailedPara
 	return err
 }
 
+const orderStats = `-- name: OrderStats :one
+SELECT
+    count(*) FILTER (WHERE o.created_at::date = now()::date)          AS today,
+    count(*) FILTER (WHERE COALESCE(ob.status, 'pending') = 'pending') AS queued,
+    count(*) FILTER (WHERE ob.status = 'failed')                      AS failed
+FROM orders o
+LEFT JOIN outbox ob
+    ON ob.kind = 'order' AND (ob.payload->>'order_id')::bigint = o.id
+`
+
+type OrderStatsRow struct {
+	Today  int64
+	Queued int64
+	Failed int64
+}
+
+func (q *Queries) OrderStats(ctx context.Context) (OrderStatsRow, error) {
+	row := q.db.QueryRow(ctx, orderStats)
+	var i OrderStatsRow
+	err := row.Scan(&i.Today, &i.Queued, &i.Failed)
+	return i, err
+}
+
 const rescheduleOutbox = `-- name: RescheduleOutbox :exec
 UPDATE outbox
 SET attempts = attempts + 1, next_retry_at = $2, last_error = $3, updated_at = now()
@@ -183,4 +480,128 @@ type RescheduleOutboxParams struct {
 func (q *Queries) RescheduleOutbox(ctx context.Context, arg RescheduleOutboxParams) error {
 	_, err := q.db.Exec(ctx, rescheduleOutbox, arg.ID, arg.NextRetryAt, arg.LastError)
 	return err
+}
+
+const retryOrderDelivery = `-- name: RetryOrderDelivery :exec
+UPDATE outbox
+SET status = 'pending', next_retry_at = now(), last_error = '', updated_at = now()
+WHERE kind = 'order'
+  AND status = 'failed'
+  AND (payload->>'order_id')::bigint = $1::bigint
+`
+
+func (q *Queries) RetryOrderDelivery(ctx context.Context, orderID int64) error {
+	_, err := q.db.Exec(ctx, retryOrderDelivery, orderID)
+	return err
+}
+
+const upsertOverride = `-- name: UpsertOverride :exec
+INSERT INTO product_overrides (slug, hidden, badge_hit, updated_by, updated_at)
+VALUES ($1, $2, $3, $4, now())
+ON CONFLICT (slug) DO UPDATE
+SET hidden = EXCLUDED.hidden,
+    badge_hit = EXCLUDED.badge_hit,
+    updated_by = EXCLUDED.updated_by,
+    updated_at = now()
+`
+
+type UpsertOverrideParams struct {
+	Slug      string
+	Hidden    bool
+	BadgeHit  bool
+	UpdatedBy *int64
+}
+
+func (q *Queries) UpsertOverride(ctx context.Context, arg UpsertOverrideParams) error {
+	_, err := q.db.Exec(ctx, upsertOverride,
+		arg.Slug,
+		arg.Hidden,
+		arg.BadgeHit,
+		arg.UpdatedBy,
+	)
+	return err
+}
+
+const upsertProduct = `-- name: UpsertProduct :exec
+
+INSERT INTO products (
+    code, slug, brand, model, name, size_label,
+    width, profile, diameter, season, spikes, runflat,
+    price, stock, image_url, synced_at
+) VALUES (
+    $1, $2, $3, $4, $5, $6,
+    $7, $8, $9, $10, $11, $12,
+    $13, $14, $15, now()
+)
+ON CONFLICT (code) WHERE code <> '' DO UPDATE SET
+    slug = EXCLUDED.slug,
+    brand = EXCLUDED.brand,
+    model = EXCLUDED.model,
+    name = EXCLUDED.name,
+    size_label = EXCLUDED.size_label,
+    width = EXCLUDED.width,
+    profile = EXCLUDED.profile,
+    diameter = EXCLUDED.diameter,
+    season = EXCLUDED.season,
+    spikes = EXCLUDED.spikes,
+    runflat = EXCLUDED.runflat,
+    price = EXCLUDED.price,
+    stock = EXCLUDED.stock,
+    image_url = EXCLUDED.image_url,
+    synced_at = now()
+`
+
+type UpsertProductParams struct {
+	Code      string
+	Slug      string
+	Brand     string
+	Model     string
+	Name      string
+	SizeLabel string
+	Width     int32
+	Profile   int32
+	Diameter  int32
+	Season    string
+	Spikes    bool
+	Runflat   bool
+	Price     int32
+	Stock     int32
+	ImageUrl  string
+}
+
+// Upsert товара из синка SelectTyres (ключ — code). Динамические выборки каталога
+// (листинг с фильтрами) идут сырым pgx через Filters.WhereSQL — здесь только статика.
+func (q *Queries) UpsertProduct(ctx context.Context, arg UpsertProductParams) error {
+	_, err := q.db.Exec(ctx, upsertProduct,
+		arg.Code,
+		arg.Slug,
+		arg.Brand,
+		arg.Model,
+		arg.Name,
+		arg.SizeLabel,
+		arg.Width,
+		arg.Profile,
+		arg.Diameter,
+		arg.Season,
+		arg.Spikes,
+		arg.Runflat,
+		arg.Price,
+		arg.Stock,
+		arg.ImageUrl,
+	)
+	return err
+}
+
+const zeroStaleStock = `-- name: ZeroStaleStock :execrows
+UPDATE products SET stock = 0, synced_at = now()
+WHERE code <> '' AND synced_at < $1 AND stock <> 0
+`
+
+// Товары, пропавшие из последней выгрузки, гасим до нуля остатка (не в наличии).
+func (q *Queries) ZeroStaleStock(ctx context.Context, syncedAt pgtype.Timestamptz) (int64, error) {
+	result, err := q.db.Exec(ctx, zeroStaleStock, syncedAt)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }

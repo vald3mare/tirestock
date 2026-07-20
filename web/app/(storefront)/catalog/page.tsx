@@ -28,6 +28,7 @@ function parseFilters(sp: SearchParams): ProductFilters {
   const bool = (v: string | string[] | undefined) => (v === "true" ? true : undefined);
 
   return {
+    q: str(sp.q),
     width: num(sp.width),
     profile: num(sp.profile),
     diameter: num(sp.diameter),
@@ -63,7 +64,7 @@ export default async function CatalogPage({
 
       <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-h2 text-black lg:text-h1">
-          Шины
+          {filters.q ? `Поиск: ${filters.q}` : "Шины"}
           <span className="tnum text-body font-medium text-grey">
             {formatNumber(total)} товаров
           </span>
@@ -90,7 +91,7 @@ export default async function CatalogPage({
           ) : (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
               {items.map((p) => (
-                <ProductCard key={p.slug} product={p} imageSrc="/images/tire-placeholder.png" />
+                <ProductCard key={p.slug} product={p} />
               ))}
             </div>
           )}

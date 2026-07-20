@@ -10,7 +10,11 @@ import { formatPrice } from "@/lib/format";
 // Тупой компонент: данные только пропсами.
 // TODO: состояние «нет в наличии» (серый бейдж, disabled CTA) — дизайн в работе.
 
+const PLACEHOLDER = "/images/tire-placeholder.png";
+
 export function ProductCard({ product, imageSrc }: { product: Product; imageSrc?: string }) {
+  // Фото из SelectTyres (product.image_url); плейсхолдер — если пусто или явно передан.
+  const src = imageSrc ?? product.image_url ?? PLACEHOLDER;
   return (
     <article className="flex w-full flex-col gap-2.5 rounded-card-lg border border-line bg-white p-3 sm:p-4">
       {/* Дубль ссылки с названием ниже — прячем от табуляции и скринридера */}
@@ -20,14 +24,12 @@ export function ProductCard({ product, imageSrc }: { product: Product; imageSrc?
         aria-hidden="true"
         className="relative block aspect-[58/43] w-full overflow-hidden rounded-card border border-line bg-white"
       >
-        {imageSrc && (
-          <img
-            src={imageSrc}
-            alt=""
-            loading="lazy"
-            className="absolute inset-0 size-full object-contain p-3"
-          />
-        )}
+        <img
+          src={src || PLACEHOLDER}
+          alt=""
+          loading="lazy"
+          className="absolute inset-0 size-full object-contain p-3"
+        />
         <span className="absolute left-2 top-2">
           <SeasonBadge season={product.season} spikes={product.spikes} />
         </span>

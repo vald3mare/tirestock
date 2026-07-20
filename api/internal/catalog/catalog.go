@@ -31,6 +31,8 @@ type Product struct {
 	Runflat   bool   `json:"runflat"`
 	Price     int    `json:"price"` // рубли за штуку
 	Stock     int    `json:"stock"`
+	ImageURL  string `json:"image_url"` // фото из SelectTyres (пусто → плейсхолдер на витрине)
+	BadgeHit  bool   `json:"badge_hit"` // оверрайд админки «Хит»
 }
 
 // ErrNotFound — товар не найден (sentinel фичи).

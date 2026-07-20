@@ -90,6 +90,32 @@ func TestWhereSQLStartArgOffset(t *testing.T) {
 	}
 }
 
+func TestQueryFilterSQLAndMatch(t *testing.T) {
+	q, _ := url.ParseQuery("q=nokian&diameter=16")
+	f, _, _, err := ParseFilters(q)
+	if err != nil {
+		t.Fatalf("ParseFilters: %v", err)
+	}
+	sql, args := f.WhereSQL(1)
+	want := "WHERE (name ILIKE $1 OR brand ILIKE $1 OR model ILIKE $1) AND diameter = $2"
+	if sql != want {
+		t.Errorf("SQL: got %q, want %q", sql, want)
+	}
+	if !reflect.DeepEqual(args, []any{"%nokian%", 16}) {
+		t.Errorf("args: got %#v", args)
+	}
+	// Match — та же семантика (для мока): регистронезависимая подстрока.
+	p := Product{Name: "Nokian Hakkapeliitta 10", Brand: "Nokian", Model: "Hakkapeliitta", Diameter: 16}
+	if !f.Match(p) {
+		t.Error("ожидалось совпадение по q=nokian + diameter=16")
+	}
+	q2, _ := url.ParseQuery("q=michelin")
+	f2, _, _, _ := ParseFilters(q2)
+	if f2.Match(p) {
+		t.Error("michelin не должен совпасть с Nokian")
+	}
+}
+
 func TestParseFiltersPagination(t *testing.T) {
 	q, _ := url.ParseQuery("page=3&per_page=12")
 	_, page, perPage, err := ParseFilters(q)

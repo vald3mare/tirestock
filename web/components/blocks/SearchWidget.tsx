@@ -15,6 +15,8 @@ import {
   seasonOptions,
   widthOptions,
 } from "@/lib/catalog-options";
+import { formatNumber } from "@/lib/format";
+import { useLiveCount } from "@/lib/use-live-count";
 
 // Поиск в hero = фильтр каталога (один компонент, два контекста).
 // Выбранные параметры уходят в каталог через URL query params.
@@ -32,6 +34,9 @@ export function SearchWidget() {
   const [diameter, setDiameter] = useState<string>();
   const [season, setSeason] = useState<string>();
   const [query, setQuery] = useState("");
+
+  // Живое число «Показать N шин» для таба «По размеру».
+  const live = useLiveCount({ width, profile, diameter, season });
 
   const submit = () => {
     const params = new URLSearchParams();
@@ -82,7 +87,9 @@ export function SearchWidget() {
           <div className="flex-1">
             <Dropdown placeholder="Сезон" options={seasonOptions} value={season} onChange={setSeason} />
           </div>
-          <Button onClick={submit} className="sm:col-span-2 lg:w-auto">Подобрать</Button>
+          <Button onClick={submit} className="tnum sm:col-span-2 lg:w-auto">
+            {live !== null ? `Показать ${formatNumber(live)} шин` : "Подобрать"}
+          </Button>
         </div>
       )}
 

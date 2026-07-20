@@ -8,6 +8,21 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type AdminSession struct {
+	TokenHash string
+	UserID    int64
+	CreatedAt pgtype.Timestamptz
+	ExpiresAt pgtype.Timestamptz
+}
+
+type AdminUser struct {
+	ID           int64
+	Username     string
+	PasswordHash string
+	DisplayName  string
+	CreatedAt    pgtype.Timestamptz
+}
+
 type Order struct {
 	ID             int64
 	IdempotencyKey string
@@ -47,4 +62,14 @@ type Product struct {
 	Price     int32
 	Stock     int32
 	SyncedAt  pgtype.Timestamptz
+	Code      string
+	ImageUrl  string
+}
+
+type ProductOverride struct {
+	Slug      string
+	Hidden    bool
+	BadgeHit  bool
+	UpdatedAt pgtype.Timestamptz
+	UpdatedBy *int64
 }

@@ -28,6 +28,13 @@ services:
       TRADESK_BASE_URL: ${TRADESK_BASE_URL:-}
       TRADESK_USERNAME: ${TRADESK_USERNAME:-}
       TRADESK_PASSWORD: ${TRADESK_PASSWORD:-}
+      # Сид первого пользователя админки (создаётся, только если таблица пуста).
+      ADMIN_BOOTSTRAP_USER: ${ADMIN_BOOTSTRAP_USER:-}
+      ADMIN_BOOTSTRAP_PASSWORD: ${ADMIN_BOOTSTRAP_PASSWORD:-}
+      ADMIN_BOOTSTRAP_NAME: ${ADMIN_BOOTSTRAP_NAME:-}
+      # Синк каталога из SelectTyres (пусто → мок).
+      SELECTYRES_FEED_URL: ${SELECTYRES_FEED_URL:-}
+      SELECTYRES_SYNC_INTERVAL: ${SELECTYRES_SYNC_INTERVAL:-1h}
     ports:
       - "${API_PORT:-8080}:8080"
     depends_on:

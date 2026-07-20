@@ -14,6 +14,7 @@ export type ErrorBody = components["schemas"]["ErrorBody"];
 
 // Фильтры каталога = query-параметры URL витрины (имена совпадают 1:1).
 export type ProductFilters = {
+  q?: string;
   width?: number;
   profile?: number;
   diameter?: number;

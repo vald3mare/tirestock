@@ -4,6 +4,8 @@ sql:
     schema: "internal/db/migrations"
     queries:
       - "internal/orders/queries.sql"
+      - "internal/admin/queries.sql"
+      - "internal/catalog/queries.sql"
     gen:
       go:
         package: "db"
