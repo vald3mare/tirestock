@@ -18,6 +18,7 @@ import (
 
 	"tirestock/api/internal/admin"
 	"tirestock/api/internal/catalog"
+	"tirestock/api/internal/content"
 	"tirestock/api/internal/db"
 	"tirestock/api/internal/httpx"
 	"tirestock/api/internal/integrations/mock"
@@ -187,6 +188,7 @@ func main() {
 
 	// Админка: сессии в БД, монитор заказов, оверрайды товаров.
 	adminSvc := admin.NewService(pool, catalogSvc)
+	contentSvc := content.NewService(pool)
 	if err := adminSvc.Bootstrap(ctx, cfg.AdminBootstrapUser, cfg.AdminBootstrapPassword, cfg.AdminBootstrapName); err != nil {
 		log.Error("сид админа", "err", err)
 		os.Exit(1)
@@ -219,7 +221,7 @@ func main() {
 		})
 		catalog.NewHandlers(catalogSvc).Mount(r)
 		orders.NewHandlers(ordersSvc).Mount(r)
-		admin.NewHandlers(adminSvc).Mount(r)
+		admin.NewHandlers(adminSvc, contentSvc).Mount(r)
 	})
 
 	srv := &http.Server{

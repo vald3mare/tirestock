@@ -76,6 +76,52 @@ func (q *Queries) CountSyncedProducts(ctx context.Context) (int64, error) {
 	return count, err
 }
 
+const createContentPage = `-- name: CreateContentPage :one
+INSERT INTO content_pages (slug, title, updated_by)
+VALUES ($1, $2, $3)
+RETURNING id, slug, title, body, meta_title, meta_description,
+          published, indexed, system, updated_by, updated_at
+`
+
+type CreateContentPageParams struct {
+	Slug      string
+	Title     string
+	UpdatedBy string
+}
+
+type CreateContentPageRow struct {
+	ID              int64
+	Slug            string
+	Title           string
+	Body            string
+	MetaTitle       string
+	MetaDescription string
+	Published       bool
+	Indexed         bool
+	System          bool
+	UpdatedBy       string
+	UpdatedAt       pgtype.Timestamptz
+}
+
+func (q *Queries) CreateContentPage(ctx context.Context, arg CreateContentPageParams) (CreateContentPageRow, error) {
+	row := q.db.QueryRow(ctx, createContentPage, arg.Slug, arg.Title, arg.UpdatedBy)
+	var i CreateContentPageRow
+	err := row.Scan(
+		&i.ID,
+		&i.Slug,
+		&i.Title,
+		&i.Body,
+		&i.MetaTitle,
+		&i.MetaDescription,
+		&i.Published,
+		&i.Indexed,
+		&i.System,
+		&i.UpdatedBy,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const createSession = `-- name: CreateSession :exec
 INSERT INTO admin_sessions (token_hash, user_id, expires_at)
 VALUES ($1, $2, $3)
@@ -89,6 +135,15 @@ type CreateSessionParams struct {
 
 func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) error {
 	_, err := q.db.Exec(ctx, createSession, arg.TokenHash, arg.UserID, arg.ExpiresAt)
+	return err
+}
+
+const deleteContentPage = `-- name: DeleteContentPage :exec
+DELETE FROM content_pages WHERE id = $1
+`
+
+func (q *Queries) DeleteContentPage(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, deleteContentPage, id)
 	return err
 }
 
@@ -205,6 +260,84 @@ func (q *Queries) GetCatalogProductBySlug(ctx context.Context, arg GetCatalogPro
 		&i.Stock,
 		&i.ImageUrl,
 		&i.BadgeHit,
+	)
+	return i, err
+}
+
+const getContentPage = `-- name: GetContentPage :one
+SELECT id, slug, title, body, meta_title, meta_description,
+       published, indexed, system, updated_by, updated_at
+FROM content_pages WHERE id = $1
+`
+
+type GetContentPageRow struct {
+	ID              int64
+	Slug            string
+	Title           string
+	Body            string
+	MetaTitle       string
+	MetaDescription string
+	Published       bool
+	Indexed         bool
+	System          bool
+	UpdatedBy       string
+	UpdatedAt       pgtype.Timestamptz
+}
+
+func (q *Queries) GetContentPage(ctx context.Context, id int64) (GetContentPageRow, error) {
+	row := q.db.QueryRow(ctx, getContentPage, id)
+	var i GetContentPageRow
+	err := row.Scan(
+		&i.ID,
+		&i.Slug,
+		&i.Title,
+		&i.Body,
+		&i.MetaTitle,
+		&i.MetaDescription,
+		&i.Published,
+		&i.Indexed,
+		&i.System,
+		&i.UpdatedBy,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getContentPageBySlug = `-- name: GetContentPageBySlug :one
+SELECT id, slug, title, body, meta_title, meta_description,
+       published, indexed, system, updated_by, updated_at
+FROM content_pages WHERE slug = $1
+`
+
+type GetContentPageBySlugRow struct {
+	ID              int64
+	Slug            string
+	Title           string
+	Body            string
+	MetaTitle       string
+	MetaDescription string
+	Published       bool
+	Indexed         bool
+	System          bool
+	UpdatedBy       string
+	UpdatedAt       pgtype.Timestamptz
+}
+
+func (q *Queries) GetContentPageBySlug(ctx context.Context, slug string) (GetContentPageBySlugRow, error) {
+	row := q.db.QueryRow(ctx, getContentPageBySlug, slug)
+	var i GetContentPageBySlugRow
+	err := row.Scan(
+		&i.ID,
+		&i.Slug,
+		&i.Title,
+		&i.Body,
+		&i.MetaTitle,
+		&i.MetaDescription,
+		&i.Published,
+		&i.Indexed,
+		&i.System,
+		&i.UpdatedBy,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
@@ -335,6 +468,61 @@ func (q *Queries) InsertOutbox(ctx context.Context, arg InsertOutboxParams) (int
 	var id int64
 	err := row.Scan(&id)
 	return id, err
+}
+
+const listContentPages = `-- name: ListContentPages :many
+
+SELECT id, slug, title, body, meta_title, meta_description,
+       published, indexed, system, updated_by, updated_at
+FROM content_pages
+ORDER BY published DESC, id
+`
+
+type ListContentPagesRow struct {
+	ID              int64
+	Slug            string
+	Title           string
+	Body            string
+	MetaTitle       string
+	MetaDescription string
+	Published       bool
+	Indexed         bool
+	System          bool
+	UpdatedBy       string
+	UpdatedAt       pgtype.Timestamptz
+}
+
+// Контентные страницы админки. Правила блокировки — в сервисе internal/content.
+func (q *Queries) ListContentPages(ctx context.Context) ([]ListContentPagesRow, error) {
+	rows, err := q.db.Query(ctx, listContentPages)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListContentPagesRow
+	for rows.Next() {
+		var i ListContentPagesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Slug,
+			&i.Title,
+			&i.Body,
+			&i.MetaTitle,
+			&i.MetaDescription,
+			&i.Published,
+			&i.Indexed,
+			&i.System,
+			&i.UpdatedBy,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listOrders = `-- name: ListOrders :many
@@ -485,6 +673,23 @@ func (q *Queries) OrderStats(ctx context.Context) (OrderStatsRow, error) {
 	return i, err
 }
 
+const renameContentPage = `-- name: RenameContentPage :exec
+UPDATE content_pages SET slug = $2, updated_by = $3, updated_at = now()
+WHERE id = $1
+`
+
+type RenameContentPageParams struct {
+	ID        int64
+	Slug      string
+	UpdatedBy string
+}
+
+// Смена URL — только для черновиков (проверяется в сервисе).
+func (q *Queries) RenameContentPage(ctx context.Context, arg RenameContentPageParams) error {
+	_, err := q.db.Exec(ctx, renameContentPage, arg.ID, arg.Slug, arg.UpdatedBy)
+	return err
+}
+
 const rescheduleOutbox = `-- name: RescheduleOutbox :exec
 UPDATE outbox
 SET attempts = attempts + 1, next_retry_at = $2, last_error = $3, updated_at = now()
@@ -512,6 +717,54 @@ WHERE kind = 'order'
 
 func (q *Queries) RetryOrderDelivery(ctx context.Context, orderID int64) error {
 	_, err := q.db.Exec(ctx, retryOrderDelivery, orderID)
+	return err
+}
+
+const setContentPagePublished = `-- name: SetContentPagePublished :exec
+UPDATE content_pages SET
+    published = $2, indexed = content_pages.indexed OR $2,
+    updated_by = $3, updated_at = now()
+WHERE id = $1
+`
+
+type SetContentPagePublishedParams struct {
+	ID        int64
+	Published bool
+	UpdatedBy string
+}
+
+// Публикация делает indexed=true липко (SEO-адрес закрепляется); снятие с
+// публикации не сбрасывает indexed.
+func (q *Queries) SetContentPagePublished(ctx context.Context, arg SetContentPagePublishedParams) error {
+	_, err := q.db.Exec(ctx, setContentPagePublished, arg.ID, arg.Published, arg.UpdatedBy)
+	return err
+}
+
+const updateContentPage = `-- name: UpdateContentPage :exec
+UPDATE content_pages SET
+    title = $2, body = $3, meta_title = $4, meta_description = $5,
+    updated_by = $6, updated_at = now()
+WHERE id = $1
+`
+
+type UpdateContentPageParams struct {
+	ID              int64
+	Title           string
+	Body            string
+	MetaTitle       string
+	MetaDescription string
+	UpdatedBy       string
+}
+
+func (q *Queries) UpdateContentPage(ctx context.Context, arg UpdateContentPageParams) error {
+	_, err := q.db.Exec(ctx, updateContentPage,
+		arg.ID,
+		arg.Title,
+		arg.Body,
+		arg.MetaTitle,
+		arg.MetaDescription,
+		arg.UpdatedBy,
+	)
 	return err
 }
 

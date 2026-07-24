@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"tirestock/api/internal/content"
 	"tirestock/api/internal/httpx"
 )
 
@@ -20,11 +21,12 @@ const userKey ctxKey = 0
 // Handlers — HTTP-слой админки. Токен сессии ходит между Next и Go в заголовке
 // Authorization: Bearer <token>; httpOnly-куку на домене витрины ставит Next.
 type Handlers struct {
-	svc *Service
+	svc     *Service
+	content *content.Service
 }
 
-func NewHandlers(svc *Service) *Handlers {
-	return &Handlers{svc: svc}
+func NewHandlers(svc *Service, contentSvc *content.Service) *Handlers {
+	return &Handlers{svc: svc, content: contentSvc}
 }
 
 // Mount вешает роуты админки. Публичен только login; остальное — за сессией.
@@ -40,6 +42,14 @@ func (h *Handlers) Mount(r chi.Router) {
 			r.Post("/orders/{id}/retry", h.retryOrder)
 			r.Get("/products", h.products)
 			r.Put("/products/{slug}/override", h.setOverride)
+
+			r.Get("/pages", h.pages)
+			r.Post("/pages", h.createPage)
+			r.Get("/pages/{id}", h.page)
+			r.Put("/pages/{id}", h.updatePage)
+			r.Put("/pages/{id}/url", h.renamePage)
+			r.Post("/pages/{id}/publish", h.publishPage)
+			r.Delete("/pages/{id}", h.deletePage)
 		})
 	})
 }

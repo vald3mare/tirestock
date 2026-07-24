@@ -23,6 +23,21 @@ type AdminUser struct {
 	CreatedAt    pgtype.Timestamptz
 }
 
+type ContentPage struct {
+	ID              int64
+	Slug            string
+	Title           string
+	Body            string
+	MetaTitle       string
+	MetaDescription string
+	Published       bool
+	Indexed         bool
+	System          bool
+	UpdatedBy       string
+	UpdatedAt       pgtype.Timestamptz
+	CreatedAt       pgtype.Timestamptz
+}
+
 type Order struct {
 	ID             int64
 	IdempotencyKey string

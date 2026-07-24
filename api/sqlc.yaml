@@ -6,6 +6,7 @@ sql:
       - "internal/orders/queries.sql"
       - "internal/admin/queries.sql"
       - "internal/catalog/queries.sql"
+      - "internal/content/queries.sql"
     gen:
       go:
         package: "db"
