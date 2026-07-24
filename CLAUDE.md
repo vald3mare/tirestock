@@ -73,12 +73,16 @@
 (мок → синк-база → реальные адаптеры) подменялся без переписывания страниц.
 Не хардкодить товары в компоненты.
 
-## graphify
+## graphify — МАНТРА проекта (обязательно, не по желанию)
 
-This project has a graphify knowledge graph at graphify-out/.
+This project has a graphify knowledge graph at graphify-out/. Три правила ниже —
+жёсткие; повторять как мантру каждую сессию и на каждой задаче.
 
-Rules:
-- Before answering architecture or codebase questions, read graphify-out/GRAPH_REPORT.md for god nodes and community structure
-- If graphify-out/wiki/index.md exists, navigate it instead of reading raw files
-- For cross-module "how does X relate to Y" questions, prefer `graphify query "<question>"`, `graphify path "<A>" "<B>"`, or `graphify explain "<concept>"` over grep — these traverse the graph's EXTRACTED + INFERRED edges instead of scanning files
-- After modifying code files in this session, run `graphify update .` to keep the graph current (AST-only, no API cost)
+**1. Поиск по кодовой базе идёт ЧЕРЕЗ graphify, а не grep/ручной обход файлов.**
+- Перед ответом на вопрос про архитектуру/код — сперва `graphify-out/GRAPH_REPORT.md` (god-ноды, структура сообществ).
+- Если есть `graphify-out/wiki/index.md` — навигировать по нему, а не читать сырые файлы.
+- Кросс-модульное «как X связан с Y» — только `graphify query "<вопрос>"`, `graphify path "<A>" "<B>"`, `graphify explain "<концепт>"` (обходят рёбра EXTRACTED+INFERRED). Grep — крайний случай, когда graphify не дал ответа.
+
+**2. Граф обновляется по мере работы.** После ЛЮБОГО изменения кода в сессии — `graphify update .` (AST-only, без затрат на API). Граф не должен отставать от кода.
+
+**3. Спек-файлы обновляются по мере работы — тоже мантра.** Меняя код/архитектуру, синхронно правь релевантные MD: `docs/ARCHITECTURE.md`, `docs/PROJECT_OVERVIEW.md`, `docs/DESIGN_SYSTEM.md`, `docs/Conventions.md`, активные спеки/планы в `docs/superpowers/`, и `TODO.md`. Код без обновлённых спек — задача не закрыта.
