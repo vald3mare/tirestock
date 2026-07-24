@@ -11,7 +11,7 @@ import (
 // Store — приёмник результатов синка (read-модель каталога). Объявляет потребитель.
 type Store interface {
 	Upsert(ctx context.Context, p catalog.SyncProduct) error
-	ZeroStaleBefore(ctx context.Context, before time.Time) (int64, error)
+	PruneStaleBefore(ctx context.Context, before time.Time) (int64, error)
 }
 
 // Syncer — фоновый контур: раз в Interval тянет фид SelectTyres и обновляет каталог.
@@ -60,12 +60,12 @@ func (s *Syncer) SyncOnce(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	zeroed, err := s.store.ZeroStaleBefore(ctx, start)
+	pruned, err := s.store.PruneStaleBefore(ctx, start)
 	if err != nil {
-		s.log.Error("selecttyres: гашение пропавших", "err", err)
+		s.log.Error("selecttyres: удаление устаревших предложений", "err", err)
 	}
 	s.log.Info("selecttyres: синк завершён",
-		"в_фиде", parsed, "с_наличием_спб", kept, "погашено", zeroed,
+		"в_фиде", parsed, "с_наличием", kept, "удалено_предложений", pruned,
 		"длительность", time.Since(start).Round(time.Second).String())
 	return nil
 }
