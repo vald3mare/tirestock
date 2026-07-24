@@ -50,7 +50,11 @@ func (h *Handlers) list(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handlers) bySlug(w http.ResponseWriter, r *http.Request) {
 	slug := chi.URLParam(r, "slug")
-	p, err := h.svc.BySlug(r.Context(), slug)
+	city := r.URL.Query().Get("city")
+	if !ValidCity(city) {
+		city = CitySPB
+	}
+	p, err := h.svc.BySlug(r.Context(), slug, city)
 	if errors.Is(err, ErrNotFound) {
 		httpx.NotFound(w, "товар не найден")
 		return

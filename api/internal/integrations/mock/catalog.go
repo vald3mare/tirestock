@@ -39,7 +39,7 @@ func (s *CatalogSource) List(_ context.Context, f catalog.Filters, page, perPage
 	return matched[from:to], total, nil
 }
 
-func (s *CatalogSource) BySlug(_ context.Context, slug string) (catalog.Product, error) {
+func (s *CatalogSource) BySlug(_ context.Context, slug, _ string) (catalog.Product, error) {
 	for _, p := range s.products {
 		if p.Slug == slug {
 			return p, nil

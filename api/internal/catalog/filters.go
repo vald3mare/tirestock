@@ -20,6 +20,7 @@ type Filters struct {
 	PriceMax *int
 	Spikes   *bool
 	Runflat  *bool
+	City     string // выбранный город (spb|msk)
 }
 
 // DefaultPerPage — дефолт пагинации каталога по конвенциям API.
@@ -103,6 +104,11 @@ func ParseFilters(q url.Values) (Filters, int, int, error) {
 		perPage = v
 	}
 
+	f.City = CitySPB
+	if c := q.Get("city"); ValidCity(c) {
+		f.City = c
+	}
+
 	return f, page, perPage, nil
 }
 
@@ -138,10 +144,10 @@ func (f Filters) WhereSQL(startArg int) (string, []any) {
 		add("brand ILIKE $%d", *f.Brand)
 	}
 	if f.PriceMin != nil {
-		add("price >= $%d", *f.PriceMin)
+		add("po.price >= $%d", *f.PriceMin)
 	}
 	if f.PriceMax != nil {
-		add("price <= $%d", *f.PriceMax)
+		add("po.price <= $%d", *f.PriceMax)
 	}
 	if f.Spikes != nil {
 		add("spikes = $%d", *f.Spikes)

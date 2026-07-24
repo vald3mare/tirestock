@@ -26,18 +26,25 @@ func NewDBSource(pool *pgxpool.Pool) *DBSource {
 
 const listCols = `p.id, p.slug, p.brand, p.model, p.name, p.size_label,
 	p.width, p.profile, p.diameter, p.season, p.spikes, p.runflat,
-	p.price, p.stock, p.image_url, COALESCE(o.badge_hit, false)`
+	po.price, po.stock, COALESCE(NULLIF(p.image_clean_url, ''), p.image_url), COALESCE(o.badge_hit, false)`
 
 func (s *DBSource) List(ctx context.Context, f Filters, page, perPage int) ([]Product, int, error) {
-	where, args := f.WhereSQL(1)
+	city := f.City
+	if !ValidCity(city) {
+		city = CitySPB
+	}
+	where, args := f.WhereSQL(2) // $1 зарезервирован под город
+	allArgs := append([]any{city}, args...)
 	cond := "COALESCE(o.hidden, false) = false"
 	if where != "" {
 		cond += " AND " + strings.TrimPrefix(where, "WHERE ")
 	}
-	from := "FROM products p LEFT JOIN product_overrides o ON o.slug = p.slug WHERE " + cond
+	from := "FROM products p " +
+		"JOIN product_offers po ON po.product_code = p.code AND po.city = $1 " +
+		"LEFT JOIN product_overrides o ON o.slug = p.slug WHERE " + cond
 
 	var total int
-	if err := s.pool.QueryRow(ctx, "SELECT count(*) "+from, args...).Scan(&total); err != nil {
+	if err := s.pool.QueryRow(ctx, "SELECT count(*) "+from, allArgs...).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("count products: %w", err)
 	}
 	if total == 0 {
@@ -45,10 +52,10 @@ func (s *DBSource) List(ctx context.Context, f Filters, page, perPage int) ([]Pr
 	}
 
 	listSQL := fmt.Sprintf(
-		"SELECT %s %s ORDER BY (p.stock > 0) DESC, p.id LIMIT $%d OFFSET $%d",
-		listCols, from, len(args)+1, len(args)+2,
+		"SELECT %s %s ORDER BY (po.stock > 0) DESC, p.id LIMIT $%d OFFSET $%d",
+		listCols, from, len(allArgs)+1, len(allArgs)+2,
 	)
-	rows, err := s.pool.Query(ctx, listSQL, append(args, perPage, (page-1)*perPage)...)
+	rows, err := s.pool.Query(ctx, listSQL, append(allArgs, perPage, (page-1)*perPage)...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("list products: %w", err)
 	}
@@ -68,8 +75,11 @@ func (s *DBSource) List(ctx context.Context, f Filters, page, perPage int) ([]Pr
 	return items, total, nil
 }
 
-func (s *DBSource) BySlug(ctx context.Context, slug string) (Product, error) {
-	r, err := s.q.GetCatalogProductBySlug(ctx, slug)
+func (s *DBSource) BySlug(ctx context.Context, slug, city string) (Product, error) {
+	if !ValidCity(city) {
+		city = CitySPB
+	}
+	r, err := s.q.GetCatalogProductBySlug(ctx, db.GetCatalogProductBySlugParams{Slug: slug, City: city})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Product{}, ErrNotFound
 	}

@@ -35,7 +35,7 @@ func TestParseFiltersAndWhereSQL(t *testing.T) {
 		{
 			name:     "цена от и до",
 			query:    "price_min=5000&price_max=15000",
-			wantSQL:  "WHERE price >= $1 AND price <= $2",
+			wantSQL:  "WHERE po.price >= $1 AND po.price <= $2",
 			wantArgs: []any{5000, 15000},
 		},
 		{
@@ -48,7 +48,7 @@ func TestParseFiltersAndWhereSQL(t *testing.T) {
 			name:  "всё сразу",
 			query: "width=205&profile=55&diameter=16&season=winter&brand=Nokian&price_min=5000&price_max=20000&spikes=true&runflat=false",
 			wantSQL: "WHERE width = $1 AND profile = $2 AND diameter = $3 AND season = $4 " +
-				"AND brand ILIKE $5 AND price >= $6 AND price <= $7 AND spikes = $8 AND runflat = $9",
+				"AND brand ILIKE $5 AND po.price >= $6 AND po.price <= $7 AND spikes = $8 AND runflat = $9",
 			wantArgs: []any{205, 55, 16, "winter", "Nokian", 5000, 20000, true, false},
 		},
 	}
@@ -150,5 +150,20 @@ func TestParseFiltersValidation(t *testing.T) {
 		if _, _, _, err := ParseFilters(q); err == nil {
 			t.Errorf("query %q: ожидалась ошибка валидации, получен nil", query)
 		}
+	}
+}
+
+func TestParseFilters_City(t *testing.T) {
+	f, _, _, err := ParseFilters(url.Values{"city": {"msk"}})
+	if err != nil || f.City != "msk" {
+		t.Fatalf("city=msk: got %q err=%v", f.City, err)
+	}
+	f2, _, _, _ := ParseFilters(url.Values{})
+	if f2.City != CitySPB {
+		t.Errorf("дефолт города: got %q, ожидалось spb", f2.City)
+	}
+	f3, _, _, _ := ParseFilters(url.Values{"city": {"piter"}})
+	if f3.City != CitySPB {
+		t.Errorf("невалидный город → дефолт spb, got %q", f3.City)
 	}
 }
