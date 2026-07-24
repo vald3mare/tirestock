@@ -39,7 +39,7 @@ const nav: { label: string; href: string; items?: NavItem[] }[] = [
       { label: "Шиномонтаж", href: "#" },
     ],
   },
-  { label: "Пункты выдачи", href: "#" },
+  { label: "Пункты выдачи", href: "/points/" },
 ];
 
 export async function Header() {

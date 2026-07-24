@@ -221,6 +221,7 @@ func main() {
 		})
 		catalog.NewHandlers(catalogSvc).Mount(r)
 		orders.NewHandlers(ordersSvc).Mount(r)
+		content.NewPublicHandlers(contentSvc).Mount(r)
 		admin.NewHandlers(adminSvc, contentSvc).Mount(r)
 	})
 

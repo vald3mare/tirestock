@@ -1,7 +1,17 @@
 // Footer: 4 колонки 264 (бренд / контакты / часы двух отделов / ссылки)
 // + нижняя строка: дисклеймер-оферта 12px + копирайт. tel:/mailto: обязательны.
 
-const links = ["О магазине", "Отзывы", "Оплата", "Доставка", "Гарантия"];
+import Link from "next/link";
+
+// Ссылки на контентные страницы (рендерятся catch-all роутом по их URL).
+const links: { label: string; href: string }[] = [
+  { label: "О магазине", href: "/about/" },
+  { label: "Отзывы", href: "/reviews/" },
+  { label: "Оплата", href: "/info/oplata/" },
+  { label: "Доставка", href: "/dostavka/" },
+  { label: "Гарантия", href: "/garantiya/" },
+  { label: "Пункты выдачи", href: "/points/" },
+];
 
 export function Footer() {
   return (
@@ -36,9 +46,9 @@ export function Footer() {
         <div className="flex flex-col gap-2.5">
           <p className="text-body font-semibold text-dark">Покупателям</p>
           {links.map((l) => (
-            <a key={l} href="#" className="text-caption-lg text-grey hover:text-blue">
-              {l}
-            </a>
+            <Link key={l.href} href={l.href} className="text-caption-lg text-grey hover:text-blue">
+              {l.label}
+            </Link>
           ))}
         </div>
       </div>

@@ -93,7 +93,7 @@ func (s *Service) Get(ctx context.Context, id int64) (Page, error) {
 		r.Published, r.Indexed, r.System, r.UpdatedBy, r.UpdatedAt), nil
 }
 
-// BySlug — для рендера страницы на витрине (позже). Отдаёт только опубликованные.
+// BySlug ищет страницу по точному URL (админ-контекст, любой статус).
 func (s *Service) BySlug(ctx context.Context, slug string) (Page, error) {
 	r, err := s.q.GetContentPageBySlug(ctx, slug)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -104,6 +104,29 @@ func (s *Service) BySlug(ctx context.Context, slug string) (Page, error) {
 	}
 	return mkPage(r.ID, r.Slug, r.Title, r.Body, r.MetaTitle, r.MetaDescription,
 		r.Published, r.Indexed, r.System, r.UpdatedBy, r.UpdatedAt), nil
+}
+
+// PublicBySlug — рендер страницы на витрине: нормализует путь и отдаёт только
+// ОПУБЛИКОВАННУЮ страницу (черновик → ErrNotFound).
+func (s *Service) PublicBySlug(ctx context.Context, path string) (Page, error) {
+	p, err := s.BySlug(ctx, NormalizePath(path))
+	if err != nil {
+		return Page{}, err
+	}
+	if !p.Published {
+		return Page{}, ErrNotFound
+	}
+	return p, nil
+}
+
+// NormalizePath приводит путь к виду '/сегменты/' (ведущий и завершающий слэш),
+// чтобы '/points', '/points/' и 'points' совпадали с сохранённым slug.
+func NormalizePath(path string) string {
+	path = "/" + strings.Trim(strings.TrimSpace(path), "/")
+	if path != "/" {
+		path += "/"
+	}
+	return path
 }
 
 // Create заводит новый черновик (не опубликован, не индексирован).

@@ -80,6 +80,22 @@ export function getProductBySlug(slug: string, city?: "spb" | "msk"): Promise<Pr
   return request(`/products/${encodeURIComponent(slug)}${q}`);
 }
 
+// Контентная страница витрины (тексты/SEO из админки). Только опубликованные.
+export type ContentPage = {
+  slug: string;
+  title: string;
+  body: string;
+  meta_title: string;
+  meta_description: string;
+  updated_by: string;
+  updated_at: string;
+};
+
+// no-store: правки в админке применяются на сайте сразу, без кеша.
+export function getContentPage(path: string): Promise<ContentPage> {
+  return request(`/content?path=${encodeURIComponent(path)}`, { cache: "no-store" });
+}
+
 export function createOrder(
   input: CreateOrderInput,
   idempotencyKey: string,
