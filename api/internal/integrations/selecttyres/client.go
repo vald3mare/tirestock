@@ -23,9 +23,12 @@ import (
 
 // DefaultCityFilters — подстроки stock_name по городам (нижний регистр).
 // MSK-подстроки — предположение; свериться с живым фидом (см. spec §10).
+// Осознанно БЕЗ подстроки "msk" для МСК: реальный склад
+// "sever-avto-msk_sankt-peterburg" содержит "msk", но физически питерский —
+// матчим Москву только по "moskva"/"moscow".
 var DefaultCityFilters = map[string][]string{
 	catalog.CitySPB: {"spb", "sankt-peterburg"},
-	catalog.CityMSK: {"msk", "moskva", "moscow"},
+	catalog.CityMSK: {"moskva", "moscow"},
 }
 
 // Config — параметры источника.

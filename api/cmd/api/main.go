@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -37,9 +38,10 @@ type config struct {
 	AdminBootstrapPassword string
 	AdminBootstrapName     string
 	// Синк каталога из SelectTyres (пусто → каталог на моке).
-	Selecttyres  selecttyres.Config
-	PhotoFeedURL string
-	SyncInterval time.Duration
+	Selecttyres    selecttyres.Config
+	PhotoFeedURL   string
+	SyncInterval   time.Duration
+	SyncMinHealthy float64 // порог здоровья синка (доля от прошлого размера); 0 → дефолт
 }
 
 // Конфиг читается из env один раз в main и передаётся явно.
@@ -69,6 +71,11 @@ func loadConfig() config {
 	if v := os.Getenv("SELECTYRES_SYNC_INTERVAL"); v != "" {
 		if d, err := time.ParseDuration(v); err == nil {
 			cfg.SyncInterval = d
+		}
+	}
+	if v := os.Getenv("SELECTYRES_MIN_HEALTHY_RATIO"); v != "" {
+		if r, err := strconv.ParseFloat(v, 64); err == nil {
+			cfg.SyncMinHealthy = r
 		}
 	}
 	return cfg
@@ -132,7 +139,7 @@ func main() {
 			os.Exit(1)
 		}
 		store := catalog.NewSyncStore(pool)
-		syncer = selecttyres.NewSyncer(stClient, store, cfg.SyncInterval, log)
+		syncer = selecttyres.NewSyncer(stClient, store, cfg.SyncInterval, cfg.SyncMinHealthy, log)
 		catSource = catalog.NewDBSource(pool)
 		log.Info("каталог: SelectTyres (синк в read-модель)", "interval", cfg.SyncInterval.String())
 
