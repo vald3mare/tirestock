@@ -11,8 +11,8 @@ import (
 	"tirestock/api/internal/db"
 )
 
-// SyncProduct — строка каталога для upsert синком (уже агрегированная: цена и
-// остаток сведены из предложений источника). Ключ идемпотентности — Code.
+// SyncProduct — строка каталога для upsert синком. Цена/остаток разнесены по
+// городам (Offers). Ключ идемпотентности — Code.
 type SyncProduct struct {
 	Code      string
 	Slug      string
@@ -26,9 +26,8 @@ type SyncProduct struct {
 	Season    Season
 	Spikes    bool
 	Runflat   bool
-	Price     int
-	Stock     int
 	ImageURL  string
+	Offers    []CityOffer
 }
 
 // SyncStore — запись read-модели products синком. Обёртка над sqlc.
@@ -41,18 +40,28 @@ func NewSyncStore(pool *pgxpool.Pool) *SyncStore {
 }
 
 func (s *SyncStore) Upsert(ctx context.Context, p SyncProduct) error {
-	return s.q.UpsertProduct(ctx, db.UpsertProductParams{
+	if err := s.q.UpsertProduct(ctx, db.UpsertProductParams{
 		Code: p.Code, Slug: p.Slug, Brand: p.Brand, Model: p.Model, Name: p.Name,
 		SizeLabel: p.SizeLabel, Width: int32(p.Width), Profile: int32(p.Profile),
 		Diameter: int32(p.Diameter), Season: string(p.Season), Spikes: p.Spikes,
-		Runflat: p.Runflat, Price: int32(p.Price), Stock: int32(p.Stock), ImageUrl: p.ImageURL,
-	})
+		Runflat: p.Runflat, Price: 0, Stock: 0, ImageUrl: p.ImageURL, // price/stock legacy — читаем из product_offers
+	}); err != nil {
+		return fmt.Errorf("upsert product %s: %w", p.Code, err)
+	}
+	for _, o := range p.Offers {
+		if err := s.q.UpsertProductOffer(ctx, db.UpsertProductOfferParams{
+			ProductCode: p.Code, City: o.City, Price: int64(o.Price), Stock: int32(o.Stock),
+		}); err != nil {
+			return fmt.Errorf("upsert offer %s/%s: %w", p.Code, o.City, err)
+		}
+	}
+	return nil
 }
 
-// ZeroStaleBefore гасит остаток товаров, не обновлённых в текущем прогоне синка
-// (пропали из выгрузки). Возвращает число затронутых строк.
-func (s *SyncStore) ZeroStaleBefore(ctx context.Context, before time.Time) (int64, error) {
-	return s.q.ZeroStaleStock(ctx, pgtype.Timestamptz{Time: before, Valid: true})
+// PruneStaleBefore удаляет предложения, не обновлённые в текущем прогоне синка
+// (город или товар пропал из выгрузки). Возвращает число удалённых строк.
+func (s *SyncStore) PruneStaleBefore(ctx context.Context, before time.Time) (int64, error) {
+	return s.q.DeleteStaleOffers(ctx, pgtype.Timestamptz{Time: before, Valid: true})
 }
 
 func (s *SyncStore) CountSynced(ctx context.Context) (int64, error) {

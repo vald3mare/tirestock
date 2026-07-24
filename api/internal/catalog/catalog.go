@@ -35,6 +35,32 @@ type Product struct {
 	BadgeHit  bool   `json:"badge_hit"` // оверрайд админки «Хит»
 }
 
+// Города витрины. Ровно два (созвон с Виталием): СПб и МСК.
+const (
+	CitySPB = "spb"
+	CityMSK = "msk"
+)
+
+// AllCities — список валидных городов (порядок = дефолтный порядок вывода).
+var AllCities = []string{CitySPB, CityMSK}
+
+// ValidCity сообщает, поддерживается ли город.
+func ValidCity(c string) bool {
+	for _, x := range AllCities {
+		if x == c {
+			return true
+		}
+	}
+	return false
+}
+
+// CityOffer — цена и остаток товара в конкретном городе (агрегат синка).
+type CityOffer struct {
+	City  string
+	Price int
+	Stock int
+}
+
 // ErrNotFound — товар не найден (sentinel фичи).
 var ErrNotFound = errors.New("catalog: product not found")
 
@@ -42,7 +68,7 @@ var ErrNotFound = errors.New("catalog: product not found")
 // synced-БД / selecttyres (позже). Интерфейс объявляет потребитель — catalog.
 type CatalogSource interface {
 	List(ctx context.Context, f Filters, page, perPage int) (items []Product, total int, err error)
-	BySlug(ctx context.Context, slug string) (Product, error)
+	BySlug(ctx context.Context, slug, city string) (Product, error)
 }
 
 // Service — бизнес-логика каталога поверх источника.
@@ -58,6 +84,6 @@ func (s *Service) List(ctx context.Context, f Filters, page, perPage int) ([]Pro
 	return s.src.List(ctx, f, page, perPage)
 }
 
-func (s *Service) BySlug(ctx context.Context, slug string) (Product, error) {
-	return s.src.BySlug(ctx, slug)
+func (s *Service) BySlug(ctx context.Context, slug, city string) (Product, error) {
+	return s.src.BySlug(ctx, slug, city)
 }
