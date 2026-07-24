@@ -190,7 +190,10 @@ export interface components {
             };
         };
     };
-    parameters: never;
+    parameters: {
+        /** @description Город (СПб/МСК). Влияет на цену и наличие. */
+        CityParam: "spb" | "msk";
+    };
     requestBodies: never;
     headers: never;
     pathItems: never;
@@ -245,6 +248,8 @@ export interface operations {
                 runflat?: boolean;
                 page?: number;
                 per_page?: number;
+                /** @description Город (СПб/МСК). Влияет на цену и наличие. */
+                city?: components["parameters"]["CityParam"];
             };
             header?: never;
             path?: never;
@@ -266,7 +271,10 @@ export interface operations {
     };
     getProductBySlug: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Город (СПб/МСК). Влияет на цену и наличие. */
+                city?: components["parameters"]["CityParam"];
+            };
             header?: never;
             path: {
                 slug: string;

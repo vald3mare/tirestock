@@ -48,6 +48,7 @@ paths:
         - { name: runflat,   in: query, schema: { type: boolean }, description: "RunFlat" }
         - { name: page,      in: query, schema: { type: integer, minimum: 1, default: 1 } }
         - { name: per_page,  in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 24 } }
+        - $ref: "#/components/parameters/CityParam"
       responses:
         "200":
           description: Страница каталога
@@ -67,6 +68,7 @@ paths:
           in: path
           required: true
           schema: { type: string }
+        - $ref: "#/components/parameters/CityParam"
       responses:
         "200":
           description: Товар
@@ -138,6 +140,17 @@ paths:
           $ref: "#/components/responses/Error"
 
 components:
+  parameters:
+    CityParam:
+      name: city
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [spb, msk]
+        default: spb
+      description: Город (СПб/МСК). Влияет на цену и наличие.
+
   responses:
     Error:
       description: Ошибка в едином формате
