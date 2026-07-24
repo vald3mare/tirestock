@@ -40,11 +40,16 @@ func NewSyncStore(pool *pgxpool.Pool) *SyncStore {
 }
 
 func (s *SyncStore) Upsert(ctx context.Context, p SyncProduct) error {
+	// products.price/stock — денормализованный снапшот города по умолчанию (СПб),
+	// а не «мёртвые» нули. City-aware путь читает product_offers, но снапшот в
+	// products служит фолбэком/источником для сидинга offers (см. миграцию 0005),
+	// чтобы падение фида не оставляло каталог без данных.
+	dPrice, dStock := defaultOfferSnapshot(p.Offers)
 	if err := s.q.UpsertProduct(ctx, db.UpsertProductParams{
 		Code: p.Code, Slug: p.Slug, Brand: p.Brand, Model: p.Model, Name: p.Name,
 		SizeLabel: p.SizeLabel, Width: int32(p.Width), Profile: int32(p.Profile),
 		Diameter: int32(p.Diameter), Season: string(p.Season), Spikes: p.Spikes,
-		Runflat: p.Runflat, Price: 0, Stock: 0, ImageUrl: p.ImageURL, // price/stock legacy — читаем из product_offers
+		Runflat: p.Runflat, Price: int32(dPrice), Stock: int32(dStock), ImageUrl: p.ImageURL,
 	}); err != nil {
 		return fmt.Errorf("upsert product %s: %w", p.Code, err)
 	}
@@ -56,6 +61,20 @@ func (s *SyncStore) Upsert(ctx context.Context, p SyncProduct) error {
 		}
 	}
 	return nil
+}
+
+// defaultOfferSnapshot выбирает цену/остаток для денормализованного снапшота в
+// products: предложение города по умолчанию (СПб), иначе первое, иначе нули.
+func defaultOfferSnapshot(offers []CityOffer) (price, stock int) {
+	if len(offers) == 0 {
+		return 0, 0
+	}
+	for _, o := range offers {
+		if o.City == CitySPB {
+			return o.Price, o.Stock
+		}
+	}
+	return offers[0].Price, offers[0].Stock
 }
 
 // PruneStaleBefore удаляет предложения, не обновлённые в текущем прогоне синка
