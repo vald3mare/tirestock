@@ -5,6 +5,7 @@ import { ButtonLink } from "@/components/ui/ButtonLink";
 import { FilterSidebar } from "@/components/blocks/FilterSidebar";
 import { ProductCard } from "@/components/blocks/ProductCard";
 import { listProducts, type ProductFilters, type Season } from "@/lib/api/client";
+import { getCity } from "@/lib/get-city";
 import { formatNumber } from "@/lib/format";
 
 // Каталог шин (Figma → «Каталог», 20:417). Server Component:
@@ -48,8 +49,9 @@ export default async function CatalogPage({
   searchParams: Promise<SearchParams>;
 }) {
   const sp = await searchParams;
+  const city = await getCity();
   const filters = parseFilters(sp);
-  const { items, total, page, per_page } = await listProducts(filters);
+  const { items, total, page, per_page } = await listProducts({ ...filters, city });
 
   const nextPageParams = new URLSearchParams();
   for (const [k, v] of Object.entries(sp)) {

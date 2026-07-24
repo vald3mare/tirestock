@@ -4,13 +4,18 @@ import { ProductCard } from "@/components/blocks/ProductCard";
 import { SearchWidget } from "@/components/blocks/SearchWidget";
 import { ServicesSection } from "@/components/blocks/ServicesSection";
 import { listProducts, type Product } from "@/lib/api/client";
+import { getCity } from "@/lib/get-city";
 
 // Главная (Figma → Desktop, 1:2). Server Component: данные через lib/api.
 // Ритм по макету: hero-текст ↑80, виджет ↑36, преимущества ↑24, секции через 80.
+// ISR: «Популярные» берут свежий каталог (иначе статика заморозит выдачу на билде).
+export const revalidate = 300;
+
 export default async function Home() {
+  const city = await getCity();
   let products: Product[] = [];
   try {
-    products = (await listProducts({ per_page: 8 })).items;
+    products = (await listProducts({ city, per_page: 8 })).items;
   } catch {
     // api недоступен — секция «Популярные товары» просто скрывается
   }
@@ -51,7 +56,6 @@ export default async function Home() {
           </div>
           <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             {products.map((p) => (
-              // TODO: изображения товаров придут из SelectTyres; пока плейсхолдер
               <ProductCard key={p.slug} product={p} />
             ))}
           </div>

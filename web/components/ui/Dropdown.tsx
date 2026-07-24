@@ -73,7 +73,7 @@ export function Dropdown({ options, value, onChange, placeholder, label, disable
           <ul
             id={listboxId}
             role="listbox"
-            className="max-h-72 overflow-auto rounded-field border border-line bg-white py-2 shadow-dropdown"
+            className="animate-dropdown max-h-72 origin-top overflow-auto rounded-field border border-line bg-white py-2 shadow-dropdown"
           >
             {options.map((o) => (
               <li key={o.value}>

@@ -14,6 +14,7 @@ export type ErrorBody = components["schemas"]["ErrorBody"];
 
 // Фильтры каталога = query-параметры URL витрины (имена совпадают 1:1).
 export type ProductFilters = {
+  city?: "spb" | "msk";
   q?: string;
   width?: number;
   profile?: number;
@@ -74,8 +75,9 @@ export function listProducts(filters: ProductFilters = {}): Promise<ProductList>
   return request(`/products${query}`);
 }
 
-export function getProductBySlug(slug: string): Promise<Product> {
-  return request(`/products/${encodeURIComponent(slug)}`);
+export function getProductBySlug(slug: string, city?: "spb" | "msk"): Promise<Product> {
+  const q = city ? `?city=${city}` : "";
+  return request(`/products/${encodeURIComponent(slug)}${q}`);
 }
 
 export function createOrder(

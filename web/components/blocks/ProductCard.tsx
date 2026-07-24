@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { Product } from "@/lib/api/client";
 import { Button } from "@/components/ui/Button";
@@ -22,14 +23,17 @@ export function ProductCard({ product, imageSrc }: { product: Product; imageSrc?
         href={`/catalog/${product.slug}`}
         tabIndex={-1}
         aria-hidden="true"
-        className="relative block aspect-[58/43] w-full overflow-hidden rounded-card border border-line bg-white"
+        className="relative block aspect-[58/43] w-full overflow-hidden rounded-card border border-line bg-white p-3 transition-transform duration-200 ease-out hover:scale-[1.02] motion-reduce:transition-none motion-reduce:hover:scale-100"
       >
-        <img
-          src={src || PLACEHOLDER}
-          alt=""
-          loading="lazy"
-          className="absolute inset-0 size-full object-contain p-3"
-        />
+        <div className="relative size-full">
+          <Image
+            src={src || PLACEHOLDER}
+            alt=""
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 264px"
+            className="object-contain"
+          />
+        </div>
         <span className="absolute left-2 top-2">
           <SeasonBadge season={product.season} spikes={product.spikes} />
         </span>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import { AddToCart } from "@/components/blocks/AddToCart";
@@ -6,6 +7,8 @@ import { Breadcrumbs } from "@/components/blocks/Breadcrumbs";
 import { ProductCard } from "@/components/blocks/ProductCard";
 import { SeasonBadge } from "@/components/ui/SeasonBadge";
 import { ApiError, getProductBySlug, listProducts, type Product } from "@/lib/api/client";
+import { type City } from "@/lib/city";
+import { getCity } from "@/lib/get-city";
 import { formatNumber, formatPrice, seasonLabel } from "@/lib/format";
 import { parseTireIndices } from "@/lib/tire-indices";
 
@@ -17,9 +20,11 @@ type Params = { slug: string };
 
 // React.cache: generateMetadata и страница делят один запрос к api
 // в рамках одного рендера (иначе товар грузился бы дважды).
-const loadProduct = cache(async (slug: string): Promise<Product | null> => {
+// Ключ кэша — (slug, city): один и тот же товар в разных городах может иметь
+// разные цену/наличие.
+const loadProduct = cache(async (slug: string, city: City): Promise<Product | null> => {
   try {
-    return await getProductBySlug(slug);
+    return await getProductBySlug(slug, city);
   } catch (e) {
     if (e instanceof ApiError && e.status === 404) return null;
     throw e;
@@ -27,7 +32,8 @@ const loadProduct = cache(async (slug: string): Promise<Product | null> => {
 });
 
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
-  const product = await loadProduct((await params).slug);
+  const city = await getCity();
+  const product = await loadProduct((await params).slug, city);
   if (!product) return { title: "Товар не найден | TireStock" };
   return {
     title: `${product.name} — купить в СПб | TireStock`,
@@ -36,10 +42,11 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
 }
 
 export default async function ProductPage({ params }: { params: Promise<Params> }) {
-  const product = await loadProduct((await params).slug);
+  const city = await getCity();
+  const product = await loadProduct((await params).slug, city);
   if (!product) notFound();
 
-  const related = (await listProducts({ season: product.season, per_page: 5 })).items
+  const related = (await listProducts({ city, season: product.season, per_page: 5 })).items
     .filter((p) => p.slug !== product.slug)
     .slice(0, 4);
 
@@ -72,12 +79,17 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
       />
 
       <div className="mt-8 flex flex-col items-stretch gap-6 lg:flex-row lg:items-start lg:gap-8">
-        <div className="relative aspect-[136/110] w-full shrink-0 rounded-card-lg border border-line bg-white lg:h-110 lg:w-136">
-          <img
-            src={product.image_url || "/images/tire-placeholder.png"}
-            alt={product.name}
-            className="absolute inset-0 size-full object-contain p-10"
-          />
+        <div className="relative aspect-[136/110] w-full shrink-0 rounded-card-lg border border-line bg-white p-10 lg:h-110 lg:w-136">
+          <div className="relative size-full">
+            <Image
+              src={product.image_url || "/images/tire-placeholder.png"}
+              alt={product.name}
+              fill
+              sizes="(max-width: 1024px) 100vw, 544px"
+              priority
+              className="object-contain"
+            />
+          </div>
           <span className="absolute left-4 top-4">
             <SeasonBadge season={product.season} spikes={product.spikes} />
           </span>

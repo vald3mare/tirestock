@@ -13,6 +13,7 @@ export async function GET(req: NextRequest) {
   const bool = (k: string) => (sp.get(k) === "true" ? true : undefined);
 
   const filters: ProductFilters = {
+    city: str("city") as "spb" | "msk" | undefined,
     q: str("q"),
     width: num("width"),
     profile: num("profile"),
