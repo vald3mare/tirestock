@@ -7,7 +7,7 @@ import { Breadcrumbs } from "@/components/blocks/Breadcrumbs";
 import { ProductCard } from "@/components/blocks/ProductCard";
 import { SeasonBadge } from "@/components/ui/SeasonBadge";
 import { ApiError, getProductBySlug, listProducts, type Product } from "@/lib/api/client";
-import { type City } from "@/lib/city";
+import { CITIES, type City } from "@/lib/city";
 import { getCity } from "@/lib/get-city";
 import { formatNumber, formatPrice, seasonLabel } from "@/lib/format";
 import { parseTireIndices } from "@/lib/tire-indices";
@@ -36,8 +36,8 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const product = await loadProduct((await params).slug, city);
   if (!product) return { title: "Товар не найден | TireStock" };
   return {
-    title: `${product.name} — купить в СПб | TireStock`,
-    description: `${seasonLabel[product.season]} шины ${product.name}: в наличии ${product.stock} шт., цена ${formatPrice(product.price)}/шт. Доставка по СПб и России.`,
+    title: `${product.name} — купить в ${CITIES[city].loc} | TireStock`,
+    description: `${seasonLabel[product.season]} шины ${product.name}: в наличии ${product.stock} шт., цена ${formatPrice(product.price)}/шт. Доставка по ${CITIES[city].loc} и России.`,
   };
 }
 
@@ -114,8 +114,8 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
           <div className="flex flex-col gap-2 rounded-card bg-light px-4 py-3.5">
             <p className="text-caption-lg font-semibold text-dark">Доставка и самовывоз</p>
             <p className="text-caption text-grey">
-              По СПб в пределах КАД — 500 ₽, бесплатно от 30 000 ₽. До пункта выдачи ПЭК —
-              бесплатно.
+              Доставка по {CITIES[city].label} — 500 ₽, бесплатно от 30 000 ₽. До пункта выдачи
+              ПЭК — бесплатно.
             </p>
             <p className="text-caption text-grey">Самовывоз со склада — сегодня</p>
           </div>
