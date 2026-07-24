@@ -2,7 +2,10 @@ package selecttyres
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
+	"sort"
+	"strings"
 	"time"
 
 	"tirestock/api/internal/catalog"
@@ -58,6 +61,27 @@ func (s *Syncer) Run(ctx context.Context) {
 	}
 }
 
+// topStocks форматирует «склад=число_офферов» по убыванию, не более n позиций.
+func topStocks(m map[string]int, n int) string {
+	type kv struct {
+		k string
+		v int
+	}
+	arr := make([]kv, 0, len(m))
+	for k, v := range m {
+		arr = append(arr, kv{k, v})
+	}
+	sort.Slice(arr, func(i, j int) bool { return arr[i].v > arr[j].v })
+	if len(arr) > n {
+		arr = arr[:n]
+	}
+	parts := make([]string, len(arr))
+	for i, e := range arr {
+		parts[i] = fmt.Sprintf("%s=%d", e.k, e.v)
+	}
+	return strings.Join(parts, " ")
+}
+
 // SyncOnce выполняет один цикл: скачать фид → upsert товаров → погасить пропавшие.
 // Живучесть: при ошибке Fetch (фид недоступен, 403, сеть) офферы НЕ трогаем —
 // каталог живёт из последнего состояния. При успешном, но «усохшем» фиде
@@ -78,6 +102,11 @@ func (s *Syncer) SyncOnce(ctx context.Context) error {
 	})
 	if err != nil {
 		return err // офферы не трогаем — последнее состояние сохраняется
+	}
+
+	if u := s.client.UnrecognizedStocks(); len(u) > 0 {
+		s.log.Warn("selecttyres: склады не распознаны ни по одному городу — товар с них в каталог НЕ попал",
+			"складов", len(u), "детали", topStocks(u, 20))
 	}
 
 	if prev > 0 && float64(kept) < s.minHealthy*float64(prev) {

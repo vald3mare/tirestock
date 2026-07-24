@@ -104,3 +104,37 @@ func TestFetchStreamsFeed(t *testing.T) {
 		t.Errorf("неверный товар: %+v", got)
 	}
 }
+
+func TestFetchReportsUnrecognizedStocks(t *testing.T) {
+	feed := `{"tires":[
+		{"code":"t1","p_full_name":"A 205/55 R16","p_brand":"A","p_width":"205.00","p_height":"55.00","p_diameter":"16.00","p_season":"Летняя","offers":[
+			{"stock_name":"depot_spb","quantity":4,"recommended_retail_price":"5000.00"},
+			{"stock_name":"depot_yaroslavl","quantity":7,"recommended_retail_price":"4000.00"},
+			{"stock_name":"depot_kazan","quantity":0,"recommended_retail_price":"3000.00"}
+		]}
+	]}`
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Write([]byte(feed))
+	}))
+	defer srv.Close()
+
+	c, err := NewClient(Config{FeedURL: srv.URL, CityFilters: map[string][]string{
+		"spb": {"spb"}, "msk": {"moskva"},
+	}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := c.Fetch(context.Background(), func(catalog.SyncProduct) error { return nil }); err != nil {
+		t.Fatalf("Fetch: %v", err)
+	}
+	u := c.UnrecognizedStocks()
+	if u["depot_yaroslavl"] != 1 {
+		t.Errorf("depot_yaroslavl должен быть нераспознан (1 оффер), got %+v", u)
+	}
+	if _, ok := u["depot_spb"]; ok {
+		t.Error("depot_spb распознан по СПб — не должен попасть в нераспознанные")
+	}
+	if _, ok := u["depot_kazan"]; ok {
+		t.Error("depot_kazan с quantity=0 не должен учитываться")
+	}
+}

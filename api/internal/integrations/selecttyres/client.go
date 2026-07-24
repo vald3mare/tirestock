@@ -43,6 +43,10 @@ type Client struct {
 	cfg    Config
 	cities []string // детерминированный порядок городов
 	http   *http.Client
+	// unrecognized — склады из последнего Fetch, не попавшие ни в один город
+	// (stock_name → число офферов). Сбрасывается в начале Fetch. Не потокобезопасно:
+	// Fetch вызывается последовательно одним синкером.
+	unrecognized map[string]int
 }
 
 func NewClient(cfg Config) (*Client, error) {
@@ -112,6 +116,8 @@ func (c *Client) Fetch(ctx context.Context, fn func(catalog.SyncProduct) error) 
 		return 0, 0, fmt.Errorf("selecttyres: фид вернул статус %d", resp.StatusCode)
 	}
 
+	c.unrecognized = map[string]int{} // сброс на каждый Fetch
+
 	dec := json.NewDecoder(resp.Body)
 	if _, err := dec.Token(); err != nil { // открывающая '{'
 		return 0, 0, fmt.Errorf("selecttyres: битый JSON (нет '{'): %w", err)
@@ -138,6 +144,11 @@ func (c *Client) Fetch(ctx context.Context, fn func(catalog.SyncProduct) error) 
 				return parsed, kept, fmt.Errorf("selecttyres: разбор товара: %w", err)
 			}
 			parsed++
+			for _, o := range t.Offers { // склады с наличием, не попавшие ни в один город
+				if o.Quantity > 0 && !c.recognized(o.StockName) {
+					c.unrecognized[o.StockName]++
+				}
+			}
 			p, ok := c.mapTire(t)
 			if !ok {
 				continue
@@ -230,6 +241,23 @@ func matchStock(stockName string, subs []string) bool {
 		}
 	}
 	return false
+}
+
+// recognized сообщает, попадает ли склад хотя бы в один город.
+func (c *Client) recognized(stockName string) bool {
+	for _, city := range c.cities {
+		if matchStock(stockName, c.cfg.CityFilters[city]) {
+			return true
+		}
+	}
+	return false
+}
+
+// UnrecognizedStocks — склады из последнего Fetch, не попавшие ни в один город
+// (stock_name → число офферов с наличием). Товары с таких складов в каталог не
+// попадают — синкер логирует это, чтобы новый склад не терялся молча.
+func (c *Client) UnrecognizedStocks() map[string]int {
+	return c.unrecognized
 }
 
 // parseDim: "245.00" → 245.
