@@ -10,7 +10,7 @@ type NavItem = { href?: string; label: string; soon?: boolean };
 const nav: NavItem[] = [
   { href: "/admin/orders", label: "Заказы" },
   { href: "/admin/products", label: "Товары" },
-  { label: "Страницы", soon: true },
+  { href: "/admin/pages", label: "Страницы" },
   { label: "Преимущества", soon: true },
   { label: "SEO-мета", soon: true },
 ];

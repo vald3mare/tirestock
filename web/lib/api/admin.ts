@@ -103,3 +103,66 @@ export function adminSetOverride(
     body: JSON.stringify(patch),
   });
 }
+
+// ── Контентные страницы (раздел «Страницы») ─────────────────────────────────
+
+export type AdminPage = {
+  id: number;
+  slug: string;
+  title: string;
+  body: string;
+  meta_title: string;
+  meta_description: string;
+  published: boolean;
+  indexed: boolean;
+  system: boolean;
+  updated_by: string;
+  updated_at: string;
+  locked: boolean; // URL залочен (проиндексирована/системная)
+  deletable: boolean; // можно удалить (черновик, не системная)
+};
+
+export type AdminPagesList = {
+  items: AdminPage[];
+  total: number;
+  published: number;
+  drafts: number;
+};
+
+export function adminPages(token: string): Promise<AdminPagesList> {
+  return request("/admin/pages", token);
+}
+
+export function adminPage(token: string, id: number): Promise<AdminPage> {
+  return request(`/admin/pages/${id}`, token);
+}
+
+export function adminCreatePage(token: string, slug: string, title: string): Promise<AdminPage> {
+  return request("/admin/pages", token, {
+    method: "POST",
+    body: JSON.stringify({ slug, title }),
+  });
+}
+
+export function adminUpdatePage(
+  token: string,
+  id: number,
+  patch: { title: string; body: string; meta_title: string; meta_description: string },
+): Promise<AdminPage> {
+  return request(`/admin/pages/${id}`, token, { method: "PUT", body: JSON.stringify(patch) });
+}
+
+export function adminRenamePage(token: string, id: number, slug: string): Promise<AdminPage> {
+  return request(`/admin/pages/${id}/url`, token, { method: "PUT", body: JSON.stringify({ slug }) });
+}
+
+export function adminPublishPage(token: string, id: number, published: boolean): Promise<AdminPage> {
+  return request(`/admin/pages/${id}/publish`, token, {
+    method: "POST",
+    body: JSON.stringify({ published }),
+  });
+}
+
+export function adminDeletePage(token: string, id: number): Promise<{ status: string }> {
+  return request(`/admin/pages/${id}`, token, { method: "DELETE" });
+}
