@@ -110,6 +110,19 @@ func (q *Queries) DeleteSession(ctx context.Context, tokenHash string) error {
 	return err
 }
 
+const deleteStaleOffers = `-- name: DeleteStaleOffers :execrows
+DELETE FROM product_offers WHERE updated_at < $1
+`
+
+// Предложения, не обновлённые в текущем прогоне синка (город/товар пропал), удаляем.
+func (q *Queries) DeleteStaleOffers(ctx context.Context, updatedAt pgtype.Timestamptz) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteStaleOffers, updatedAt)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const getAdminUserByUsername = `-- name: GetAdminUserByUsername :one
 SELECT id, username, password_hash, display_name
 FROM admin_users
@@ -139,12 +152,19 @@ const getCatalogProductBySlug = `-- name: GetCatalogProductBySlug :one
 SELECT
     p.id, p.slug, p.brand, p.model, p.name, p.size_label,
     p.width, p.profile, p.diameter, p.season, p.spikes, p.runflat,
-    p.price, p.stock, p.image_url,
+    po.price, po.stock,
+    COALESCE(NULLIF(p.image_clean_url, ''), p.image_url) AS image_url,
     COALESCE(o.badge_hit, false) AS badge_hit
 FROM products p
+JOIN product_offers po ON po.product_code = p.code AND po.city = $2
 LEFT JOIN product_overrides o ON o.slug = p.slug
 WHERE p.slug = $1 AND COALESCE(o.hidden, false) = false
 `
+
+type GetCatalogProductBySlugParams struct {
+	Slug string
+	City string
+}
 
 type GetCatalogProductBySlugRow struct {
 	ID        int64
@@ -159,14 +179,14 @@ type GetCatalogProductBySlugRow struct {
 	Season    string
 	Spikes    bool
 	Runflat   bool
-	Price     int32
+	Price     int64
 	Stock     int32
 	ImageUrl  string
 	BadgeHit  bool
 }
 
-func (q *Queries) GetCatalogProductBySlug(ctx context.Context, slug string) (GetCatalogProductBySlugRow, error) {
-	row := q.db.QueryRow(ctx, getCatalogProductBySlug, slug)
+func (q *Queries) GetCatalogProductBySlug(ctx context.Context, arg GetCatalogProductBySlugParams) (GetCatalogProductBySlugRow, error) {
+	row := q.db.QueryRow(ctx, getCatalogProductBySlug, arg.Slug, arg.City)
 	var i GetCatalogProductBySlugRow
 	err := row.Scan(
 		&i.ID,
@@ -495,6 +515,23 @@ func (q *Queries) RetryOrderDelivery(ctx context.Context, orderID int64) error {
 	return err
 }
 
+const updateProductImageClean = `-- name: UpdateProductImageClean :execrows
+UPDATE products SET image_clean_url = $2 WHERE code = $1 AND code <> ''
+`
+
+type UpdateProductImageCleanParams struct {
+	Code          string
+	ImageCleanUrl string
+}
+
+func (q *Queries) UpdateProductImageClean(ctx context.Context, arg UpdateProductImageCleanParams) (int64, error) {
+	result, err := q.db.Exec(ctx, updateProductImageClean, arg.Code, arg.ImageCleanUrl)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const upsertOverride = `-- name: UpsertOverride :exec
 INSERT INTO product_overrides (slug, hidden, badge_hit, updated_by, updated_at)
 VALUES ($1, $2, $3, $4, now())
@@ -588,6 +625,32 @@ func (q *Queries) UpsertProduct(ctx context.Context, arg UpsertProductParams) er
 		arg.Price,
 		arg.Stock,
 		arg.ImageUrl,
+	)
+	return err
+}
+
+const upsertProductOffer = `-- name: UpsertProductOffer :exec
+INSERT INTO product_offers (product_code, city, price, stock, updated_at)
+VALUES ($1, $2, $3, $4, now())
+ON CONFLICT (product_code, city) DO UPDATE SET
+    price = EXCLUDED.price,
+    stock = EXCLUDED.stock,
+    updated_at = now()
+`
+
+type UpsertProductOfferParams struct {
+	ProductCode string
+	City        string
+	Price       int64
+	Stock       int32
+}
+
+func (q *Queries) UpsertProductOffer(ctx context.Context, arg UpsertProductOfferParams) error {
+	_, err := q.db.Exec(ctx, upsertProductOffer,
+		arg.ProductCode,
+		arg.City,
+		arg.Price,
+		arg.Stock,
 	)
 	return err
 }

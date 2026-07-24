@@ -47,23 +47,32 @@ type Outbox struct {
 }
 
 type Product struct {
-	ID        int64
-	Slug      string
-	Brand     string
-	Model     string
-	Name      string
-	SizeLabel string
-	Width     int32
-	Profile   int32
-	Diameter  int32
-	Season    string
-	Spikes    bool
-	Runflat   bool
-	Price     int32
-	Stock     int32
-	SyncedAt  pgtype.Timestamptz
-	Code      string
-	ImageUrl  string
+	ID            int64
+	Slug          string
+	Brand         string
+	Model         string
+	Name          string
+	SizeLabel     string
+	Width         int32
+	Profile       int32
+	Diameter      int32
+	Season        string
+	Spikes        bool
+	Runflat       bool
+	Price         int32
+	Stock         int32
+	SyncedAt      pgtype.Timestamptz
+	Code          string
+	ImageUrl      string
+	ImageCleanUrl string
+}
+
+type ProductOffer struct {
+	ProductCode string
+	City        string
+	Price       int64
+	Stock       int32
+	UpdatedAt   pgtype.Timestamptz
 }
 
 type ProductOverride struct {
