@@ -71,3 +71,9 @@ func (s *SyncStore) CountSynced(ctx context.Context) (int64, error) {
 	}
 	return n, nil
 }
+
+// UpdateImageClean записывает чистое фото товара по коду. Возвращает число строк
+// (0 — товара с таким кодом ещё нет в каталоге).
+func (s *SyncStore) UpdateImageClean(ctx context.Context, code, url string) (int64, error) {
+	return s.q.UpdateProductImageClean(ctx, db.UpdateProductImageCleanParams{Code: code, ImageCleanUrl: url})
+}
