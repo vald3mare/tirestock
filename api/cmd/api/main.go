@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -37,6 +38,7 @@ type config struct {
 	AdminBootstrapName     string
 	// Синк каталога из SelectTyres (пусто → каталог на моке).
 	Selecttyres  selecttyres.Config
+	PhotoFeedURL string
 	SyncInterval time.Duration
 }
 
@@ -58,7 +60,11 @@ func loadConfig() config {
 	cfg.AdminBootstrapUser = os.Getenv("ADMIN_BOOTSTRAP_USER")
 	cfg.AdminBootstrapPassword = os.Getenv("ADMIN_BOOTSTRAP_PASSWORD")
 	cfg.AdminBootstrapName = os.Getenv("ADMIN_BOOTSTRAP_NAME")
-	cfg.Selecttyres = selecttyres.Config{FeedURL: os.Getenv("SELECTYRES_FEED_URL")}
+	cfg.Selecttyres = selecttyres.Config{
+		FeedURL:     os.Getenv("SELECTYRES_FEED_URL"),
+		CityFilters: cityFiltersFromEnv(),
+	}
+	cfg.PhotoFeedURL = os.Getenv("SELECTYRES_PHOTO_FEED_URL")
 	cfg.SyncInterval = time.Hour
 	if v := os.Getenv("SELECTYRES_SYNC_INTERVAL"); v != "" {
 		if d, err := time.ParseDuration(v); err == nil {
@@ -66,6 +72,28 @@ func loadConfig() config {
 		}
 	}
 	return cfg
+}
+
+// cityFiltersFromEnv читает подстроки складов по городам из env; пусто → дефолты.
+// SELECTYRES_STOCK_SPB / SELECTYRES_STOCK_MSK — списки через запятую.
+func cityFiltersFromEnv() map[string][]string {
+	parse := func(env, city string) []string {
+		v := strings.TrimSpace(os.Getenv(env))
+		if v == "" {
+			return selecttyres.DefaultCityFilters[city]
+		}
+		var out []string
+		for _, s := range strings.Split(v, ",") {
+			if s = strings.TrimSpace(strings.ToLower(s)); s != "" {
+				out = append(out, s)
+			}
+		}
+		return out
+	}
+	return map[string][]string{
+		catalog.CitySPB: parse("SELECTYRES_STOCK_SPB", catalog.CitySPB),
+		catalog.CityMSK: parse("SELECTYRES_STOCK_MSK", catalog.CityMSK),
+	}
 }
 
 func main() {
@@ -96,15 +124,27 @@ func main() {
 	// иначе мок (этап без интеграции). Синк-воркер стартует ниже.
 	var catSource catalog.CatalogSource
 	var syncer *selecttyres.Syncer
+	var photoSyncer *selecttyres.PhotoSyncer
 	if cfg.Selecttyres.FeedURL != "" {
 		stClient, err := selecttyres.NewClient(cfg.Selecttyres)
 		if err != nil {
 			log.Error("selecttyres client", "err", err)
 			os.Exit(1)
 		}
-		syncer = selecttyres.NewSyncer(stClient, catalog.NewSyncStore(pool), cfg.SyncInterval, log)
+		store := catalog.NewSyncStore(pool)
+		syncer = selecttyres.NewSyncer(stClient, store, cfg.SyncInterval, log)
 		catSource = catalog.NewDBSource(pool)
 		log.Info("каталог: SelectTyres (синк в read-модель)", "interval", cfg.SyncInterval.String())
+
+		if cfg.PhotoFeedURL != "" {
+			pClient, err := selecttyres.NewPhotoClient(selecttyres.PhotoConfig{FeedURL: cfg.PhotoFeedURL})
+			if err != nil {
+				log.Error("selecttyres photo client", "err", err)
+				os.Exit(1)
+			}
+			photoSyncer = selecttyres.NewPhotoSyncer(pClient, store, cfg.SyncInterval, log)
+			log.Info("каталог: синк чистых фото (Avito-фид) включён")
+		}
 	} else {
 		catSource = mock.NewCatalogSource()
 		log.Info("каталог: мок (SELECTYRES_FEED_URL не задан)")
@@ -152,6 +192,9 @@ func main() {
 	// Фоновый контур: синк каталога из SelectTyres (если включён).
 	if syncer != nil {
 		go syncer.Run(ctx)
+	}
+	if photoSyncer != nil {
+		go photoSyncer.Run(ctx)
 	}
 
 	r := chi.NewRouter()
