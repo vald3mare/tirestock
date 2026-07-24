@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ButtonLink } from "@/components/ui/ButtonLink";
 import { NavDropdown, type NavItem } from "@/components/blocks/NavDropdown";
+import { MobileMenu } from "@/components/blocks/MobileMenu";
 import { CitySwitcher } from "@/components/blocks/CitySwitcher";
 import { CITIES } from "@/lib/city";
 import { getCity } from "@/lib/get-city";
@@ -66,10 +67,19 @@ export async function Header() {
 
       <div className="sticky top-0 z-40 border-b border-line bg-white">
         <div className="mx-auto flex max-w-content items-center justify-between gap-4 px-4 py-4">
-          <Link href="/" className="flex min-h-touch items-center" aria-label="TireStock — на главную">
-            <img src="/images/logo.png" alt="TireStock" width={94} height={56} className="h-14 w-auto" />
-          </Link>
-          {/* TODO: мобильное меню-бургер — макета нет; на <lg нав скрыт */}
+          <div className="flex items-center gap-2">
+            <MobileMenu
+              nav={nav}
+              phone={CITIES[city].phone}
+              phoneHref={CITIES[city].phoneHref}
+              cityLabel={CITIES[city].label}
+              address={CITIES[city].address}
+              hours="Пн–Пт 9:00–21:00 · Сб–Вс 9:00–20:00"
+            />
+            <Link href="/" className="flex min-h-touch items-center" aria-label="TireStock — на главную">
+              <img src="/images/logo.png" alt="TireStock" width={94} height={56} className="h-14 w-auto" />
+            </Link>
+          </div>
           <nav className="hidden items-center gap-8 lg:flex" aria-label="Основная навигация">
             {nav.map((item) => (
               <NavDropdown key={item.label} label={item.label} href={item.href} items={item.items} />
