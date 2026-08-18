@@ -2,15 +2,19 @@
 // + нижняя строка: дисклеймер-оферта 12px + копирайт. tel:/mailto: обязательны.
 
 import Link from "next/link";
+import { CallbackModal } from "@/components/blocks/CallbackModal";
+import { SHOP } from "@/lib/shop";
 
-// Ссылки на контентные страницы (рендерятся catch-all роутом по их URL).
+// Оплата/Доставка/Гарантия/Контакты — статические роуты по URL старого сайта
+// (SEO 1:1); О магазине/Отзывы/Пункты выдачи — контентные страницы (catch-all).
 const links: { label: string; href: string }[] = [
   { label: "О магазине", href: "/about/" },
   { label: "Отзывы", href: "/reviews/" },
-  { label: "Оплата", href: "/info/oplata/" },
-  { label: "Доставка", href: "/dostavka/" },
-  { label: "Гарантия", href: "/garantiya/" },
+  { label: "Оплата", href: "/payment/" },
+  { label: "Доставка", href: "/delivery/" },
+  { label: "Гарантия", href: "/warranty/" },
   { label: "Пункты выдачи", href: "/points/" },
+  { label: "Контакты", href: "/contacts/" },
 ];
 
 export function Footer() {
@@ -25,16 +29,16 @@ export function Footer() {
         </div>
         <div className="flex flex-col gap-2.5">
           <p className="text-body font-semibold text-dark">Контакты</p>
-          <p className="text-caption-lg text-grey">Спб, Зотовский пр. 11, стр. 1</p>
+          <p className="text-caption-lg text-grey">Спб, {SHOP.address}</p>
           <a href="tel:+78126146442" className="text-body font-semibold text-dark hover:text-blue">
             +7 (812) 614-64-42
           </a>
           <a href="mailto:info@tirestock.ru" className="text-caption-lg text-grey hover:text-blue">
             info@tirestock.ru
           </a>
-          <a href="#" className="text-caption-lg font-semibold text-blue hover:underline">
-            Что с моим заказом?
-          </a>
+          {/* Заявка уходит в tradesk (раздел «Обратный звонок») через outbox.
+              TODO: страница проверки статуса заказа (/status/ на старом сайте). */}
+          <CallbackModal className="text-left" />
         </div>
         <div className="flex flex-col gap-2.5">
           <p className="text-body font-semibold text-dark">Часы работы</p>

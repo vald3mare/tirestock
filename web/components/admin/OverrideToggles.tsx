@@ -3,8 +3,12 @@
 import { useState, useTransition } from "react";
 import { setOverrideAction } from "@/app/admin/actions";
 
-// Два оверрайда товара (скрыт / бейдж «Хит»). setOverride пишет оба поля разом,
-// поэтому держим общий стейт строки и шлём его целиком при любом переключении.
+// Управление ПОКАЗОМ товара на витрине (не редактирование данных — цена/остаток/
+// название приходят из SelectTyres, только чтение). Два переключателя:
+//   «Показывать в каталоге» — позитивная формулировка оверрайда hidden
+//     (checked = виден; выключен = скрыт с витрины);
+//   «Бейдж «Хит»» — синий пилл на карточке.
+// setOverride пишет оба поля разом, поэтому держим общий стейт строки.
 // Оптимистично обновляем UI; при ошибке откатываем.
 export function OverrideToggles({
   slug,
@@ -34,10 +38,10 @@ export function OverrideToggles({
   }
 
   return (
-    <div className="flex items-center gap-16">
+    <div className="flex flex-col gap-2.5">
       <Switch
-        label="Скрыт"
-        checked={hidden}
+        label="Показывать в каталоге"
+        checked={!hidden}
         disabled={pending}
         onToggle={() => commit({ hidden: !hidden, badge_hit: badgeHit })}
       />
@@ -51,6 +55,8 @@ export function OverrideToggles({
   );
 }
 
+// Тумблер с ВИДИМОЙ подписью — чтобы было ясно, что это настройка показа, а не
+// поле данных. Клик по всей строке (label+переключатель).
 function Switch({
   label,
   checked,
@@ -67,21 +73,26 @@ function Switch({
       type="button"
       role="switch"
       aria-checked={checked}
-      aria-label={label}
       disabled={disabled}
       onClick={onToggle}
       className={
-        "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors " +
-        "disabled:cursor-not-allowed disabled:opacity-60 " +
-        (checked ? "bg-blue" : "bg-line")
+        "group flex items-center gap-2.5 text-left disabled:cursor-not-allowed disabled:opacity-60"
       }
     >
       <span
         className={
-          "inline-block size-5 rounded-full bg-white shadow transition-transform " +
-          (checked ? "translate-x-[22px]" : "translate-x-0.5")
+          "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors " +
+          (checked ? "bg-blue" : "bg-line")
         }
-      />
+      >
+        <span
+          className={
+            "inline-block size-5 rounded-full bg-white shadow transition-transform " +
+            (checked ? "translate-x-[22px]" : "translate-x-0.5")
+          }
+        />
+      </span>
+      <span className="text-caption-lg text-dark whitespace-nowrap">{label}</span>
     </button>
   );
 }

@@ -10,11 +10,15 @@ export type Season = components["schemas"]["Season"];
 export type OrderItem = components["schemas"]["OrderItem"];
 export type CreateOrderInput = components["schemas"]["CreateOrderInput"];
 export type CallbackInput = components["schemas"]["CallbackInput"];
+export type RequestInput = components["schemas"]["RequestInput"];
+export type CatalogFacets = components["schemas"]["CatalogFacets"];
+export type Benefit = components["schemas"]["Benefit"];
+export type SeoResolved = components["schemas"]["SeoResolved"];
+export type PickupPoint = components["schemas"]["PickupPoint"];
 export type ErrorBody = components["schemas"]["ErrorBody"];
 
 // Фильтры каталога = query-параметры URL витрины (имена совпадают 1:1).
 export type ProductFilters = {
-  city?: "spb" | "msk";
   q?: string;
   width?: number;
   profile?: number;
@@ -25,6 +29,7 @@ export type ProductFilters = {
   price_max?: number;
   spikes?: boolean;
   runflat?: boolean;
+  sort?: "price_asc" | "price_desc" | "name";
   page?: number;
   per_page?: number;
 };
@@ -75,9 +80,14 @@ export function listProducts(filters: ProductFilters = {}): Promise<ProductList>
   return request(`/products${query}`);
 }
 
-export function getProductBySlug(slug: string, city?: "spb" | "msk"): Promise<Product> {
-  const q = city ? `?city=${city}` : "";
-  return request(`/products/${encodeURIComponent(slug)}${q}`);
+export function getProductBySlug(slug: string): Promise<Product> {
+  return request(`/products/${encodeURIComponent(slug)}`);
+}
+
+// Фасеты каталога — реальные бренды/размеры в наличии (СПб). Строят опции
+// сайдбара вместо статики; фолбэк на lib/catalog-options при пустом ответе.
+export function getCatalogFacets(): Promise<CatalogFacets> {
+  return request("/catalog/facets");
 }
 
 // Контентная страница витрины (тексты/SEO из админки). Только опубликованные.
@@ -96,6 +106,25 @@ export function getContentPage(path: string): Promise<ContentPage> {
   return request(`/content?path=${encodeURIComponent(path)}`, { cache: "no-store" });
 }
 
+// Офферы строки «Преимущества» (главная). Контент из админки; no-store —
+// правки видны сразу. Фолбэк на статику — на стороне вызывающего компонента.
+export function listBenefits(): Promise<{ items: Benefit[] }> {
+  return request("/benefits", { cache: "no-store" });
+}
+
+// Пункты выдачи для страницы /points. Контент из админки; no-store — правки
+// видны сразу. Фолбэк на статику — на стороне вызывающего компонента.
+export function listPickupPoints(): Promise<{ items: PickupPoint[] }> {
+  return request("/pickup-points", { cache: "no-store" });
+}
+
+// Эффективная SEO-мета маршрута для generateMetadata. Мета из админки (раздел
+// «SEO-мета»). Ревалидация 300с (не no-store): мета меняется редко, а главная/
+// каталог должны остаться ISR, а не рендериться на каждый запрос. Фолбэк — у вызывающего.
+export function resolveSeo(path: string): Promise<SeoResolved> {
+  return request(`/seo?path=${encodeURIComponent(path)}`, { next: { revalidate: 300 } });
+}
+
 export function createOrder(
   input: CreateOrderInput,
   idempotencyKey: string,
@@ -109,6 +138,15 @@ export function createOrder(
 
 export function createCallback(input: CallbackInput): Promise<{ status: "accepted" }> {
   return request("/callbacks", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+// Заявка с формы услуги: в tradesk уходит с типом («Шиномонтаж», «Хранение колёс»…),
+// поэтому менеджер сразу видит, на что заявка. Обратный звонок типа не несёт.
+export function createServiceRequest(input: RequestInput): Promise<{ status: "accepted" }> {
+  return request("/requests", {
     method: "POST",
     body: JSON.stringify(input),
   });

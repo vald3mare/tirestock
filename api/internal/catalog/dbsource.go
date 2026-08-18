@@ -26,21 +26,15 @@ func NewDBSource(pool *pgxpool.Pool) *DBSource {
 
 const listCols = `p.id, p.slug, p.brand, p.model, p.name, p.size_label,
 	p.width, p.profile, p.diameter, p.season, p.spikes, p.runflat,
-	po.price, po.stock, COALESCE(NULLIF(p.image_clean_url, ''), p.image_url), COALESCE(o.badge_hit, false)`
+	p.price, p.stock, COALESCE(NULLIF(p.image_clean_url, ''), p.image_url), COALESCE(o.badge_hit, false)`
 
 func (s *DBSource) List(ctx context.Context, f Filters, page, perPage int) ([]Product, int, error) {
-	city := f.City
-	if !ValidCity(city) {
-		city = CitySPB
-	}
-	where, args := f.WhereSQL(2) // $1 зарезервирован под город
-	allArgs := append([]any{city}, args...)
-	cond := "COALESCE(o.hidden, false) = false"
+	where, allArgs := f.WhereSQL(1)
+	cond := "p.code <> '' AND COALESCE(o.hidden, false) = false"
 	if where != "" {
 		cond += " AND " + strings.TrimPrefix(where, "WHERE ")
 	}
 	from := "FROM products p " +
-		"JOIN product_offers po ON po.product_code = p.code AND po.city = $1 " +
 		"LEFT JOIN product_overrides o ON o.slug = p.slug WHERE " + cond
 
 	var total int
@@ -51,9 +45,11 @@ func (s *DBSource) List(ctx context.Context, f Filters, page, perPage int) ([]Pr
 		return []Product{}, 0, nil
 	}
 
+	// ORDER BY берётся из белого списка SortOrders (не из ввода) — SQL-инъекция исключена.
+	orderBy := SortOrders[f.Sort]
 	listSQL := fmt.Sprintf(
-		"SELECT %s %s ORDER BY (po.stock > 0) DESC, p.id LIMIT $%d OFFSET $%d",
-		listCols, from, len(allArgs)+1, len(allArgs)+2,
+		"SELECT %s %s ORDER BY %s LIMIT $%d OFFSET $%d",
+		listCols, from, orderBy, len(allArgs)+1, len(allArgs)+2,
 	)
 	rows, err := s.pool.Query(ctx, listSQL, append(allArgs, perPage, (page-1)*perPage)...)
 	if err != nil {
@@ -75,11 +71,8 @@ func (s *DBSource) List(ctx context.Context, f Filters, page, perPage int) ([]Pr
 	return items, total, nil
 }
 
-func (s *DBSource) BySlug(ctx context.Context, slug, city string) (Product, error) {
-	if !ValidCity(city) {
-		city = CitySPB
-	}
-	r, err := s.q.GetCatalogProductBySlug(ctx, db.GetCatalogProductBySlugParams{Slug: slug, City: city})
+func (s *DBSource) BySlug(ctx context.Context, slug string) (Product, error) {
+	r, err := s.q.GetCatalogProductBySlug(ctx, slug)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Product{}, ErrNotFound
 	}
@@ -87,7 +80,7 @@ func (s *DBSource) BySlug(ctx context.Context, slug, city string) (Product, erro
 		return Product{}, fmt.Errorf("get product: %w", err)
 	}
 	return Product{
-		ID: r.ID, Slug: r.Slug, Brand: r.Brand, Model: r.Model, Name: r.Name,
+		ID: r.ID, Slug: r.Slug, Code: r.Code, Brand: r.Brand, Model: r.Model, Name: r.Name,
 		SizeLabel: r.SizeLabel, Width: int(r.Width), Profile: int(r.Profile),
 		Diameter: int(r.Diameter), Season: Season(r.Season), Spikes: r.Spikes,
 		Runflat: r.Runflat, Price: int(r.Price), Stock: int(r.Stock),
@@ -108,4 +101,36 @@ func scanProduct(rows pgx.Rows) (Product, error) {
 	}
 	p.Season = Season(season)
 	return p, nil
+}
+
+// Facets возвращает реальные значения фильтров, присутствующие в каталоге
+// (не скрытые товары). array_agg с FILTER отсекает пустые бренды; NULL-массивы
+// (пустой каталог) сканируются в nil-срезы — витрина отдаст пустые списки.
+func (s *DBSource) Facets(ctx context.Context) (Facets, error) {
+	const q = `
+SELECT
+  array_agg(DISTINCT p.brand ORDER BY p.brand) FILTER (WHERE p.brand <> ''),
+  array_agg(DISTINCT p.width ORDER BY p.width),
+  array_agg(DISTINCT p.profile ORDER BY p.profile),
+  array_agg(DISTINCT p.diameter ORDER BY p.diameter)
+FROM products p
+LEFT JOIN product_overrides o ON o.slug = p.slug
+WHERE p.code <> '' AND COALESCE(o.hidden, false) = false`
+	var f Facets
+	var w, pr, d []int32
+	if err := s.pool.QueryRow(ctx, q).Scan(&f.Brands, &w, &pr, &d); err != nil {
+		return Facets{}, fmt.Errorf("facets: %w", err)
+	}
+	f.Widths = int32sToInts(w)
+	f.Profiles = int32sToInts(pr)
+	f.Diameters = int32sToInts(d)
+	return f, nil
+}
+
+func int32sToInts(src []int32) []int {
+	out := make([]int, len(src))
+	for i, v := range src {
+		out[i] = int(v)
+	}
+	return out
 }

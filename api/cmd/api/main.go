@@ -18,7 +18,10 @@ import (
 
 	"tirestock/api/internal/admin"
 	"tirestock/api/internal/catalog"
+	"tirestock/api/internal/benefits"
 	"tirestock/api/internal/content"
+	"tirestock/api/internal/pickups"
+	"tirestock/api/internal/seo"
 	"tirestock/api/internal/db"
 	"tirestock/api/internal/httpx"
 	"tirestock/api/internal/integrations/mock"
@@ -65,7 +68,7 @@ func loadConfig() config {
 	cfg.AdminBootstrapName = os.Getenv("ADMIN_BOOTSTRAP_NAME")
 	cfg.Selecttyres = selecttyres.Config{
 		FeedURL:     os.Getenv("SELECTYRES_FEED_URL"),
-		CityFilters: cityFiltersFromEnv(),
+		StockFilter: stockFilterFromEnv(),
 	}
 	cfg.PhotoFeedURL = os.Getenv("SELECTYRES_PHOTO_FEED_URL")
 	cfg.SyncInterval = time.Hour
@@ -82,26 +85,21 @@ func loadConfig() config {
 	return cfg
 }
 
-// cityFiltersFromEnv читает подстроки складов по городам из env; пусто → дефолты.
-// SELECTYRES_STOCK_SPB / SELECTYRES_STOCK_MSK — списки через запятую.
-func cityFiltersFromEnv() map[string][]string {
-	parse := func(env, city string) []string {
-		v := strings.TrimSpace(os.Getenv(env))
-		if v == "" {
-			return selecttyres.DefaultCityFilters[city]
-		}
-		var out []string
-		for _, s := range strings.Split(v, ",") {
-			if s = strings.TrimSpace(strings.ToLower(s)); s != "" {
-				out = append(out, s)
-			}
-		}
-		return out
+// stockFilterFromEnv читает подстроки петербургских складов из env
+// (SELECTYRES_STOCK_SPB, через запятую); пусто → дефолт пакета.
+// Магазин работает только по СПб — фильтров по другим городам больше нет.
+func stockFilterFromEnv() []string {
+	v := strings.TrimSpace(os.Getenv("SELECTYRES_STOCK_SPB"))
+	if v == "" {
+		return selecttyres.DefaultStockFilter
 	}
-	return map[string][]string{
-		catalog.CitySPB: parse("SELECTYRES_STOCK_SPB", catalog.CitySPB),
-		catalog.CityMSK: parse("SELECTYRES_STOCK_MSK", catalog.CityMSK),
+	var out []string
+	for _, s := range strings.Split(v, ",") {
+		if s = strings.TrimSpace(strings.ToLower(s)); s != "" {
+			out = append(out, s)
+		}
 	}
+	return out
 }
 
 func main() {
@@ -158,22 +156,26 @@ func main() {
 		log.Info("каталог: мок (SELECTYRES_FEED_URL не задан)")
 	}
 	catalogSvc := catalog.NewService(catSource)
-	ordersSvc := orders.NewService(pool)
+	// DELIVERY_TEST_MARK — пометка стенда в комментарии заявок и заказов.
+	// Задаётся на локальном/тестовом стенде, который шлёт в БОЕВОЙ tradesk, чтобы
+	// менеджер видел тестовые записи и не тратил звонок. На проде — пусто.
+	ordersSvc := orders.NewService(pool).WithCommentPrefix(os.Getenv("DELIVERY_TEST_MARK"))
+	if m := os.Getenv("DELIVERY_TEST_MARK"); m != "" {
+		log.Warn("заявки помечаются как тестовые", "пометка", m)
+	}
 
-	// Доставка заявок. Приоритет: мост через старый сайт (OLDSITE_BASE_URL) →
-	// прямой tradesk (TRADESK_BASE_URL) → мок. См. ARCHITECTURE.md: мост временный,
-	// до вскрытия прямого приёмника tradesk.
+	// Доставка заявок и заказов. Приоритет: ПРЯМОЙ tradesk (TRADESK_BASE_URL) →
+	// мост через Битрикс (OLDSITE_BASE_URL, аварийный) → мок.
+	//
+	// Контракт приёмников вскрыт 11.08.2026 (docs/OLDSITE_AJAX.md), поэтому
+	// Битрикс из цепочки выведен: он был тонким прокси и больше не нужен.
+	// Мост оставлен как запасной путь на время параллельного запуска — если
+	// прямой контур вдруг откажет, достаточно задать OLDSITE_BASE_URL и снять
+	// TRADESK_BASE_URL.
 	var delivery orders.OrderDelivery
 	switch {
-	case cfg.OldSite.BaseURL != "":
-		oc, err := oldsite.NewClient(cfg.OldSite)
-		if err != nil {
-			log.Error("oldsite client", "err", err)
-			os.Exit(1)
-		}
-		delivery = oc
-		log.Info("доставка: мост через старый сайт (Битрикс)", "base_url", cfg.OldSite.BaseURL)
 	case cfg.Tradesk.BaseURL != "":
+		cfg.Tradesk.Log = log
 		tc, err := tradesk.NewClient(cfg.Tradesk)
 		if err != nil {
 			log.Error("tradesk client", "err", err)
@@ -181,6 +183,14 @@ func main() {
 		}
 		delivery = tc
 		log.Info("доставка: прямой tradesk", "base_url", cfg.Tradesk.BaseURL)
+	case cfg.OldSite.BaseURL != "":
+		oc, err := oldsite.NewClient(cfg.OldSite)
+		if err != nil {
+			log.Error("oldsite client", "err", err)
+			os.Exit(1)
+		}
+		delivery = oc
+		log.Warn("доставка: АВАРИЙНЫЙ мост через Битрикс — задайте TRADESK_BASE_URL", "base_url", cfg.OldSite.BaseURL)
 	default:
 		delivery = mock.NewOrderDelivery()
 		log.Info("доставка: мок (OLDSITE_BASE_URL/TRADESK_BASE_URL не заданы)")
@@ -189,6 +199,9 @@ func main() {
 	// Админка: сессии в БД, монитор заказов, оверрайды товаров.
 	adminSvc := admin.NewService(pool, catalogSvc)
 	contentSvc := content.NewService(pool)
+	benefitsSvc := benefits.NewService(pool)
+	seoSvc := seo.NewService(pool)
+	pickupsSvc := pickups.NewService(pool)
 	if err := adminSvc.Bootstrap(ctx, cfg.AdminBootstrapUser, cfg.AdminBootstrapPassword, cfg.AdminBootstrapName); err != nil {
 		log.Error("сид админа", "err", err)
 		os.Exit(1)
@@ -222,7 +235,10 @@ func main() {
 		catalog.NewHandlers(catalogSvc).Mount(r)
 		orders.NewHandlers(ordersSvc).Mount(r)
 		content.NewPublicHandlers(contentSvc).Mount(r)
-		admin.NewHandlers(adminSvc, contentSvc).Mount(r)
+		benefits.NewPublicHandlers(benefitsSvc).Mount(r)
+		seo.NewPublicHandlers(seoSvc).Mount(r)
+		pickups.NewPublicHandlers(pickupsSvc).Mount(r)
+		admin.NewHandlers(adminSvc, contentSvc, benefitsSvc, seoSvc, pickupsSvc).Mount(r)
 	})
 
 	srv := &http.Server{

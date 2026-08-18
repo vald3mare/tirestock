@@ -21,7 +21,7 @@ FOR UPDATE SKIP LOCKED;
 
 -- name: MarkOutboxDelivered :exec
 UPDATE outbox
-SET status = 'delivered', updated_at = now()
+SET status = 'delivered', result = $2, updated_at = now()
 WHERE id = $1;
 
 -- name: RescheduleOutbox :exec

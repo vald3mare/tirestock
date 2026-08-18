@@ -21,29 +21,24 @@ import (
 	"tirestock/api/internal/catalog"
 )
 
-// DefaultCityFilters — подстроки stock_name по городам (нижний регистр).
-// MSK-подстроки — предположение; свериться с живым фидом (см. spec §10).
-// Осознанно БЕЗ подстроки "msk" для МСК: реальный склад
-// "sever-avto-msk_sankt-peterburg" содержит "msk", но физически питерский —
-// матчим Москву только по "moskva"/"moscow".
-var DefaultCityFilters = map[string][]string{
-	catalog.CitySPB: {"spb", "sankt-peterburg"},
-	catalog.CityMSK: {"moskva", "moscow"},
-}
+// DefaultStockFilter — подстроки stock_name петербургских складов (нижний регистр).
+// Магазин работает только по СПб (решение 11.08.2026): товары с остальных складов
+// в каталог не попадают. NB: склад "sever-avto-msk_sankt-peterburg" содержит "msk",
+// но физически питерский — поэтому матчим по "spb"/"sankt-peterburg".
+var DefaultStockFilter = []string{"spb", "sankt-peterburg"}
 
 // Config — параметры источника.
 type Config struct {
 	FeedURL     string
-	CityFilters map[string][]string // город → подстроки stock_name; пусто → DefaultCityFilters
-	Timeout     time.Duration       // на скачивание фида; 0 → 6m
+	StockFilter []string      // подстроки stock_name складов СПб; пусто → DefaultStockFilter
+	Timeout     time.Duration // на скачивание фида; 0 → 6m
 }
 
 // Client — загрузчик и парсер фида.
 type Client struct {
-	cfg    Config
-	cities []string // детерминированный порядок городов
-	http   *http.Client
-	// unrecognized — склады из последнего Fetch, не попавшие ни в один город
+	cfg  Config
+	http *http.Client
+	// unrecognized — склады из последнего Fetch, не прошедшие фильтр СПб
 	// (stock_name → число офферов). Сбрасывается в начале Fetch. Не потокобезопасно:
 	// Fetch вызывается последовательно одним синкером.
 	unrecognized map[string]int
@@ -53,19 +48,13 @@ func NewClient(cfg Config) (*Client, error) {
 	if strings.TrimSpace(cfg.FeedURL) == "" {
 		return nil, fmt.Errorf("selecttyres: FeedURL обязателен")
 	}
-	if len(cfg.CityFilters) == 0 {
-		cfg.CityFilters = DefaultCityFilters
+	if len(cfg.StockFilter) == 0 {
+		cfg.StockFilter = DefaultStockFilter
 	}
 	if cfg.Timeout == 0 {
 		cfg.Timeout = 6 * time.Minute
 	}
-	cities := make([]string, 0, len(cfg.CityFilters))
-	for _, c := range catalog.AllCities { // стабильный порядок из каталога
-		if _, ok := cfg.CityFilters[c]; ok {
-			cities = append(cities, c)
-		}
-	}
-	return &Client{cfg: cfg, cities: cities, http: &http.Client{Timeout: cfg.Timeout}}, nil
+	return &Client{cfg: cfg, http: &http.Client{Timeout: cfg.Timeout}}, nil
 }
 
 // feedTire — нужные поля товара из фида (остальные игнорируются).
@@ -165,50 +154,43 @@ func (c *Client) Fetch(ctx context.Context, fn func(catalog.SyncProduct) error) 
 	return parsed, kept, nil
 }
 
-// mapTire агрегирует предложения по каждому городу отдельно. ok=false — товар без
-// предложений ни в одном целевом городе (или без вычислимой цены во всех).
+// mapTire агрегирует предложения петербургских складов в одну цену и остаток.
+// ok=false — товара нет на складах СПб либо цену вычислить не удалось.
 func (c *Client) mapTire(t feedTire) (catalog.SyncProduct, bool) {
-	var offers []catalog.CityOffer
-	for _, city := range c.cities {
-		subs := c.cfg.CityFilters[city]
-		stock, price, hasPrice, found := 0, 0, false, false
-		consider := func(raw *string) {
-			if raw == nil {
-				return
-			}
-			v, err := strconv.ParseFloat(*raw, 64)
-			if err != nil || v <= 0 {
-				return
-			}
-			iv := int(v)
-			if !hasPrice || iv < price {
-				price, hasPrice = iv, true
-			}
+	subs := c.cfg.StockFilter
+	stock, price, hasPrice, found := 0, 0, false, false
+	consider := func(raw *string) {
+		if raw == nil {
+			return
 		}
-		for _, o := range t.Offers {
-			if !matchStock(o.StockName, subs) {
-				continue
-			}
-			found = true
-			stock += o.Quantity
-			consider(o.RRP) // цена = мин. РРЦ
+		v, err := strconv.ParseFloat(*raw, 64)
+		if err != nil || v <= 0 {
+			return
 		}
-		if !found {
+		iv := int(v)
+		if !hasPrice || iv < price {
+			price, hasPrice = iv, true
+		}
+	}
+	for _, o := range t.Offers {
+		if !matchStock(o.StockName, subs) {
 			continue
 		}
-		if !hasPrice { // нет РРЦ ни у одного склада города — фолбэк на интернет-цену
-			for _, o := range t.Offers {
-				if matchStock(o.StockName, subs) {
-					consider(o.MinInternet)
-				}
+		found = true
+		stock += o.Quantity
+		consider(o.RRP) // цена = мин. РРЦ
+	}
+	if !found {
+		return catalog.SyncProduct{}, false
+	}
+	if !hasPrice { // нет РРЦ ни у одного склада — фолбэк на минимальную интернет-цену
+		for _, o := range t.Offers {
+			if matchStock(o.StockName, subs) {
+				consider(o.MinInternet)
 			}
 		}
-		if !hasPrice {
-			continue // город есть, но цену не вычислить — пропускаем город
-		}
-		offers = append(offers, catalog.CityOffer{City: city, Price: price, Stock: stock})
 	}
-	if len(offers) == 0 {
+	if !hasPrice {
 		return catalog.SyncProduct{}, false
 	}
 
@@ -229,7 +211,8 @@ func (c *Client) mapTire(t feedTire) (catalog.SyncProduct, bool) {
 	return catalog.SyncProduct{
 		Code: t.Code, Slug: slugify(name, t.Code), Brand: t.Brand, Model: t.Model,
 		Name: name, SizeLabel: sizeLabel, Width: width, Profile: profile, Diameter: diameter,
-		Season: season, Spikes: t.Thorn, Runflat: t.Runflat, ImageURL: t.Photo, Offers: offers,
+		Season: season, Spikes: t.Thorn, Runflat: t.Runflat, ImageURL: t.Photo,
+		Price: price, Stock: stock,
 	}, true
 }
 
@@ -243,14 +226,9 @@ func matchStock(stockName string, subs []string) bool {
 	return false
 }
 
-// recognized сообщает, попадает ли склад хотя бы в один город.
+// recognized сообщает, проходит ли склад фильтр СПб.
 func (c *Client) recognized(stockName string) bool {
-	for _, city := range c.cities {
-		if matchStock(stockName, c.cfg.CityFilters[city]) {
-			return true
-		}
-	}
-	return false
+	return matchStock(stockName, c.cfg.StockFilter)
 }
 
 // UnrecognizedStocks — склады из последнего Fetch, не попавшие ни в один город

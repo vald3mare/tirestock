@@ -11,8 +11,9 @@ const nav: NavItem[] = [
   { href: "/admin/orders", label: "Заказы" },
   { href: "/admin/products", label: "Товары" },
   { href: "/admin/pages", label: "Страницы" },
-  { label: "Преимущества", soon: true },
-  { label: "SEO-мета", soon: true },
+  { href: "/admin/benefits", label: "Преимущества" },
+  { href: "/admin/pickups", label: "Пункты выдачи" },
+  { href: "/admin/seo", label: "SEO-мета" },
 ];
 
 export function AdminSidebar({ userName }: { userName: string }) {

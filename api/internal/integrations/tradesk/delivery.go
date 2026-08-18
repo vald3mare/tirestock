@@ -5,64 +5,77 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"strings"
 
 	"tirestock/api/internal/orders"
 )
 
 // Deliver реализует orders.OrderDelivery: маршрутизирует payload outbox по виду
-// (order/callback) в соответствующий контроллер tradesk. Идемпотентность гарантирует
+// (order/callback) в соответствующий приёмник tradesk. Идемпотентность гарантирует
 // вызывающая сторона (outbox: одна строка — одна доставка).
-func (c *Client) Deliver(ctx context.Context, kind string, payload []byte) error {
+func (c *Client) Deliver(ctx context.Context, kind string, payload []byte) (string, error) {
 	switch kind {
 	case orders.KindCallback:
-		return c.deliverCallback(ctx, payload)
+		return "", c.deliverCallback(ctx, payload)
+	case orders.KindRequest:
+		return "", c.deliverRequest(ctx, payload)
 	case orders.KindOrder:
-		return c.deliverOrder(ctx, payload)
+		in, err := unmarshalOrder(payload)
+		if err != nil {
+			return "", err
+		}
+		return c.deliverOrder(ctx, in)
 	default:
-		return fmt.Errorf("tradesk: неизвестный вид outbox %q", kind)
+		return "", fmt.Errorf("tradesk: неизвестный вид outbox %q", kind)
 	}
 }
 
-// deliverCallback шлёт заявку «обратный звонок» в контроллер backcall.
+// deliverCallback шлёт «обратный звонок» в приёмник /data/backcall.
 //
-// TODO(разведка формы): подтвердить со старого сайта tirestock.ru точные имена полей
-// приёмника и actionPath. В админке backcall/create отсутствует (404), поэтому создание
-// идёт тем же URL, что и форма старого сайта. Ниже — предположение по паттерну Yii2
-// ActiveForm (модель Backcall с атрибутами phone/name/comment).
+// Контракт ВСКРЫТ из исходника моста старого сайта (Битрикс, /ajax/call.php, 11.08.2026):
+//
+//	file_get_contents('http://tradesk.ru/data/backcall?phone=…&comment=…')
+//
+// То есть GET с query-параметрами, без авторизации, сессии и CSRF — приёмник
+// публичный. Поля ровно два: phone и comment; имени в контракте НЕТ, поэтому имя
+// подмешиваем в начало комментария (так же делает мост oldsite — менеджер видит
+// одинаковый текст независимо от того, какой контур доставки включён).
 func (c *Client) deliverCallback(ctx context.Context, payload []byte) error {
 	var in orders.CallbackInput
 	if err := json.Unmarshal(payload, &in); err != nil {
 		return fmt.Errorf("tradesk callback: разбор payload: %w", err)
 	}
-	fields := url.Values{
-		fieldBackcallPhone:   {in.Phone},
-		fieldBackcallName:    {in.Name},
-		fieldBackcallComment: {in.Comment},
+	if strings.TrimSpace(in.Phone) == "" {
+		return fmt.Errorf("tradesk callback: пустой телефон")
 	}
-	return c.postForm(ctx, pathBackcallForm, pathBackcallCreate, fields)
+	return c.getData(ctx, pathBackcall, url.Values{
+		"phone":   {in.Phone},
+		"comment": {FoldNameIntoComment(in.Name, in.Comment)},
+	})
 }
 
-// deliverOrder шлёт заказ в контроллер order.
-//
-// TODO(разведка формы): подтвердить имена полей и формат позиций (order controller).
-// Заказ содержит список позиций — уточнить, ждёт ли tradesk массив
-// OrderItem[i][slug]/[qty]/[price] или иной формат.
-func (c *Client) deliverOrder(ctx context.Context, payload []byte) error {
+// unmarshalOrder разбирает payload outbox в структуру заказа (доставка — order.go).
+func unmarshalOrder(payload []byte) (orderPayload, error) {
 	var in orderPayload
 	if err := json.Unmarshal(payload, &in); err != nil {
-		return fmt.Errorf("tradesk order: разбор payload: %w", err)
+		return orderPayload{}, fmt.Errorf("tradesk order: разбор payload: %w", err)
 	}
-	fields := url.Values{
-		fieldOrderPhone:   {in.Phone},
-		fieldOrderName:    {in.CustomerName},
-		fieldOrderComment: {in.Comment},
+	return in, nil
+}
+
+// FoldNameIntoComment складывает имя в комментарий: приёмники tradesk (backcall)
+// принимают только phone+comment, отдельного поля имени в контракте нет.
+func FoldNameIntoComment(name, comment string) string {
+	name = strings.TrimSpace(name)
+	comment = strings.TrimSpace(comment)
+	switch {
+	case name == "":
+		return comment
+	case comment == "":
+		return "Имя: " + name
+	default:
+		return "Имя: " + name + ". " + comment
 	}
-	for i, it := range in.Items {
-		fields.Set(fmt.Sprintf(fieldOrderItemSlugFmt, i), it.Slug)
-		fields.Set(fmt.Sprintf(fieldOrderItemQtyFmt, i), fmt.Sprint(it.Qty))
-		fields.Set(fmt.Sprintf(fieldOrderItemPriceFmt, i), fmt.Sprint(it.Price))
-	}
-	return c.postForm(ctx, pathOrderForm, pathOrderCreate, fields)
 }
 
 // orderPayload повторяет структуру, которую orders.CreateOrder кладёт в outbox.
@@ -76,24 +89,11 @@ type orderPayload struct {
 }
 
 // ── КОНТРАКТ ПРИЁМНИКА tradesk ─────────────────────────────────────────────────
-// ВСЕ значения ниже — ПРЕДПОЛОЖЕНИЯ по паттерну Yii2 ActiveForm. Обязательно
-// подтвердить путём осмотра формы «обратный звонок»/оформления на старом сайте
-// tirestock.ru (View Source → name="…" полей и action формы) ДО первой реальной
-// записи. Разведка admin-контура показала контроллеры backcall и order.
+// Вскрыт из исходников мостов старого сайта (Битрикс, папка /ajax):
+//   - call.php → GET /data/backcall?phone=&comment=      (ПОДТВЕРЖДЕНО)
+//   - auth.php → GET /api/login?phone=                   (есть и namespace /api/;
+//     сам файл нерабочий — синтаксическая ошибка в switch, никогда не исполнялся)
+//   - order.php, request.php, record.php — ЕЩЁ НЕ ПРОЧИТАНЫ (см. TODO.md).
 const (
-	pathBackcallForm     = "/backcall/index"  // страница со свежим CSRF (форма создания — с сайта)
-	pathBackcallCreate   = "/backcall/create" // TODO: подтвердить actionPath приёмника
-	fieldBackcallPhone   = "Backcall[phone]"
-	fieldBackcallName    = "Backcall[name]"
-	fieldBackcallComment = "Backcall[comment]"
-
-	pathOrderForm     = "/order/index"
-	pathOrderCreate   = "/order/create" // TODO: подтвердить actionPath приёмника
-	fieldOrderPhone   = "Order[phone]"
-	fieldOrderName    = "Order[name]"
-	fieldOrderComment = "Order[comment]"
-	// Позиции заказа: TODO подтвердить формат (табличный ввод Yii2).
-	fieldOrderItemSlugFmt  = "OrderItem[%d][slug]"
-	fieldOrderItemQtyFmt   = "OrderItem[%d][qty]"
-	fieldOrderItemPriceFmt = "OrderItem[%d][price]"
+	pathBackcall = "/data/backcall"
 )

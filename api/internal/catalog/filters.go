@@ -20,7 +20,20 @@ type Filters struct {
 	PriceMax *int
 	Spikes   *bool
 	Runflat  *bool
-	City     string // выбранный город (spb|msk)
+	Sort     string // "" (по умолчанию) | price_asc | price_desc | name
+	// Availability — фильтр наличия: "" (все) | "in" (в наличии) | "out" (распродано).
+	// Нужен админке, чтобы найти распроданные товары (их синк не удаляет, обнуляет остаток).
+	Availability string
+}
+
+// SortOrders — допустимые значения сортировки → SQL-выражение ORDER BY.
+// Первичный ключ всегда «в наличии сверху», затем выбранная сортировка, затем id
+// (стабильность пагинации). Пустая строка = дефолт (наличие + id).
+var SortOrders = map[string]string{
+	"":           "(p.stock > 0) DESC, p.id",
+	"price_asc":  "(p.stock > 0) DESC, p.price ASC, p.id",
+	"price_desc": "(p.stock > 0) DESC, p.price DESC, p.id",
+	"name":       "(p.stock > 0) DESC, p.brand ASC, p.model ASC, p.id",
 }
 
 // DefaultPerPage — дефолт пагинации каталога по конвенциям API.
@@ -86,6 +99,18 @@ func ParseFilters(q url.Values) (Filters, int, int, error) {
 	if s := strings.TrimSpace(q.Get("q")); s != "" {
 		f.Query = &s
 	}
+	if s := q.Get("sort"); s != "" {
+		if _, ok := SortOrders[s]; !ok {
+			return Filters{}, 0, 0, fmt.Errorf("параметр sort: ожидается price_asc|price_desc|name, получено %q", s)
+		}
+		f.Sort = s
+	}
+	if s := q.Get("stock"); s != "" {
+		if s != "in" && s != "out" {
+			return Filters{}, 0, 0, fmt.Errorf("параметр stock: ожидается in|out, получено %q", s)
+		}
+		f.Availability = s
+	}
 
 	page := 1
 	if s := q.Get("page"); s != "" {
@@ -102,11 +127,6 @@ func ParseFilters(q url.Values) (Filters, int, int, error) {
 			return Filters{}, 0, 0, fmt.Errorf("параметр per_page: ожидается число 1–%d, получено %q", MaxPerPage, s)
 		}
 		perPage = v
-	}
-
-	f.City = CitySPB
-	if c := q.Get("city"); ValidCity(c) {
-		f.City = c
 	}
 
 	return f, page, perPage, nil
@@ -144,16 +164,23 @@ func (f Filters) WhereSQL(startArg int) (string, []any) {
 		add("brand ILIKE $%d", *f.Brand)
 	}
 	if f.PriceMin != nil {
-		add("po.price >= $%d", *f.PriceMin)
+		add("price >= $%d", *f.PriceMin)
 	}
 	if f.PriceMax != nil {
-		add("po.price <= $%d", *f.PriceMax)
+		add("price <= $%d", *f.PriceMax)
 	}
 	if f.Spikes != nil {
 		add("spikes = $%d", *f.Spikes)
 	}
 	if f.Runflat != nil {
 		add("runflat = $%d", *f.Runflat)
+	}
+	// Наличие — без плейсхолдера (константное выражение), значение из белого списка.
+	switch f.Availability {
+	case "in":
+		conds = append(conds, "stock > 0")
+	case "out":
+		conds = append(conds, "stock = 0")
 	}
 
 	if len(conds) == 0 {
@@ -196,6 +223,12 @@ func (f Filters) Match(p Product) bool {
 		return false
 	}
 	if f.Runflat != nil && p.Runflat != *f.Runflat {
+		return false
+	}
+	if f.Availability == "in" && p.Stock <= 0 {
+		return false
+	}
+	if f.Availability == "out" && p.Stock > 0 {
 		return false
 	}
 	return true

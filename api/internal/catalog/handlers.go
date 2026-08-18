@@ -29,6 +29,16 @@ func NewHandlers(svc *Service) *Handlers {
 func (h *Handlers) Mount(r chi.Router) {
 	r.Get("/products", h.list)
 	r.Get("/products/{slug}", h.bySlug)
+	r.Get("/catalog/facets", h.facets)
+}
+
+func (h *Handlers) facets(w http.ResponseWriter, r *http.Request) {
+	f, err := h.svc.Facets(r.Context())
+	if err != nil {
+		httpx.Internal(w, err)
+		return
+	}
+	httpx.JSON(w, http.StatusOK, f)
 }
 
 func (h *Handlers) list(w http.ResponseWriter, r *http.Request) {
@@ -50,11 +60,7 @@ func (h *Handlers) list(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handlers) bySlug(w http.ResponseWriter, r *http.Request) {
 	slug := chi.URLParam(r, "slug")
-	city := r.URL.Query().Get("city")
-	if !ValidCity(city) {
-		city = CitySPB
-	}
-	p, err := h.svc.BySlug(r.Context(), slug, city)
+	p, err := h.svc.BySlug(r.Context(), slug)
 	if errors.Is(err, ErrNotFound) {
 		httpx.NotFound(w, "товар не найден")
 		return

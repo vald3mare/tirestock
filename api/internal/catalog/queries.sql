@@ -35,30 +35,19 @@ WHERE code <> '' AND synced_at < $1 AND stock <> 0;
 
 -- name: GetCatalogProductBySlug :one
 SELECT
-    p.id, p.slug, p.brand, p.model, p.name, p.size_label,
+    p.id, p.slug, p.code, p.brand, p.model, p.name, p.size_label,
     p.width, p.profile, p.diameter, p.season, p.spikes, p.runflat,
-    po.price, po.stock,
+    p.price, p.stock,
     COALESCE(NULLIF(p.image_clean_url, ''), p.image_url) AS image_url,
     COALESCE(o.badge_hit, false) AS badge_hit
 FROM products p
-JOIN product_offers po ON po.product_code = p.code AND po.city = $2
 LEFT JOIN product_overrides o ON o.slug = p.slug
 WHERE p.slug = $1 AND COALESCE(o.hidden, false) = false;
 
 -- name: CountSyncedProducts :one
 SELECT count(*) FROM products WHERE code <> '';
 
--- name: UpsertProductOffer :exec
-INSERT INTO product_offers (product_code, city, price, stock, updated_at)
-VALUES ($1, $2, $3, $4, now())
-ON CONFLICT (product_code, city) DO UPDATE SET
-    price = EXCLUDED.price,
-    stock = EXCLUDED.stock,
-    updated_at = now();
 
--- name: DeleteStaleOffers :execrows
--- Предложения, не обновлённые в текущем прогоне синка (город/товар пропал), удаляем.
-DELETE FROM product_offers WHERE updated_at < $1;
 
 -- name: UpdateProductImageClean :execrows
 UPDATE products SET image_clean_url = $2 WHERE code = $1 AND code <> '';

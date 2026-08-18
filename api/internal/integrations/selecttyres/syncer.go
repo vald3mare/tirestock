@@ -105,7 +105,7 @@ func (s *Syncer) SyncOnce(ctx context.Context) error {
 	}
 
 	if u := s.client.UnrecognizedStocks(); len(u) > 0 {
-		s.log.Warn("selecttyres: склады не распознаны ни по одному городу — товар с них в каталог НЕ попал",
+		s.log.Warn("selecttyres: склады вне Санкт-Петербурга — товар с них в каталог НЕ попал",
 			"складов", len(u), "детали", topStocks(u, 20))
 	}
 
@@ -121,7 +121,7 @@ func (s *Syncer) SyncOnce(ctx context.Context) error {
 		s.log.Error("selecttyres: удаление устаревших предложений", "err", err)
 	}
 	s.log.Info("selecttyres: синк завершён",
-		"в_фиде", parsed, "с_наличием", kept, "удалено_предложений", pruned,
+		"в_фиде", parsed, "на_складах_спб", kept, "обнулено_остатков", pruned,
 		"длительность", time.Since(start).Round(time.Second).String())
 	return nil
 }

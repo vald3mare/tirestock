@@ -22,12 +22,16 @@ services:
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-tirestock}:${POSTGRES_PASSWORD:-tirestock}@postgres:5432/${POSTGRES_DB:-tirestock}?sslmode=disable
       API_ADDR: ":8080"
-      # Доставка заявок. Приоритет: мост через старый сайт → прямой tradesk → мок.
-      # OLDSITE_BASE_URL: временный мост через /ajax/call.php Битрикса (на параллельный запуск).
+      # Доставка заявок и заказов. Приоритет: прямой tradesk → мост Битрикса → мок.
+      # TRADESK_BASE_URL — основной путь (http://tradesk.ru). ⚠️ БОЕВАЯ учётка.
+      # OLDSITE_BASE_URL — аварийный мост через /ajax Битрикса, задавать только
+      # если прямой контур недоступен (см. docs/OLDSITE_AJAX.md).
       OLDSITE_BASE_URL: ${OLDSITE_BASE_URL:-}
       TRADESK_BASE_URL: ${TRADESK_BASE_URL:-}
       TRADESK_USERNAME: ${TRADESK_USERNAME:-}
       TRADESK_PASSWORD: ${TRADESK_PASSWORD:-}
+      # Пометка тестового стенда в комментарии заявок (на проде — пусто).
+      DELIVERY_TEST_MARK: ${DELIVERY_TEST_MARK:-}
       # Сид первого пользователя админки (создаётся, только если таблица пуста).
       ADMIN_BOOTSTRAP_USER: ${ADMIN_BOOTSTRAP_USER:-}
       ADMIN_BOOTSTRAP_PASSWORD: ${ADMIN_BOOTSTRAP_PASSWORD:-}
@@ -37,7 +41,6 @@ services:
       SELECTYRES_SYNC_INTERVAL: ${SELECTYRES_SYNC_INTERVAL:-1h}
       SELECTYRES_PHOTO_FEED_URL: ${SELECTYRES_PHOTO_FEED_URL:-}
       SELECTYRES_STOCK_SPB: ${SELECTYRES_STOCK_SPB:-}
-      SELECTYRES_STOCK_MSK: ${SELECTYRES_STOCK_MSK:-}
       SELECTYRES_MIN_HEALTHY_RATIO: ${SELECTYRES_MIN_HEALTHY_RATIO:-}
     ports:
       - "${API_PORT:-8080}:8080"
@@ -54,11 +57,22 @@ services:
     build: ../web
     environment:
       API_URL: http://api:8080
+      # Индексация. По умолчанию сайт ЗАКРЫТ от поисковиков (robots Disallow +
+      # X-Robots-Tag noindex) — тестовый домен не должен попасть в индекс рядом
+      # со старым tirestock.ru. На боевом домене выставить SITE_INDEXABLE=true.
+      SITE_INDEXABLE: "${SITE_INDEXABLE:-false}"
     ports:
       - "${WEB_PORT:-3000}:3000"
+    volumes:
+      # Кэш оптимизированных фото — вне контейнера, переживает пересборку образа.
+      - web-image-cache:/app/.next/cache/images
     depends_on:
       api:
         condition: service_healthy
 
 volumes:
   pgdata:
+  # Кэш пережатых фото товаров. Отдельный том, а не слой контейнера: переживает
+  # пересборку образа (после деплоя фото не оптимизируются заново) и не раздувает
+  # сам контейнер. Размер ограничен images.maximumDiskCacheSize в next.config.ts.
+  web-image-cache:

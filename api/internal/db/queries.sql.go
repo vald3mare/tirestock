@@ -76,6 +76,53 @@ func (q *Queries) CountSyncedProducts(ctx context.Context) (int64, error) {
 	return count, err
 }
 
+const createBenefit = `-- name: CreateBenefit :one
+INSERT INTO benefits (icon, title, note, sort_order, updated_by)
+VALUES ($1, $2, $3, $4, $5)
+RETURNING id, icon, title, note, sort_order, published, updated_by, updated_at
+`
+
+type CreateBenefitParams struct {
+	Icon      string
+	Title     string
+	Note      string
+	SortOrder int32
+	UpdatedBy string
+}
+
+type CreateBenefitRow struct {
+	ID        int64
+	Icon      string
+	Title     string
+	Note      string
+	SortOrder int32
+	Published bool
+	UpdatedBy string
+	UpdatedAt pgtype.Timestamptz
+}
+
+func (q *Queries) CreateBenefit(ctx context.Context, arg CreateBenefitParams) (CreateBenefitRow, error) {
+	row := q.db.QueryRow(ctx, createBenefit,
+		arg.Icon,
+		arg.Title,
+		arg.Note,
+		arg.SortOrder,
+		arg.UpdatedBy,
+	)
+	var i CreateBenefitRow
+	err := row.Scan(
+		&i.ID,
+		&i.Icon,
+		&i.Title,
+		&i.Note,
+		&i.SortOrder,
+		&i.Published,
+		&i.UpdatedBy,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const createContentPage = `-- name: CreateContentPage :one
 INSERT INTO content_pages (slug, title, updated_by)
 VALUES ($1, $2, $3)
@@ -122,6 +169,67 @@ func (q *Queries) CreateContentPage(ctx context.Context, arg CreateContentPagePa
 	return i, err
 }
 
+const createPickupPoint = `-- name: CreatePickupPoint :one
+INSERT INTO pickup_points (address, metro, hours, badge, note, is_central, sort_order, published, updated_by)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+RETURNING id, address, metro, hours, badge, note, is_central, sort_order, published, updated_by, updated_at
+`
+
+type CreatePickupPointParams struct {
+	Address   string
+	Metro     string
+	Hours     string
+	Badge     string
+	Note      string
+	IsCentral bool
+	SortOrder int32
+	Published bool
+	UpdatedBy string
+}
+
+type CreatePickupPointRow struct {
+	ID        int64
+	Address   string
+	Metro     string
+	Hours     string
+	Badge     string
+	Note      string
+	IsCentral bool
+	SortOrder int32
+	Published bool
+	UpdatedBy string
+	UpdatedAt pgtype.Timestamptz
+}
+
+func (q *Queries) CreatePickupPoint(ctx context.Context, arg CreatePickupPointParams) (CreatePickupPointRow, error) {
+	row := q.db.QueryRow(ctx, createPickupPoint,
+		arg.Address,
+		arg.Metro,
+		arg.Hours,
+		arg.Badge,
+		arg.Note,
+		arg.IsCentral,
+		arg.SortOrder,
+		arg.Published,
+		arg.UpdatedBy,
+	)
+	var i CreatePickupPointRow
+	err := row.Scan(
+		&i.ID,
+		&i.Address,
+		&i.Metro,
+		&i.Hours,
+		&i.Badge,
+		&i.Note,
+		&i.IsCentral,
+		&i.SortOrder,
+		&i.Published,
+		&i.UpdatedBy,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const createSession = `-- name: CreateSession :exec
 INSERT INTO admin_sessions (token_hash, user_id, expires_at)
 VALUES ($1, $2, $3)
@@ -135,6 +243,15 @@ type CreateSessionParams struct {
 
 func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) error {
 	_, err := q.db.Exec(ctx, createSession, arg.TokenHash, arg.UserID, arg.ExpiresAt)
+	return err
+}
+
+const deleteBenefit = `-- name: DeleteBenefit :exec
+DELETE FROM benefits WHERE id = $1
+`
+
+func (q *Queries) DeleteBenefit(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, deleteBenefit, id)
 	return err
 }
 
@@ -156,6 +273,15 @@ func (q *Queries) DeleteExpiredSessions(ctx context.Context) error {
 	return err
 }
 
+const deletePickupPoint = `-- name: DeletePickupPoint :exec
+DELETE FROM pickup_points WHERE id = $1
+`
+
+func (q *Queries) DeletePickupPoint(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, deletePickupPoint, id)
+	return err
+}
+
 const deleteSession = `-- name: DeleteSession :exec
 DELETE FROM admin_sessions WHERE token_hash = $1
 `
@@ -163,19 +289,6 @@ DELETE FROM admin_sessions WHERE token_hash = $1
 func (q *Queries) DeleteSession(ctx context.Context, tokenHash string) error {
 	_, err := q.db.Exec(ctx, deleteSession, tokenHash)
 	return err
-}
-
-const deleteStaleOffers = `-- name: DeleteStaleOffers :execrows
-DELETE FROM product_offers WHERE updated_at < $1
-`
-
-// Предложения, не обновлённые в текущем прогоне синка (город/товар пропал), удаляем.
-func (q *Queries) DeleteStaleOffers(ctx context.Context, updatedAt pgtype.Timestamptz) (int64, error) {
-	result, err := q.db.Exec(ctx, deleteStaleOffers, updatedAt)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected(), nil
 }
 
 const getAdminUserByUsername = `-- name: GetAdminUserByUsername :one
@@ -203,27 +316,54 @@ func (q *Queries) GetAdminUserByUsername(ctx context.Context, username string) (
 	return i, err
 }
 
+const getBenefit = `-- name: GetBenefit :one
+SELECT id, icon, title, note, sort_order, published, updated_by, updated_at
+FROM benefits WHERE id = $1
+`
+
+type GetBenefitRow struct {
+	ID        int64
+	Icon      string
+	Title     string
+	Note      string
+	SortOrder int32
+	Published bool
+	UpdatedBy string
+	UpdatedAt pgtype.Timestamptz
+}
+
+func (q *Queries) GetBenefit(ctx context.Context, id int64) (GetBenefitRow, error) {
+	row := q.db.QueryRow(ctx, getBenefit, id)
+	var i GetBenefitRow
+	err := row.Scan(
+		&i.ID,
+		&i.Icon,
+		&i.Title,
+		&i.Note,
+		&i.SortOrder,
+		&i.Published,
+		&i.UpdatedBy,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getCatalogProductBySlug = `-- name: GetCatalogProductBySlug :one
 SELECT
-    p.id, p.slug, p.brand, p.model, p.name, p.size_label,
+    p.id, p.slug, p.code, p.brand, p.model, p.name, p.size_label,
     p.width, p.profile, p.diameter, p.season, p.spikes, p.runflat,
-    po.price, po.stock,
+    p.price, p.stock,
     COALESCE(NULLIF(p.image_clean_url, ''), p.image_url) AS image_url,
     COALESCE(o.badge_hit, false) AS badge_hit
 FROM products p
-JOIN product_offers po ON po.product_code = p.code AND po.city = $2
 LEFT JOIN product_overrides o ON o.slug = p.slug
 WHERE p.slug = $1 AND COALESCE(o.hidden, false) = false
 `
 
-type GetCatalogProductBySlugParams struct {
-	Slug string
-	City string
-}
-
 type GetCatalogProductBySlugRow struct {
 	ID        int64
 	Slug      string
+	Code      string
 	Brand     string
 	Model     string
 	Name      string
@@ -234,18 +374,19 @@ type GetCatalogProductBySlugRow struct {
 	Season    string
 	Spikes    bool
 	Runflat   bool
-	Price     int64
+	Price     int32
 	Stock     int32
 	ImageUrl  string
 	BadgeHit  bool
 }
 
-func (q *Queries) GetCatalogProductBySlug(ctx context.Context, arg GetCatalogProductBySlugParams) (GetCatalogProductBySlugRow, error) {
-	row := q.db.QueryRow(ctx, getCatalogProductBySlug, arg.Slug, arg.City)
+func (q *Queries) GetCatalogProductBySlug(ctx context.Context, slug string) (GetCatalogProductBySlugRow, error) {
+	row := q.db.QueryRow(ctx, getCatalogProductBySlug, slug)
 	var i GetCatalogProductBySlugRow
 	err := row.Scan(
 		&i.ID,
 		&i.Slug,
+		&i.Code,
 		&i.Brand,
 		&i.Model,
 		&i.Name,
@@ -384,6 +525,64 @@ func (q *Queries) GetOutbox(ctx context.Context, id int64) (GetOutboxRow, error)
 	return i, err
 }
 
+const getPickupPoint = `-- name: GetPickupPoint :one
+SELECT id, address, metro, hours, badge, note, is_central, sort_order, published, updated_by, updated_at
+FROM pickup_points WHERE id = $1
+`
+
+type GetPickupPointRow struct {
+	ID        int64
+	Address   string
+	Metro     string
+	Hours     string
+	Badge     string
+	Note      string
+	IsCentral bool
+	SortOrder int32
+	Published bool
+	UpdatedBy string
+	UpdatedAt pgtype.Timestamptz
+}
+
+func (q *Queries) GetPickupPoint(ctx context.Context, id int64) (GetPickupPointRow, error) {
+	row := q.db.QueryRow(ctx, getPickupPoint, id)
+	var i GetPickupPointRow
+	err := row.Scan(
+		&i.ID,
+		&i.Address,
+		&i.Metro,
+		&i.Hours,
+		&i.Badge,
+		&i.Note,
+		&i.IsCentral,
+		&i.SortOrder,
+		&i.Published,
+		&i.UpdatedBy,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getSeoMeta = `-- name: GetSeoMeta :one
+SELECT route, label, title, description, is_default, updated_by, updated_at
+FROM seo_meta WHERE route = $1
+`
+
+func (q *Queries) GetSeoMeta(ctx context.Context, route string) (SeoMetum, error) {
+	row := q.db.QueryRow(ctx, getSeoMeta, route)
+	var i SeoMetum
+	err := row.Scan(
+		&i.Route,
+		&i.Label,
+		&i.Title,
+		&i.Description,
+		&i.IsDefault,
+		&i.UpdatedBy,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getSessionUser = `-- name: GetSessionUser :one
 SELECT u.id, u.username, u.display_name
 FROM admin_sessions s
@@ -470,6 +669,55 @@ func (q *Queries) InsertOutbox(ctx context.Context, arg InsertOutboxParams) (int
 	return id, err
 }
 
+const listBenefits = `-- name: ListBenefits :many
+
+SELECT id, icon, title, note, sort_order, published, updated_by, updated_at
+FROM benefits
+ORDER BY sort_order, id
+`
+
+type ListBenefitsRow struct {
+	ID        int64
+	Icon      string
+	Title     string
+	Note      string
+	SortOrder int32
+	Published bool
+	UpdatedBy string
+	UpdatedAt pgtype.Timestamptz
+}
+
+// Раздел «Преимущества» админки (строка офферов BenefitsBar). Правила — в сервисе.
+// Все офферы для админки (любой статус), в порядке вывода.
+func (q *Queries) ListBenefits(ctx context.Context) ([]ListBenefitsRow, error) {
+	rows, err := q.db.Query(ctx, listBenefits)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListBenefitsRow
+	for rows.Next() {
+		var i ListBenefitsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Icon,
+			&i.Title,
+			&i.Note,
+			&i.SortOrder,
+			&i.Published,
+			&i.UpdatedBy,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listContentPages = `-- name: ListContentPages :many
 
 SELECT id, slug, title, body, meta_title, meta_description,
@@ -535,7 +783,8 @@ SELECT
     o.created_at,
     COALESCE(ob.status, 'pending') AS delivery_status,
     COALESCE(ob.attempts, 0)       AS attempts,
-    COALESCE(ob.last_error, '')    AS last_error
+    COALESCE(ob.last_error, '')    AS last_error,
+    COALESCE(ob.result, '')        AS tradesk_number
 FROM orders o
 LEFT JOIN outbox ob
     ON ob.kind = 'order' AND (ob.payload->>'order_id')::bigint = o.id
@@ -559,6 +808,7 @@ type ListOrdersRow struct {
 	DeliveryStatus string
 	Attempts       int32
 	LastError      string
+	TradeskNumber  string
 }
 
 // ── Заказы (проекция для админки: заказ + статус доставки из outbox) ─────────
@@ -580,6 +830,7 @@ func (q *Queries) ListOrders(ctx context.Context, arg ListOrdersParams) ([]ListO
 			&i.DeliveryStatus,
 			&i.Attempts,
 			&i.LastError,
+			&i.TradeskNumber,
 		); err != nil {
 			return nil, err
 		}
@@ -623,14 +874,213 @@ func (q *Queries) ListOverrides(ctx context.Context) ([]ListOverridesRow, error)
 	return items, nil
 }
 
+const listPickupPoints = `-- name: ListPickupPoints :many
+
+SELECT id, address, metro, hours, badge, note, is_central, sort_order, published, updated_by, updated_at
+FROM pickup_points
+ORDER BY is_central DESC, sort_order, id
+`
+
+type ListPickupPointsRow struct {
+	ID        int64
+	Address   string
+	Metro     string
+	Hours     string
+	Badge     string
+	Note      string
+	IsCentral bool
+	SortOrder int32
+	Published bool
+	UpdatedBy string
+	UpdatedAt pgtype.Timestamptz
+}
+
+// Раздел «Пункты выдачи» админки. Правила — в сервисе internal/pickups.
+// Все пункты для админки (любой статус), центральный первым, затем по порядку.
+func (q *Queries) ListPickupPoints(ctx context.Context) ([]ListPickupPointsRow, error) {
+	rows, err := q.db.Query(ctx, listPickupPoints)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListPickupPointsRow
+	for rows.Next() {
+		var i ListPickupPointsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Address,
+			&i.Metro,
+			&i.Hours,
+			&i.Badge,
+			&i.Note,
+			&i.IsCentral,
+			&i.SortOrder,
+			&i.Published,
+			&i.UpdatedBy,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPublishedBenefits = `-- name: ListPublishedBenefits :many
+SELECT id, icon, title, note, sort_order, published, updated_by, updated_at
+FROM benefits
+WHERE published = true
+ORDER BY sort_order, id
+`
+
+type ListPublishedBenefitsRow struct {
+	ID        int64
+	Icon      string
+	Title     string
+	Note      string
+	SortOrder int32
+	Published bool
+	UpdatedBy string
+	UpdatedAt pgtype.Timestamptz
+}
+
+// Опубликованные офферы для витрины.
+func (q *Queries) ListPublishedBenefits(ctx context.Context) ([]ListPublishedBenefitsRow, error) {
+	rows, err := q.db.Query(ctx, listPublishedBenefits)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListPublishedBenefitsRow
+	for rows.Next() {
+		var i ListPublishedBenefitsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Icon,
+			&i.Title,
+			&i.Note,
+			&i.SortOrder,
+			&i.Published,
+			&i.UpdatedBy,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPublishedPickupPoints = `-- name: ListPublishedPickupPoints :many
+SELECT id, address, metro, hours, badge, note, is_central, sort_order, published, updated_by, updated_at
+FROM pickup_points
+WHERE published = true
+ORDER BY is_central DESC, sort_order, id
+`
+
+type ListPublishedPickupPointsRow struct {
+	ID        int64
+	Address   string
+	Metro     string
+	Hours     string
+	Badge     string
+	Note      string
+	IsCentral bool
+	SortOrder int32
+	Published bool
+	UpdatedBy string
+	UpdatedAt pgtype.Timestamptz
+}
+
+// Опубликованные пункты для витрины.
+func (q *Queries) ListPublishedPickupPoints(ctx context.Context) ([]ListPublishedPickupPointsRow, error) {
+	rows, err := q.db.Query(ctx, listPublishedPickupPoints)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListPublishedPickupPointsRow
+	for rows.Next() {
+		var i ListPublishedPickupPointsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Address,
+			&i.Metro,
+			&i.Hours,
+			&i.Badge,
+			&i.Note,
+			&i.IsCentral,
+			&i.SortOrder,
+			&i.Published,
+			&i.UpdatedBy,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listSeoMeta = `-- name: ListSeoMeta :many
+
+SELECT route, label, title, description, is_default, updated_by, updated_at
+FROM seo_meta
+ORDER BY is_default DESC, route
+`
+
+// Раздел «SEO-мета» админки. Правила резолва (роут ∥ дефолт) — в сервисе.
+// Все записи для админки; дефолт-шаблон ('*') первым.
+func (q *Queries) ListSeoMeta(ctx context.Context) ([]SeoMetum, error) {
+	rows, err := q.db.Query(ctx, listSeoMeta)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []SeoMetum
+	for rows.Next() {
+		var i SeoMetum
+		if err := rows.Scan(
+			&i.Route,
+			&i.Label,
+			&i.Title,
+			&i.Description,
+			&i.IsDefault,
+			&i.UpdatedBy,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const markOutboxDelivered = `-- name: MarkOutboxDelivered :exec
 UPDATE outbox
-SET status = 'delivered', updated_at = now()
+SET status = 'delivered', result = $2, updated_at = now()
 WHERE id = $1
 `
 
-func (q *Queries) MarkOutboxDelivered(ctx context.Context, id int64) error {
-	_, err := q.db.Exec(ctx, markOutboxDelivered, id)
+type MarkOutboxDeliveredParams struct {
+	ID     int64
+	Result string
+}
+
+func (q *Queries) MarkOutboxDelivered(ctx context.Context, arg MarkOutboxDeliveredParams) error {
+	_, err := q.db.Exec(ctx, markOutboxDelivered, arg.ID, arg.Result)
 	return err
 }
 
@@ -740,6 +1190,36 @@ func (q *Queries) SetContentPagePublished(ctx context.Context, arg SetContentPag
 	return err
 }
 
+const updateBenefit = `-- name: UpdateBenefit :exec
+UPDATE benefits SET
+    icon = $2, title = $3, note = $4, sort_order = $5, published = $6,
+    updated_by = $7, updated_at = now()
+WHERE id = $1
+`
+
+type UpdateBenefitParams struct {
+	ID        int64
+	Icon      string
+	Title     string
+	Note      string
+	SortOrder int32
+	Published bool
+	UpdatedBy string
+}
+
+func (q *Queries) UpdateBenefit(ctx context.Context, arg UpdateBenefitParams) error {
+	_, err := q.db.Exec(ctx, updateBenefit,
+		arg.ID,
+		arg.Icon,
+		arg.Title,
+		arg.Note,
+		arg.SortOrder,
+		arg.Published,
+		arg.UpdatedBy,
+	)
+	return err
+}
+
 const updateContentPage = `-- name: UpdateContentPage :exec
 UPDATE content_pages SET
     title = $2, body = $3, meta_title = $4, meta_description = $5,
@@ -768,6 +1248,42 @@ func (q *Queries) UpdateContentPage(ctx context.Context, arg UpdateContentPagePa
 	return err
 }
 
+const updatePickupPoint = `-- name: UpdatePickupPoint :exec
+UPDATE pickup_points SET
+    address = $2, metro = $3, hours = $4, badge = $5, note = $6,
+    is_central = $7, sort_order = $8, published = $9, updated_by = $10, updated_at = now()
+WHERE id = $1
+`
+
+type UpdatePickupPointParams struct {
+	ID        int64
+	Address   string
+	Metro     string
+	Hours     string
+	Badge     string
+	Note      string
+	IsCentral bool
+	SortOrder int32
+	Published bool
+	UpdatedBy string
+}
+
+func (q *Queries) UpdatePickupPoint(ctx context.Context, arg UpdatePickupPointParams) error {
+	_, err := q.db.Exec(ctx, updatePickupPoint,
+		arg.ID,
+		arg.Address,
+		arg.Metro,
+		arg.Hours,
+		arg.Badge,
+		arg.Note,
+		arg.IsCentral,
+		arg.SortOrder,
+		arg.Published,
+		arg.UpdatedBy,
+	)
+	return err
+}
+
 const updateProductImageClean = `-- name: UpdateProductImageClean :execrows
 UPDATE products SET image_clean_url = $2 WHERE code = $1 AND code <> ''
 `
@@ -783,6 +1299,30 @@ func (q *Queries) UpdateProductImageClean(ctx context.Context, arg UpdateProduct
 		return 0, err
 	}
 	return result.RowsAffected(), nil
+}
+
+const updateSeoMeta = `-- name: UpdateSeoMeta :exec
+UPDATE seo_meta SET
+    title = $2, description = $3, updated_by = $4, updated_at = now()
+WHERE route = $1
+`
+
+type UpdateSeoMetaParams struct {
+	Route       string
+	Title       string
+	Description string
+	UpdatedBy   string
+}
+
+// Правит только редактируемые поля (route/label/is_default не меняются из UI).
+func (q *Queries) UpdateSeoMeta(ctx context.Context, arg UpdateSeoMetaParams) error {
+	_, err := q.db.Exec(ctx, updateSeoMeta,
+		arg.Route,
+		arg.Title,
+		arg.Description,
+		arg.UpdatedBy,
+	)
+	return err
 }
 
 const upsertOverride = `-- name: UpsertOverride :exec
@@ -878,32 +1418,6 @@ func (q *Queries) UpsertProduct(ctx context.Context, arg UpsertProductParams) er
 		arg.Price,
 		arg.Stock,
 		arg.ImageUrl,
-	)
-	return err
-}
-
-const upsertProductOffer = `-- name: UpsertProductOffer :exec
-INSERT INTO product_offers (product_code, city, price, stock, updated_at)
-VALUES ($1, $2, $3, $4, now())
-ON CONFLICT (product_code, city) DO UPDATE SET
-    price = EXCLUDED.price,
-    stock = EXCLUDED.stock,
-    updated_at = now()
-`
-
-type UpsertProductOfferParams struct {
-	ProductCode string
-	City        string
-	Price       int64
-	Stock       int32
-}
-
-func (q *Queries) UpsertProductOffer(ctx context.Context, arg UpsertProductOfferParams) error {
-	_, err := q.db.Exec(ctx, upsertProductOffer,
-		arg.ProductCode,
-		arg.City,
-		arg.Price,
-		arg.Stock,
 	)
 	return err
 }

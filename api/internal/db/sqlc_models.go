@@ -23,6 +23,18 @@ type AdminUser struct {
 	CreatedAt    pgtype.Timestamptz
 }
 
+type Benefit struct {
+	ID        int64
+	Icon      string
+	Title     string
+	Note      string
+	SortOrder int32
+	Published bool
+	UpdatedBy string
+	UpdatedAt pgtype.Timestamptz
+	CreatedAt pgtype.Timestamptz
+}
+
 type ContentPage struct {
 	ID              int64
 	Slug            string
@@ -59,6 +71,22 @@ type Outbox struct {
 	LastError   string
 	CreatedAt   pgtype.Timestamptz
 	UpdatedAt   pgtype.Timestamptz
+	Result      string
+}
+
+type PickupPoint struct {
+	ID        int64
+	Address   string
+	Metro     string
+	Hours     string
+	Badge     string
+	Note      string
+	IsCentral bool
+	SortOrder int32
+	Published bool
+	UpdatedBy string
+	UpdatedAt pgtype.Timestamptz
+	CreatedAt pgtype.Timestamptz
 }
 
 type Product struct {
@@ -82,18 +110,20 @@ type Product struct {
 	ImageCleanUrl string
 }
 
-type ProductOffer struct {
-	ProductCode string
-	City        string
-	Price       int64
-	Stock       int32
-	UpdatedAt   pgtype.Timestamptz
-}
-
 type ProductOverride struct {
 	Slug      string
 	Hidden    bool
 	BadgeHit  bool
 	UpdatedAt pgtype.Timestamptz
 	UpdatedBy *int64
+}
+
+type SeoMetum struct {
+	Route       string
+	Label       string
+	Title       string
+	Description string
+	IsDefault   bool
+	UpdatedBy   string
+	UpdatedAt   pgtype.Timestamptz
 }

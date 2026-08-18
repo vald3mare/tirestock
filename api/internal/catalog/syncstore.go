@@ -27,7 +27,8 @@ type SyncProduct struct {
 	Spikes    bool
 	Runflat   bool
 	ImageURL  string
-	Offers    []CityOffer
+	Price     int // рубли за штуку (агрегат петербургских складов)
+	Stock     int
 }
 
 // SyncStore — запись read-модели products синком. Обёртка над sqlc.
@@ -40,47 +41,24 @@ func NewSyncStore(pool *pgxpool.Pool) *SyncStore {
 }
 
 func (s *SyncStore) Upsert(ctx context.Context, p SyncProduct) error {
-	// products.price/stock — денормализованный снапшот города по умолчанию (СПб),
-	// а не «мёртвые» нули. City-aware путь читает product_offers, но снапшот в
-	// products служит фолбэком/источником для сидинга offers (см. миграцию 0005),
-	// чтобы падение фида не оставляло каталог без данных.
-	dPrice, dStock := defaultOfferSnapshot(p.Offers)
+	// Цена и остаток лежат прямо в products: магазин работает только по СПб,
+	// отдельной таблицы предложений по городам больше нет (миграция 0009).
 	if err := s.q.UpsertProduct(ctx, db.UpsertProductParams{
 		Code: p.Code, Slug: p.Slug, Brand: p.Brand, Model: p.Model, Name: p.Name,
 		SizeLabel: p.SizeLabel, Width: int32(p.Width), Profile: int32(p.Profile),
 		Diameter: int32(p.Diameter), Season: string(p.Season), Spikes: p.Spikes,
-		Runflat: p.Runflat, Price: int32(dPrice), Stock: int32(dStock), ImageUrl: p.ImageURL,
+		Runflat: p.Runflat, Price: int32(p.Price), Stock: int32(p.Stock), ImageUrl: p.ImageURL,
 	}); err != nil {
 		return fmt.Errorf("upsert product %s: %w", p.Code, err)
-	}
-	for _, o := range p.Offers {
-		if err := s.q.UpsertProductOffer(ctx, db.UpsertProductOfferParams{
-			ProductCode: p.Code, City: o.City, Price: int64(o.Price), Stock: int32(o.Stock),
-		}); err != nil {
-			return fmt.Errorf("upsert offer %s/%s: %w", p.Code, o.City, err)
-		}
 	}
 	return nil
 }
 
-// defaultOfferSnapshot выбирает цену/остаток для денормализованного снапшота в
-// products: предложение города по умолчанию (СПб), иначе первое, иначе нули.
-func defaultOfferSnapshot(offers []CityOffer) (price, stock int) {
-	if len(offers) == 0 {
-		return 0, 0
-	}
-	for _, o := range offers {
-		if o.City == CitySPB {
-			return o.Price, o.Stock
-		}
-	}
-	return offers[0].Price, offers[0].Stock
-}
-
-// PruneStaleBefore удаляет предложения, не обновлённые в текущем прогоне синка
-// (город или товар пропал из выгрузки). Возвращает число удалённых строк.
+// PruneStaleBefore обнуляет остаток у товаров, не пришедших в текущем прогоне
+// синка (пропали из выгрузки). Сами строки не удаляем: по ним могут быть ссылки
+// из заказов и SEO-URL. Возвращает число затронутых строк.
 func (s *SyncStore) PruneStaleBefore(ctx context.Context, before time.Time) (int64, error) {
-	return s.q.DeleteStaleOffers(ctx, pgtype.Timestamptz{Time: before, Valid: true})
+	return s.q.ZeroStaleStock(ctx, pgtype.Timestamptz{Time: before, Valid: true})
 }
 
 func (s *SyncStore) CountSynced(ctx context.Context) (int64, error) {

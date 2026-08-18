@@ -1,21 +1,30 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { BenefitsBar } from "@/components/blocks/BenefitsBar";
 import { ProductCard } from "@/components/blocks/ProductCard";
 import { SearchWidget } from "@/components/blocks/SearchWidget";
 import { ServicesSection } from "@/components/blocks/ServicesSection";
 import { listProducts, type Product } from "@/lib/api/client";
-import { getCity } from "@/lib/get-city";
+import { metadataFor } from "@/lib/seo";
 
 // Главная (Figma → Desktop, 1:2). Server Component: данные через lib/api.
 // Ритм по макету: hero-текст ↑80, виджет ↑36, преимущества ↑24, секции через 80.
 // ISR: «Популярные» берут свежий каталог (иначе статика заморозит выдачу на билде).
 export const revalidate = 300;
 
+// SEO-мета из админки (раздел «SEO-мета»), фолбэк — значения корневого layout.
+export function generateMetadata(): Promise<Metadata> {
+  return metadataFor("/", {
+    title: "TireStock — шины и диски в Санкт-Петербурге",
+    description:
+      "Интернет-магазин шин и дисков: подбор по размеру и по авто, шиномонтаж, хранение колёс.",
+  });
+}
+
 export default async function Home() {
-  const city = await getCity();
   let products: Product[] = [];
   try {
-    products = (await listProducts({ city, per_page: 8 })).items;
+    products = (await listProducts({ per_page: 8 })).items;
   } catch {
     // api недоступен — секция «Популярные товары» просто скрывается
   }

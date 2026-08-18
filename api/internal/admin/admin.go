@@ -134,6 +134,10 @@ type OrderRow struct {
 	DeliveryStatus string    `json:"delivery_status"` // pending|delivered|failed
 	Attempts       int       `json:"attempts"`
 	LastError      string    `json:"last_error"`
+	// Номер записи в tradesk (ответ приёмника). Данные заказа живут в tradesk —
+	// у себя держим только номер, чтобы менеджер знал, где искать, и мы не
+	// дублировали учётную систему.
+	TradeskNumber string `json:"tradesk_number"`
 }
 
 // OrderStats — счётчики над списком заказов (для подзаголовка).
@@ -178,6 +182,7 @@ func (s *Service) Orders(ctx context.Context, status string, page int) (OrdersPa
 			DeliveryStatus: r.DeliveryStatus,
 			Attempts:       int(r.Attempts),
 			LastError:      r.LastError,
+			TradeskNumber:  r.TradeskNumber,
 		})
 	}
 	st, err := s.q.OrderStats(ctx)
@@ -209,8 +214,11 @@ type ProductAdmin struct {
 
 // Products листает каталог (read-модель) с наложенными оверрайдами; query —
 // подстрока по названию/бренду/модели (без учёта регистра).
-func (s *Service) Products(ctx context.Context, query string) ([]ProductAdmin, error) {
-	list, _, err := s.catalog.List(ctx, catalog.Filters{}, 1, 500)
+// Products — список товаров для админки. availability: "" (все) | "in" | "out".
+// Потолок 1000: распроданных ~500, они должны попадать в выборку «Нет в наличии»
+// (иначе не видны — наличие сортируется вверх). Поиск q — доп. фильтр по названию.
+func (s *Service) Products(ctx context.Context, query, availability string) ([]ProductAdmin, error) {
+	list, _, err := s.catalog.List(ctx, catalog.Filters{Availability: availability}, 1, 1000)
 	if err != nil {
 		return nil, fmt.Errorf("list catalog: %w", err)
 	}

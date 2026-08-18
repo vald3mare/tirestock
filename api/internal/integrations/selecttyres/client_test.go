@@ -11,16 +11,16 @@ import (
 
 func testClient(t *testing.T) *Client {
 	t.Helper()
-	c, err := NewClient(Config{FeedURL: "http://x", CityFilters: map[string][]string{
-		"spb": {"spb"}, "msk": {"msk"},
-	}})
+	c, err := NewClient(Config{FeedURL: "http://x", StockFilter: []string{"spb"}})
 	if err != nil {
 		t.Fatal(err)
 	}
 	return c
 }
 
-func TestMapTire_PerCityAggregate(t *testing.T) {
+// Склады СПб суммируются в один остаток, цена = минимальная РРЦ.
+// Склады других городов игнорируются: магазин работает только по Петербургу.
+func TestMapTire_AggregatesSpbStocks(t *testing.T) {
 	rrp := func(s string) *string { return &s }
 	tire := feedTire{
 		Code: "t1", FullName: "Тест 205/55 R16", Season: "Летняя",
@@ -36,19 +36,12 @@ func TestMapTire_PerCityAggregate(t *testing.T) {
 	if !ok {
 		t.Fatal("ожидался ok=true")
 	}
-	got := map[string]catalog.CityOffer{}
-	for _, o := range p.Offers {
-		got[o.City] = o
-	}
-	if got["spb"].Stock != 5 || got["spb"].Price != 4500 {
-		t.Errorf("spb: got %+v, ожидалось stock=5 price=4500", got["spb"])
-	}
-	if got["msk"].Stock != 4 || got["msk"].Price != 4800 {
-		t.Errorf("msk: got %+v, ожидалось stock=4 price=4800", got["msk"])
+	if p.Stock != 5 || p.Price != 4500 {
+		t.Errorf("got stock=%d price=%d, ожидалось stock=5 price=4500 (только склады СПб)", p.Stock, p.Price)
 	}
 }
 
-func TestMapTire_PriceFallbackPerCity(t *testing.T) {
+func TestMapTire_PriceFallbackToInternet(t *testing.T) {
 	mi := func(s string) *string { return &s }
 	tire := feedTire{
 		Code: "t2", FullName: "Ф 195/65 R15", Season: "Зимняя",
@@ -58,18 +51,18 @@ func TestMapTire_PriceFallbackPerCity(t *testing.T) {
 		},
 	}
 	p, ok := testClient(t).mapTire(tire)
-	if !ok || len(p.Offers) != 1 || p.Offers[0].City != "spb" || p.Offers[0].Price != 7000 {
-		t.Errorf("фолбэк цены по городу не сработал: ok=%v offers=%+v", ok, p.Offers)
+	if !ok || p.Price != 7000 || p.Stock != 1 {
+		t.Errorf("фолбэк цены не сработал: ok=%v price=%d stock=%d", ok, p.Price, p.Stock)
 	}
 }
 
-func TestMapTire_NoTargetCity_Skip(t *testing.T) {
+func TestMapTire_NoSpbStock_Skip(t *testing.T) {
 	rrp := func(s string) *string { return &s }
 	tire := feedTire{Code: "t3", FullName: "X", Offers: []feedOffer{
 		{StockName: "other-1", Quantity: 5, RRP: rrp("3000")},
 	}}
 	if _, ok := testClient(t).mapTire(tire); ok {
-		t.Error("ожидался ok=false — нет складов целевых городов")
+		t.Error("ожидался ok=false — нет складов СПб")
 	}
 }
 
@@ -83,9 +76,7 @@ func TestFetchStreamsFeed(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	c, err := NewClient(Config{FeedURL: srv.URL, CityFilters: map[string][]string{
-		"spb": {"spb"}, "msk": {"msk"},
-	}})
+	c, err := NewClient(Config{FeedURL: srv.URL, StockFilter: []string{"spb"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -97,10 +88,11 @@ func TestFetchStreamsFeed(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Fetch: %v", err)
 	}
-	if parsed != 2 || kept != 2 {
-		t.Errorf("parsed=%d kept=%d, want 2/2", parsed, kept)
+	// t2 лежит только на московском складе — в каталог СПб он не попадает.
+	if parsed != 2 || kept != 1 {
+		t.Errorf("parsed=%d kept=%d, want 2/1 (московский товар отброшен)", parsed, kept)
 	}
-	if len(got) != 2 || got[0].Code != "t1" || len(got[0].Offers) != 1 || got[0].Offers[0].Stock != 4 || got[0].Offers[0].Price != 5000 {
+	if len(got) != 1 || got[0].Code != "t1" || got[0].Stock != 4 || got[0].Price != 5000 {
 		t.Errorf("неверный товар: %+v", got)
 	}
 }
@@ -118,9 +110,7 @@ func TestFetchReportsUnrecognizedStocks(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	c, err := NewClient(Config{FeedURL: srv.URL, CityFilters: map[string][]string{
-		"spb": {"spb"}, "msk": {"moskva"},
-	}})
+	c, err := NewClient(Config{FeedURL: srv.URL, StockFilter: []string{"spb"}})
 	if err != nil {
 		t.Fatal(err)
 	}
