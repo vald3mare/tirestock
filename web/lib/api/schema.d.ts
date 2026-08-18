@@ -41,6 +41,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/catalog/facets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Реальные значения фильтров, присутствующие в каталоге
+         * @description Бренды и типоразмеры, фактически имеющиеся в наличии/ассортименте СПб. Витрина строит из них опции сайдбара вместо статики.
+         */
+        get: operations["getCatalogFacets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pickup-points": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Опубликованные пункты выдачи (страница /points)
+         * @description Пункты выдачи заказов витрины. Контент редактируется в админке (раздел «Пункты выдачи»): адрес, метро, часы и бейдж-акция у каждого — свои. is_central — центральный склад (рендерится отдельной карточкой).
+         */
+        get: operations["listPickupPoints"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/benefits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Опубликованные офферы строки «Преимущества» (главная)
+         * @description Строка офферов над каталогом (BenefitsBar). Контент редактируется в админке (раздел «Преимущества»), поэтому витрина берёт его по API.
+         */
+        get: operations["listBenefits"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/seo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Эффективная SEO-мета маршрута витрины
+         * @description title/description для generateMetadata статических страниц. Значения маршрута с подстановкой дефолт-шаблона по пустым полям. Мета редактируется в админке (раздел «SEO-мета»). Контентные страницы несут мету сами.
+         */
+        get: operations["resolveSeo"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/products/{slug}": {
         parameters: {
             query?: never;
@@ -78,6 +158,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Заявка с формы услуги
+         * @description Формы сервисных страниц (шиномонтаж, хранение, ремонт и покраска дисков). Уходит в tradesk `POST /api/request` через outbox — с типом услуги, в отличие от обратного звонка.
+         */
+        post: operations["createRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/callbacks": {
         parameters: {
             query?: never;
@@ -109,6 +209,11 @@ export interface components {
             id: number;
             /** @example nokian-hakkapeliitta-10p-205-55-r16 */
             slug: string;
+            /**
+             * @description Код товара в SelectTyres — уходит в заказ tradesk
+             * @example t668559
+             */
+            code?: string;
             /** @example Nokian */
             brand: string;
             /** @example Hakkapeliitta 10p */
@@ -146,6 +251,11 @@ export interface components {
         };
         OrderItem: {
             slug: string;
+            /**
+             * @description Код товара в SelectTyres — уходит в приёмник заказа tradesk
+             * @example t668559
+             */
+            code?: string;
             name: string;
             /** @description Рубли за штуку */
             price: number;
@@ -163,6 +273,65 @@ export interface components {
             phone: string;
             comment?: string;
             items: components["schemas"]["OrderItem"][];
+        };
+        CatalogFacets: {
+            brands: string[];
+            widths: number[];
+            profiles: number[];
+            diameters: number[];
+        };
+        PickupPoint: {
+            /** Format: int64 */
+            id: number;
+            /** @example Советский пр., 37А */
+            address: string;
+            /** @example м. Рыбацкое */
+            metro: string;
+            /** @example 09:00–21:00 ежедневно */
+            hours: string;
+            /**
+             * @description Акция-бейдж
+             * @example −15% на шиномонтаж
+             */
+            badge: string;
+            /** @description Строка услуг центрального склада */
+            note: string;
+            /** @description Центральный склад (телефон, полный сервис) */
+            is_central: boolean;
+            sort_order: number;
+            published: boolean;
+        };
+        Benefit: {
+            /** Format: int64 */
+            id: number;
+            /**
+             * @description Путь к svg-иконке
+             * @example /icons/benefit-mount.svg
+             */
+            icon: string;
+            /** @example −15% на шиномонтаж */
+            title: string;
+            /** @example при покупке шин */
+            note: string;
+            sort_order: number;
+            published: boolean;
+        };
+        SeoResolved: {
+            /** @example Шины — купить в Санкт-Петербурге | TireStock */
+            title: string;
+            description: string;
+        };
+        RequestInput: {
+            /** @example Иван */
+            name?: string;
+            /** @example +7 (921) 123-45-67 */
+            phone: string;
+            /**
+             * @description Тип заявки — уходит в tradesk отдельным полем
+             * @example Шиномонтаж
+             */
+            type: string;
+            comment?: string;
         };
         CallbackInput: {
             /** @example Иван */
@@ -243,6 +412,8 @@ export interface operations {
                 spikes?: boolean;
                 /** @description RunFlat */
                 runflat?: boolean;
+                /** @description Сортировка (по умолчанию — наличие + релевантность) */
+                sort?: "price_asc" | "price_desc" | "name";
                 page?: number;
                 per_page?: number;
             };
@@ -262,6 +433,93 @@ export interface operations {
                 };
             };
             400: components["responses"]["Error"];
+        };
+    };
+    getCatalogFacets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Фасеты каталога */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogFacets"];
+                };
+            };
+        };
+    };
+    listPickupPoints: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Пункты в порядке вывода (центральный первым) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["PickupPoint"][];
+                    };
+                };
+            };
+        };
+    };
+    listBenefits: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Офферы в порядке вывода */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["Benefit"][];
+                    };
+                };
+            };
+        };
+    };
+    resolveSeo: {
+        parameters: {
+            query?: {
+                /** @description Маршрут, напр. /catalog (пусто → /) */
+                path?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Эффективная мета */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeoResolved"];
+                };
+            };
         };
     };
     getProductBySlug: {
@@ -311,6 +569,34 @@ export interface operations {
                     "application/json": {
                         /** Format: int64 */
                         order_id: number;
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+        };
+    };
+    createRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RequestInput"];
+            };
+        };
+        responses: {
+            /** @description Заявка принята */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        status: "accepted";
                     };
                 };
             };

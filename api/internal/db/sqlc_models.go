@@ -23,6 +23,33 @@ type AdminUser struct {
 	CreatedAt    pgtype.Timestamptz
 }
 
+type Benefit struct {
+	ID        int64
+	Icon      string
+	Title     string
+	Note      string
+	SortOrder int32
+	Published bool
+	UpdatedBy string
+	UpdatedAt pgtype.Timestamptz
+	CreatedAt pgtype.Timestamptz
+}
+
+type ContentPage struct {
+	ID              int64
+	Slug            string
+	Title           string
+	Body            string
+	MetaTitle       string
+	MetaDescription string
+	Published       bool
+	Indexed         bool
+	System          bool
+	UpdatedBy       string
+	UpdatedAt       pgtype.Timestamptz
+	CreatedAt       pgtype.Timestamptz
+}
+
 type Order struct {
 	ID             int64
 	IdempotencyKey string
@@ -44,26 +71,43 @@ type Outbox struct {
 	LastError   string
 	CreatedAt   pgtype.Timestamptz
 	UpdatedAt   pgtype.Timestamptz
+	Result      string
+}
+
+type PickupPoint struct {
+	ID        int64
+	Address   string
+	Metro     string
+	Hours     string
+	Badge     string
+	Note      string
+	IsCentral bool
+	SortOrder int32
+	Published bool
+	UpdatedBy string
+	UpdatedAt pgtype.Timestamptz
+	CreatedAt pgtype.Timestamptz
 }
 
 type Product struct {
-	ID        int64
-	Slug      string
-	Brand     string
-	Model     string
-	Name      string
-	SizeLabel string
-	Width     int32
-	Profile   int32
-	Diameter  int32
-	Season    string
-	Spikes    bool
-	Runflat   bool
-	Price     int32
-	Stock     int32
-	SyncedAt  pgtype.Timestamptz
-	Code      string
-	ImageUrl  string
+	ID            int64
+	Slug          string
+	Brand         string
+	Model         string
+	Name          string
+	SizeLabel     string
+	Width         int32
+	Profile       int32
+	Diameter      int32
+	Season        string
+	Spikes        bool
+	Runflat       bool
+	Price         int32
+	Stock         int32
+	SyncedAt      pgtype.Timestamptz
+	Code          string
+	ImageUrl      string
+	ImageCleanUrl string
 }
 
 type ProductOverride struct {
@@ -72,4 +116,14 @@ type ProductOverride struct {
 	BadgeHit  bool
 	UpdatedAt pgtype.Timestamptz
 	UpdatedBy *int64
+}
+
+type SeoMetum struct {
+	Route       string
+	Label       string
+	Title       string
+	Description string
+	IsDefault   bool
+	UpdatedBy   string
+	UpdatedAt   pgtype.Timestamptz
 }

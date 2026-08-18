@@ -40,7 +40,8 @@ SELECT
     o.created_at,
     COALESCE(ob.status, 'pending') AS delivery_status,
     COALESCE(ob.attempts, 0)       AS attempts,
-    COALESCE(ob.last_error, '')    AS last_error
+    COALESCE(ob.last_error, '')    AS last_error,
+    COALESCE(ob.result, '')        AS tradesk_number
 FROM orders o
 LEFT JOIN outbox ob
     ON ob.kind = 'order' AND (ob.payload->>'order_id')::bigint = o.id

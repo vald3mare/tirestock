@@ -1,16 +1,22 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createCallback } from "@/lib/api/client";
+import { createServiceRequest } from "@/lib/api/client";
 
-// Заявка на хранение → POST /api/v1/callbacks → outbox → tradesk (пока мок).
+// Заявка на хранение → POST /api/v1/requests → outbox → tradesk `POST /api/request`
+// (с типом «Хранение колёс» — у tradesk есть раздел хранения).
 export async function submitStorageRequest(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
   if (!phone) redirect("/services/storage?error=phone#signup");
 
   try {
-    await createCallback({ name, phone, comment: "Заявка со страницы «Хранение шин и колёс»" });
+    await createServiceRequest({
+      name,
+      phone,
+      type: "Хранение колёс",
+      comment: "Заявка со страницы «Хранение шин и колёс» нового сайта",
+    });
   } catch {
     redirect("/services/storage?error=api#signup");
   }

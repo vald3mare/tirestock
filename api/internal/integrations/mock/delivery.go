@@ -30,15 +30,15 @@ func (d *OrderDelivery) FailWith(err error) {
 	d.failWith = err
 }
 
-func (d *OrderDelivery) Deliver(_ context.Context, kind string, payload []byte) error {
+func (d *OrderDelivery) Deliver(_ context.Context, kind string, payload []byte) (string, error) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	if d.failWith != nil {
-		return d.failWith
+		return "", d.failWith
 	}
 	d.delivered = append(d.delivered, DeliveredItem{Kind: kind, Payload: payload})
 	slog.Info("mock delivery: доставлено в tradesk (мок)", "kind", kind, "bytes", len(payload))
-	return nil
+	return "mock", nil
 }
 
 // Delivered возвращает копию списка доставленных записей.

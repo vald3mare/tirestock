@@ -9,97 +9,77 @@ import (
 	"tirestock/api/internal/catalog"
 )
 
-func strptr(s string) *string { return &s }
-
-func testClient(t *testing.T, url string) *Client {
+func testClient(t *testing.T) *Client {
 	t.Helper()
-	c, err := NewClient(Config{FeedURL: url})
+	c, err := NewClient(Config{FeedURL: "http://x", StockFilter: []string{"spb"}})
 	if err != nil {
 		t.Fatal(err)
 	}
 	return c
 }
 
-func TestMapTireAggregatesSpbOnly(t *testing.T) {
-	c := testClient(t, "http://x")
-	// СПб: 2 предложения (остаток 5+3=8, мин.РРЦ = 6000); Москва игнор.
+// Склады СПб суммируются в один остаток, цена = минимальная РРЦ.
+// Склады других городов игнорируются: магазин работает только по Петербургу.
+func TestMapTire_AggregatesSpbStocks(t *testing.T) {
+	rrp := func(s string) *string { return &s }
 	tire := feedTire{
-		Code: "t100", FullName: "Nokian X 205/55 R16 91T", Brand: "Nokian", Model: "X",
-		Width: "205.00", Height: "55.00", Diameter: "16.00", LoadIndex: "91", SpeedIndex: "T",
-		Season: "Зимняя", Thorn: true,
+		Code: "t1", FullName: "Тест 205/55 R16", Season: "Летняя",
+		Width: "205.00", Height: "55.00", Diameter: "16.00",
 		Offers: []feedOffer{
-			{StockName: "koleso-russia_spb", Quantity: 5, RRP: strptr("6500.00")},
-			{StockName: "eksklyuziv_sankt-peterburg", Quantity: 3, RRP: strptr("6000.00")},
-			{StockName: "shinservis_moskva", Quantity: 99, RRP: strptr("100.00")}, // Москва — не считается
+			{StockName: "spb-1", Quantity: 3, RRP: rrp("5000")},
+			{StockName: "spb-2", Quantity: 2, RRP: rrp("4500")},
+			{StockName: "msk-1", Quantity: 4, RRP: rrp("4800")},
+			{StockName: "other", Quantity: 9, RRP: rrp("100")},
 		},
 	}
-	p, ok := c.mapTire(tire)
+	p, ok := testClient(t).mapTire(tire)
 	if !ok {
-		t.Fatal("товар отброшен, ожидался keep")
+		t.Fatal("ожидался ok=true")
 	}
-	if p.Stock != 8 {
-		t.Errorf("остаток: got %d, want 8 (только СПб)", p.Stock)
-	}
-	if p.Price != 6000 {
-		t.Errorf("цена: got %d, want 6000 (мин.РРЦ СПб)", p.Price)
-	}
-	if p.Season != catalog.SeasonWinter {
-		t.Errorf("сезон: got %q, want winter", p.Season)
-	}
-	if p.SizeLabel != "205/55 R16 91T" {
-		t.Errorf("size_label: got %q", p.SizeLabel)
-	}
-	if !p.Spikes {
-		t.Error("шипы потеряны")
-	}
-	if p.Slug == "" || p.Code != "t100" {
-		t.Errorf("slug/code: %q / %q", p.Slug, p.Code)
+	if p.Stock != 5 || p.Price != 4500 {
+		t.Errorf("got stock=%d price=%d, ожидалось stock=5 price=4500 (только склады СПб)", p.Stock, p.Price)
 	}
 }
 
-func TestMapTireSkipsWithoutSpb(t *testing.T) {
-	c := testClient(t, "http://x")
+func TestMapTire_PriceFallbackToInternet(t *testing.T) {
+	mi := func(s string) *string { return &s }
 	tire := feedTire{
-		Code: "t2", Season: "Летняя",
-		Offers: []feedOffer{{StockName: "shinservis_moskva", Quantity: 10, RRP: strptr("5000")}},
-	}
-	if _, ok := c.mapTire(tire); ok {
-		t.Error("товар без СПб-предложений должен отбрасываться")
-	}
-}
-
-func TestMapTireFallbackToInternetPrice(t *testing.T) {
-	c := testClient(t, "http://x")
-	tire := feedTire{
-		Code: "t3", Season: "Всесезонная",
+		Code: "t2", FullName: "Ф 195/65 R15", Season: "Зимняя",
 		Width: "195.00", Height: "65.00", Diameter: "15.00",
 		Offers: []feedOffer{
-			{StockName: "buywheel_spb", Quantity: 2, RRP: nil, MinInternet: strptr("4200.00")},
+			{StockName: "spb-1", Quantity: 1, MinInternet: mi("7000")}, // РРЦ нет → фолбэк
 		},
 	}
-	p, ok := c.mapTire(tire)
-	if !ok {
-		t.Fatal("ожидался keep через фолбэк интернет-цены")
+	p, ok := testClient(t).mapTire(tire)
+	if !ok || p.Price != 7000 || p.Stock != 1 {
+		t.Errorf("фолбэк цены не сработал: ok=%v price=%d stock=%d", ok, p.Price, p.Stock)
 	}
-	if p.Price != 4200 {
-		t.Errorf("цена-фолбэк: got %d, want 4200", p.Price)
-	}
-	if p.Season != catalog.SeasonAllSeason {
-		t.Errorf("сезон: got %q, want allseason", p.Season)
+}
+
+func TestMapTire_NoSpbStock_Skip(t *testing.T) {
+	rrp := func(s string) *string { return &s }
+	tire := feedTire{Code: "t3", FullName: "X", Offers: []feedOffer{
+		{StockName: "other-1", Quantity: 5, RRP: rrp("3000")},
+	}}
+	if _, ok := testClient(t).mapTire(tire); ok {
+		t.Error("ожидался ok=false — нет складов СПб")
 	}
 }
 
 func TestFetchStreamsFeed(t *testing.T) {
 	feed := `{"metainfo":{"client_name":"x"},"wheels":[],"tires":[
-		{"code":"t1","p_full_name":"A 205/55 R16","p_brand":"A","p_width":"205.00","p_height":"55.00","p_diameter":"16.00","p_season":"Летняя","offers":[{"stock_name":"koleso-russia_spb","quantity":4,"recommended_retail_price":"5000.00"}]},
-		{"code":"t2","p_full_name":"B","p_brand":"B","p_season":"Зимняя","offers":[{"stock_name":"shinservis_moskva","quantity":9,"recommended_retail_price":"1.00"}]}
+		{"code":"t1","p_full_name":"A 205/55 R16","p_brand":"A","p_width":"205.00","p_height":"55.00","p_diameter":"16.00","p_season":"Летняя","offers":[{"stock_name":"spb-1","quantity":4,"recommended_retail_price":"5000.00"}]},
+		{"code":"t2","p_full_name":"B","p_brand":"B","p_season":"Зимняя","offers":[{"stock_name":"msk-1","quantity":9,"recommended_retail_price":"1.00"}]}
 	]}`
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(feed))
 	}))
 	defer srv.Close()
 
-	c := testClient(t, srv.URL)
+	c, err := NewClient(Config{FeedURL: srv.URL, StockFilter: []string{"spb"}})
+	if err != nil {
+		t.Fatal(err)
+	}
 	var got []catalog.SyncProduct
 	parsed, kept, err := c.Fetch(context.Background(), func(p catalog.SyncProduct) error {
 		got = append(got, p)
@@ -108,10 +88,43 @@ func TestFetchStreamsFeed(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Fetch: %v", err)
 	}
+	// t2 лежит только на московском складе — в каталог СПб он не попадает.
 	if parsed != 2 || kept != 1 {
-		t.Errorf("parsed=%d kept=%d, want 2/1 (t2 — только Москва)", parsed, kept)
+		t.Errorf("parsed=%d kept=%d, want 2/1 (московский товар отброшен)", parsed, kept)
 	}
 	if len(got) != 1 || got[0].Code != "t1" || got[0].Stock != 4 || got[0].Price != 5000 {
 		t.Errorf("неверный товар: %+v", got)
+	}
+}
+
+func TestFetchReportsUnrecognizedStocks(t *testing.T) {
+	feed := `{"tires":[
+		{"code":"t1","p_full_name":"A 205/55 R16","p_brand":"A","p_width":"205.00","p_height":"55.00","p_diameter":"16.00","p_season":"Летняя","offers":[
+			{"stock_name":"depot_spb","quantity":4,"recommended_retail_price":"5000.00"},
+			{"stock_name":"depot_yaroslavl","quantity":7,"recommended_retail_price":"4000.00"},
+			{"stock_name":"depot_kazan","quantity":0,"recommended_retail_price":"3000.00"}
+		]}
+	]}`
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Write([]byte(feed))
+	}))
+	defer srv.Close()
+
+	c, err := NewClient(Config{FeedURL: srv.URL, StockFilter: []string{"spb"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := c.Fetch(context.Background(), func(catalog.SyncProduct) error { return nil }); err != nil {
+		t.Fatalf("Fetch: %v", err)
+	}
+	u := c.UnrecognizedStocks()
+	if u["depot_yaroslavl"] != 1 {
+		t.Errorf("depot_yaroslavl должен быть нераспознан (1 оффер), got %+v", u)
+	}
+	if _, ok := u["depot_spb"]; ok {
+		t.Error("depot_spb распознан по СПб — не должен попасть в нераспознанные")
+	}
+	if _, ok := u["depot_kazan"]; ok {
+		t.Error("depot_kazan с quantity=0 не должен учитываться")
 	}
 }

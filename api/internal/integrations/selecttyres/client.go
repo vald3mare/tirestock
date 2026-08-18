@@ -3,9 +3,9 @@
 // разбирает массив tires и отдаёт агрегированные строки каталога.
 //
 // Решения по бизнесу (ARCHITECTURE.md → SelectTyres):
-//   - цена = минимальная recommended_retail_price среди СПб-предложений;
-//   - остаток = сумма quantity среди СПб-предложений;
-//   - берём только склады СПб (магазин в СПб); товар без СПб-предложений пропускаем.
+//   - цена = минимальная recommended_retail_price среди предложений города;
+//   - остаток = сумма quantity среди предложений города;
+//   - агрегируем по каждому целевому городу (СПб, МСК); товар без предложений пропускаем.
 package selecttyres
 
 import (
@@ -21,20 +21,27 @@ import (
 	"tirestock/api/internal/catalog"
 )
 
-// DefaultStockFilter — подстроки stock_name, считающиеся складами СПб.
+// DefaultStockFilter — подстроки stock_name петербургских складов (нижний регистр).
+// Магазин работает только по СПб (решение 11.08.2026): товары с остальных складов
+// в каталог не попадают. NB: склад "sever-avto-msk_sankt-peterburg" содержит "msk",
+// но физически питерский — поэтому матчим по "spb"/"sankt-peterburg".
 var DefaultStockFilter = []string{"spb", "sankt-peterburg"}
 
 // Config — параметры источника.
 type Config struct {
 	FeedURL     string
-	StockFilter []string      // подстроки stock_name (СПб); пусто → DefaultStockFilter
-	Timeout     time.Duration // на скачивание фида; 0 → 6m (файл большой и медленный)
+	StockFilter []string      // подстроки stock_name складов СПб; пусто → DefaultStockFilter
+	Timeout     time.Duration // на скачивание фида; 0 → 6m
 }
 
 // Client — загрузчик и парсер фида.
 type Client struct {
 	cfg  Config
 	http *http.Client
+	// unrecognized — склады из последнего Fetch, не прошедшие фильтр СПб
+	// (stock_name → число офферов). Сбрасывается в начале Fetch. Не потокобезопасно:
+	// Fetch вызывается последовательно одним синкером.
+	unrecognized map[string]int
 }
 
 func NewClient(cfg Config) (*Client, error) {
@@ -98,6 +105,8 @@ func (c *Client) Fetch(ctx context.Context, fn func(catalog.SyncProduct) error) 
 		return 0, 0, fmt.Errorf("selecttyres: фид вернул статус %d", resp.StatusCode)
 	}
 
+	c.unrecognized = map[string]int{} // сброс на каждый Fetch
+
 	dec := json.NewDecoder(resp.Body)
 	if _, err := dec.Token(); err != nil { // открывающая '{'
 		return 0, 0, fmt.Errorf("selecttyres: битый JSON (нет '{'): %w", err)
@@ -124,6 +133,11 @@ func (c *Client) Fetch(ctx context.Context, fn func(catalog.SyncProduct) error) 
 				return parsed, kept, fmt.Errorf("selecttyres: разбор товара: %w", err)
 			}
 			parsed++
+			for _, o := range t.Offers { // склады с наличием, не попавшие ни в один город
+				if o.Quantity > 0 && !c.recognized(o.StockName) {
+					c.unrecognized[o.StockName]++
+				}
+			}
 			p, ok := c.mapTire(t)
 			if !ok {
 				continue
@@ -140,12 +154,11 @@ func (c *Client) Fetch(ctx context.Context, fn func(catalog.SyncProduct) error) 
 	return parsed, kept, nil
 }
 
-// mapTire агрегирует предложения СПб в одну строку каталога. ok=false — товар
-// без СПб-предложений или без вычислимой цены (пропускаем).
+// mapTire агрегирует предложения петербургских складов в одну цену и остаток.
+// ok=false — товара нет на складах СПб либо цену вычислить не удалось.
 func (c *Client) mapTire(t feedTire) (catalog.SyncProduct, bool) {
-	stock := 0
-	price := 0
-	hasPrice := false
+	subs := c.cfg.StockFilter
+	stock, price, hasPrice, found := 0, 0, false, false
 	consider := func(raw *string) {
 		if raw == nil {
 			return
@@ -159,21 +172,20 @@ func (c *Client) mapTire(t feedTire) (catalog.SyncProduct, bool) {
 			price, hasPrice = iv, true
 		}
 	}
-	spbFound := false
 	for _, o := range t.Offers {
-		if !c.isTargetStock(o.StockName) {
+		if !matchStock(o.StockName, subs) {
 			continue
 		}
-		spbFound = true
+		found = true
 		stock += o.Quantity
-		consider(o.RRP) // цена = мин. РРЦ; фолбэк — мин. интернет-цена
+		consider(o.RRP) // цена = мин. РРЦ
 	}
-	if !spbFound {
+	if !found {
 		return catalog.SyncProduct{}, false
 	}
-	if !hasPrice { // ни у одного СПб-предложения нет РРЦ — пробуем интернет-цену
+	if !hasPrice { // нет РРЦ ни у одного склада — фолбэк на минимальную интернет-цену
 		for _, o := range t.Offers {
-			if c.isTargetStock(o.StockName) {
+			if matchStock(o.StockName, subs) {
 				consider(o.MinInternet)
 			}
 		}
@@ -197,32 +209,33 @@ func (c *Client) mapTire(t feedTire) (catalog.SyncProduct, bool) {
 	}
 
 	return catalog.SyncProduct{
-		Code:      t.Code,
-		Slug:      slugify(name, t.Code),
-		Brand:     t.Brand,
-		Model:     t.Model,
-		Name:      name,
-		SizeLabel: sizeLabel,
-		Width:     width,
-		Profile:   profile,
-		Diameter:  diameter,
-		Season:    season,
-		Spikes:    t.Thorn,
-		Runflat:   t.Runflat,
-		Price:     price,
-		Stock:     stock,
-		ImageURL:  t.Photo,
+		Code: t.Code, Slug: slugify(name, t.Code), Brand: t.Brand, Model: t.Model,
+		Name: name, SizeLabel: sizeLabel, Width: width, Profile: profile, Diameter: diameter,
+		Season: season, Spikes: t.Thorn, Runflat: t.Runflat, ImageURL: t.Photo,
+		Price: price, Stock: stock,
 	}, true
 }
 
-func (c *Client) isTargetStock(stockName string) bool {
+func matchStock(stockName string, subs []string) bool {
 	s := strings.ToLower(stockName)
-	for _, sub := range c.cfg.StockFilter {
+	for _, sub := range subs {
 		if strings.Contains(s, sub) {
 			return true
 		}
 	}
 	return false
+}
+
+// recognized сообщает, проходит ли склад фильтр СПб.
+func (c *Client) recognized(stockName string) bool {
+	return matchStock(stockName, c.cfg.StockFilter)
+}
+
+// UnrecognizedStocks — склады из последнего Fetch, не попавшие ни в один город
+// (stock_name → число офферов с наличием). Товары с таких складов в каталог не
+// попадают — синкер логирует это, чтобы новый склад не терялся молча.
+func (c *Client) UnrecognizedStocks() map[string]int {
+	return c.unrecognized
 }
 
 // parseDim: "245.00" → 245.

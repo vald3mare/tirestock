@@ -76,13 +76,14 @@ export default async function AdminOrdersPage({
               <th className="px-4 py-4 font-medium">Клиент</th>
               <th className="px-4 py-4 font-medium">Телефон</th>
               <th className="px-4 py-4 font-medium">Сумма</th>
+              <th className="px-4 py-4 font-medium">№ в tradesk</th>
               <th className="px-4 py-4 font-medium">Доставка в tradesk</th>
             </tr>
           </thead>
           <tbody>
             {items.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-body text-grey">
+                <td colSpan={7} className="px-4 py-10 text-center text-body text-grey">
                   Заказов нет.
                 </td>
               </tr>
@@ -96,6 +97,9 @@ export default async function AdminOrdersPage({
                     <td className="px-4 py-4">{o.customer_name}</td>
                     <td className="tnum px-4 py-4">{o.phone}</td>
                     <td className="tnum px-4 py-4">{formatPrice(o.total)}</td>
+                    {/* Данные заказа живут в tradesk — у себя держим только его номер,
+                        чтобы менеджер знал, где смотреть, без дублирования учётки. */}
+                    <td className="tnum px-4 py-4 text-grey">{o.tradesk_number || "—"}</td>
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-3">
                         <span className={"inline-flex rounded-badge px-2.5 py-1 text-caption font-semibold " + m.cls}>

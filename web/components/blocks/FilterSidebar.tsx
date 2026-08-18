@@ -7,21 +7,25 @@ import { Checkbox } from "@/components/ui/Checkbox";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { Field } from "@/components/ui/Field";
 import {
-  brandOptions,
-  diameterOptions,
-  profileOptions,
   seasonOptions,
-  widthOptions,
+  staticFilterOptions,
+  type FilterOptions,
 } from "@/lib/catalog-options";
 import { formatNumber } from "@/lib/format";
 import { useLiveCount } from "@/lib/use-live-count";
 
 // Фильтр каталога = тот же набор, что в hero-поиске, вертикально в сайдбаре 264
 // + Производитель, цена от/до, чекбоксы Шипы/RunFlat. Параметры ↔ URL query
-// (имена совпадают с API 1:1). total приходит с сервера.
-// TODO: живое число на кнопке до применения фильтра (нужен клиентский счётчик).
+// (имена совпадают с API 1:1). total приходит с сервера. options — опции
+// брендов/размеров (фасеты каталога СПб); дефолт — статика.
 
-export function FilterSidebar({ total }: { total: number }) {
+export function FilterSidebar({
+  total,
+  options = staticFilterOptions,
+}: {
+  total: number;
+  options?: FilterOptions;
+}) {
   const router = useRouter();
   const sp = useSearchParams();
 
@@ -67,11 +71,11 @@ export function FilterSidebar({ total }: { total: number }) {
     <aside aria-label="Фильтр каталога" className="w-full shrink-0 lg:w-col">
       <div className="flex flex-col gap-3 rounded-container bg-light p-6">
         <p className="text-service text-dark">Фильтр</p>
-        <Dropdown placeholder="Ширина" options={widthOptions} value={width} onChange={setWidth} />
-        <Dropdown placeholder="Профиль" options={profileOptions} value={profile} onChange={setProfile} />
-        <Dropdown placeholder="Диаметр" options={diameterOptions} value={diameter} onChange={setDiameter} />
+        <Dropdown placeholder="Ширина" options={options.widths} value={width} onChange={setWidth} />
+        <Dropdown placeholder="Профиль" options={options.profiles} value={profile} onChange={setProfile} />
+        <Dropdown placeholder="Диаметр" options={options.diameters} value={diameter} onChange={setDiameter} />
         <Dropdown placeholder="Сезон" options={seasonOptions} value={season} onChange={setSeason} />
-        <Dropdown placeholder="Производитель" options={brandOptions} value={brand} onChange={setBrand} />
+        <Dropdown placeholder="Производитель" options={options.brands} value={brand} onChange={setBrand} />
         <p className="mt-1 text-caption-lg text-grey">Цена, ₽</p>
         <div className="flex gap-2">
           <Field

@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import { AddToCart } from "@/components/blocks/AddToCart";
 import { Breadcrumbs } from "@/components/blocks/Breadcrumbs";
+import { CallbackModal } from "@/components/blocks/CallbackModal";
 import { ProductCard } from "@/components/blocks/ProductCard";
 import { SeasonBadge } from "@/components/ui/SeasonBadge";
 import { ApiError, getProductBySlug, listProducts, type Product } from "@/lib/api/client";
+import { inquiryComment } from "@/lib/inquiry";
+import { SHOP } from "@/lib/shop";
 import { formatNumber, formatPrice, seasonLabel } from "@/lib/format";
 import { parseTireIndices } from "@/lib/tire-indices";
 
@@ -17,6 +21,9 @@ type Params = { slug: string };
 
 // React.cache: generateMetadata и страница делят один запрос к api
 // в рамках одного рендера (иначе товар грузился бы дважды).
+// Ключ кэша — slug: generateMetadata и сам рендер зовут загрузку один раз за запрос.
+// Было (slug, city) — мультигород отменён, товар
+// разные цену/наличие.
 const loadProduct = cache(async (slug: string): Promise<Product | null> => {
   try {
     return await getProductBySlug(slug);
@@ -30,8 +37,8 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const product = await loadProduct((await params).slug);
   if (!product) return { title: "Товар не найден | TireStock" };
   return {
-    title: `${product.name} — купить в СПб | TireStock`,
-    description: `${seasonLabel[product.season]} шины ${product.name}: в наличии ${product.stock} шт., цена ${formatPrice(product.price)}/шт. Доставка по СПб и России.`,
+    title: `${product.name} — купить в ${SHOP.loc} | TireStock`,
+    description: `${seasonLabel[product.season]} шины ${product.name}: в наличии ${product.stock} шт., цена ${formatPrice(product.price)}/шт. Доставка по ${SHOP.loc} и России.`,
   };
 }
 
@@ -72,15 +79,25 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
       />
 
       <div className="mt-8 flex flex-col items-stretch gap-6 lg:flex-row lg:items-start lg:gap-8">
-        <div className="relative aspect-[136/110] w-full shrink-0 rounded-card-lg border border-line bg-white lg:h-110 lg:w-136">
-          <img
-            src={product.image_url || "/images/tire-placeholder.png"}
-            alt={product.name}
-            className="absolute inset-0 size-full object-contain p-10"
-          />
+        <div className="relative aspect-[136/110] w-full shrink-0 rounded-card-lg border border-line bg-white p-10 lg:h-110 lg:w-136">
+          <div className="relative size-full">
+            <Image
+              src={product.image_url || "/images/tire-placeholder.png"}
+              alt={product.name}
+              fill
+              sizes="(max-width: 1024px) 100vw, 544px"
+              priority
+              className="object-contain"
+            />
+          </div>
           <span className="absolute left-4 top-4">
             <SeasonBadge season={product.season} spikes={product.spikes} />
           </span>
+          {product.badge_hit && (
+            <span className="absolute right-4 top-4 inline-flex items-center rounded-badge bg-blue px-2.5 py-1 text-caption font-semibold text-white">
+              Хит
+            </span>
+          )}
         </div>
 
         <div className="flex flex-1 flex-col gap-4">
@@ -88,22 +105,40 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
           <p className="text-field text-grey">
             {product.size_label} · {seasonLabel[product.season]}
           </p>
-          <p className="flex items-center gap-1.5 text-caption-lg text-grey">
-            <span className="size-2 rounded-full bg-green" aria-hidden="true" />В наличии ·{" "}
-            <span className="tnum">{formatNumber(product.stock)}</span> шт.
-          </p>
+          {product.stock > 0 ? (
+            <p className="flex items-center gap-1.5 text-caption-lg text-grey">
+              <span className="size-2 rounded-full bg-green" aria-hidden="true" />В наличии ·{" "}
+              <span className="tnum">{formatNumber(product.stock)}</span> шт.
+            </p>
+          ) : (
+            <p className="flex items-center gap-1.5 text-caption-lg text-grey">
+              <span className="size-2 rounded-full bg-grey" aria-hidden="true" />
+              Нет в наличии
+            </p>
+          )}
           <p className="flex items-baseline gap-2">
             <span className="tnum text-price-xl text-black">{formatPrice(product.price)}</span>
             <span className="text-field text-grey">/ шт.</span>
           </p>
 
-          <AddToCart price={product.price} stock={product.stock} />
+          {product.stock > 0 ? (
+            <AddToCart slug={product.slug} price={product.price} stock={product.stock} />
+          ) : (
+            <CallbackModal
+              variant="button"
+              triggerLabel="Уточнить при наличии"
+              title="Уточнить наличие"
+              description={`Оставьте телефон — сообщим, когда «${product.brand} ${product.model}» появится, и подскажем аналоги.`}
+              defaultComment={inquiryComment(product)}
+              submitLabel="Уточнить"
+            />
+          )}
 
           <div className="flex flex-col gap-2 rounded-card bg-light px-4 py-3.5">
             <p className="text-caption-lg font-semibold text-dark">Доставка и самовывоз</p>
             <p className="text-caption text-grey">
-              По СПб в пределах КАД — 500 ₽, бесплатно от 30 000 ₽. До пункта выдачи ПЭК —
-              бесплатно.
+              Доставка по {SHOP.city} — 500 ₽, бесплатно от 30 000 ₽. До пункта выдачи
+              ПЭК — бесплатно.
             </p>
             <p className="text-caption text-grey">Самовывоз со склада — сегодня</p>
           </div>

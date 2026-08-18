@@ -78,11 +78,14 @@ func (w *Worker) ProcessOnce(ctx context.Context) (int, error) {
 	}
 
 	for _, item := range batch {
-		// TODO(tradesk): доставка через реальный адаптер после разведки механизма.
-		deliverErr := w.delivery.Deliver(ctx, item.Kind, item.Payload)
+		result, deliverErr := w.delivery.Deliver(ctx, item.Kind, item.Payload)
 		switch {
 		case deliverErr == nil:
-			if err := qtx.MarkOutboxDelivered(ctx, item.ID); err != nil {
+			// result — ответ приёмника (для заказа это номер записи в tradesk):
+			// храним его, чтобы админка показала, где искать заказ в учётке.
+			if err := qtx.MarkOutboxDelivered(ctx, db.MarkOutboxDeliveredParams{
+				ID: item.ID, Result: result,
+			}); err != nil {
 				return 0, fmt.Errorf("mark delivered %d: %w", item.ID, err)
 			}
 		case item.Attempts+1 >= w.cfg.MaxAttempts:

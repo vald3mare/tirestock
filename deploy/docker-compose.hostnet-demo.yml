@@ -1,0 +1,22 @@
+# Демо-overlay для машин, где firewall режет межконтейнерный трафик (bridge
+# FORWARD dropped) И host.docker.internal недостижим (compose использует
+# нестандартный bridge). Сажаем api и web прямо на host-сеть: всё общается
+# через loopback хоста, минуя заблокированный bridge. postgres остаётся на
+# bridge, но публикует 5432 на хост, поэтому api достаёт его на 127.0.0.1.
+#
+# Использование:
+#   docker compose -f docker-compose.yml -f docker-compose.hostnet-demo.yml --env-file .env up -d
+#
+# Правильное решение — починить firewall (iptables FORWARD ACCEPT для docker),
+# тогда достаточно базового docker-compose.yml.
+services:
+  api:
+    network_mode: host
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-tirestock}:${POSTGRES_PASSWORD:-tirestock}@127.0.0.1:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-tirestock}?sslmode=disable
+      API_ADDR: ":${API_PORT:-8080}"
+  web:
+    network_mode: host
+    environment:
+      API_URL: http://127.0.0.1:${API_PORT:-8080}
+      HOSTNAME: "0.0.0.0"

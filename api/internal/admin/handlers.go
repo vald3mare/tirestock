@@ -10,7 +10,11 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"tirestock/api/internal/benefits"
+	"tirestock/api/internal/content"
 	"tirestock/api/internal/httpx"
+	"tirestock/api/internal/pickups"
+	"tirestock/api/internal/seo"
 )
 
 type ctxKey int
@@ -20,11 +24,15 @@ const userKey ctxKey = 0
 // Handlers — HTTP-слой админки. Токен сессии ходит между Next и Go в заголовке
 // Authorization: Bearer <token>; httpOnly-куку на домене витрины ставит Next.
 type Handlers struct {
-	svc *Service
+	svc      *Service
+	content  *content.Service
+	benefits *benefits.Service
+	seo      *seo.Service
+	pickups  *pickups.Service
 }
 
-func NewHandlers(svc *Service) *Handlers {
-	return &Handlers{svc: svc}
+func NewHandlers(svc *Service, contentSvc *content.Service, benefitsSvc *benefits.Service, seoSvc *seo.Service, pickupsSvc *pickups.Service) *Handlers {
+	return &Handlers{svc: svc, content: contentSvc, benefits: benefitsSvc, seo: seoSvc, pickups: pickupsSvc}
 }
 
 // Mount вешает роуты админки. Публичен только login; остальное — за сессией.
@@ -40,6 +48,29 @@ func (h *Handlers) Mount(r chi.Router) {
 			r.Post("/orders/{id}/retry", h.retryOrder)
 			r.Get("/products", h.products)
 			r.Put("/products/{slug}/override", h.setOverride)
+
+			r.Get("/pages", h.pages)
+			r.Post("/pages", h.createPage)
+			r.Get("/pages/{id}", h.page)
+			r.Put("/pages/{id}", h.updatePage)
+			r.Put("/pages/{id}/url", h.renamePage)
+			r.Post("/pages/{id}/publish", h.publishPage)
+			r.Delete("/pages/{id}", h.deletePage)
+
+			r.Get("/benefits", h.benefitsList)
+			r.Post("/benefits", h.createBenefit)
+			r.Get("/benefits/{id}", h.benefit)
+			r.Put("/benefits/{id}", h.updateBenefit)
+			r.Delete("/benefits/{id}", h.deleteBenefit)
+
+			r.Get("/seo", h.seoList)
+			r.Put("/seo", h.seoUpdate)
+
+			r.Get("/pickup-points", h.pickupsList)
+			r.Post("/pickup-points", h.createPickup)
+			r.Get("/pickup-points/{id}", h.pickup)
+			r.Put("/pickup-points/{id}", h.updatePickup)
+			r.Delete("/pickup-points/{id}", h.deletePickup)
 		})
 	})
 }
@@ -147,7 +178,12 @@ func (h *Handlers) retryOrder(w http.ResponseWriter, r *http.Request) {
 // ── товары ──────────────────────────────────────────────────────────────────
 
 func (h *Handlers) products(w http.ResponseWriter, r *http.Request) {
-	items, err := h.svc.Products(r.Context(), r.URL.Query().Get("q"))
+	availability := r.URL.Query().Get("stock") // "" | in | out
+	if availability != "" && availability != "in" && availability != "out" {
+		httpx.ValidationFailed(w, "параметр stock: ожидается in|out")
+		return
+	}
+	items, err := h.svc.Products(r.Context(), r.URL.Query().Get("q"), availability)
 	if err != nil {
 		httpx.Internal(w, err)
 		return

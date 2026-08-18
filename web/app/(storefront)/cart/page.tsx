@@ -1,34 +1,64 @@
+import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Breadcrumbs } from "@/components/blocks/Breadcrumbs";
 import { Button } from "@/components/ui/Button";
-import { Stepper } from "@/components/ui/Stepper";
-import { listProducts, type Product } from "@/lib/api/client";
+import { Field } from "@/components/ui/Field";
+import { CartQty } from "@/components/blocks/CartQty";
+import { getProductBySlug, type Product } from "@/lib/api/client";
 import { formatNumber, formatPrice, seasonLabel } from "@/lib/format";
+import { readCart } from "@/lib/cart";
+import { removeFromCart, submitOrder, undoRemove } from "./actions";
 
 // Корзина (Figma → «Корзина», 37:261): список позиций 824 + саммари 264.
-// TODO: настоящая корзина — cookie + серверное чтение (конвенция Next-3),
-//       пересчёт сумм при изменении количества, удаление с undo-снекбаром,
-//       «Оформить заказ» → POST /orders (бэкенд готов). Пока демо-состав
-//       из первых двух товаров каталога.
+// Состав живёт в куке (lib/cart.ts), цена и наличие подтягиваются из каталога
+// при каждом рендере — корзина не показывает вчерашнюю цену.
+// Оформление: имя + телефон → POST /orders → outbox → tradesk (заказ не теряется).
 
 export const metadata: Metadata = {
   title: "Корзина | TireStock",
   robots: { index: false, follow: false },
 };
 
-const DEMO_QTY = 4;
+type Line = { product: Product; qty: number };
 
-export default async function CartPage() {
-  let items: Product[] = [];
-  try {
-    items = (await listProducts({ per_page: 2 })).items;
-  } catch {
-    // api недоступен — покажем пустую корзину
+export default async function CartPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ undo?: string; qty?: string; ordered?: string; error?: string }>;
+}) {
+  const { undo, qty: undoQty, ordered, error } = await searchParams;
+  const cart = await readCart();
+
+  const lines: Line[] = [];
+  for (const line of cart) {
+    try {
+      lines.push({ product: await getProductBySlug(line.slug), qty: line.qty });
+    } catch {
+      // товар пропал из каталога — просто не показываем позицию
+    }
   }
 
-  const totalQty = items.length * DEMO_QTY;
-  const totalSum = items.reduce((sum, p) => sum + p.price * DEMO_QTY, 0);
+  const totalQty = lines.reduce((n, l) => n + l.qty, 0);
+  const totalSum = lines.reduce((sum, l) => sum + l.product.price * l.qty, 0);
+
+  if (ordered) {
+    return (
+      <main id="main" className="mx-auto max-w-content px-4 pb-20">
+        <Breadcrumbs items={[{ label: "Главная", href: "/" }, { label: "Корзина" }]} />
+        <div className="mt-8 flex max-w-160 flex-col items-start gap-4 rounded-container bg-light p-10">
+          <h1 className="text-h2 text-black">Заказ №{ordered} принят</h1>
+          <p className="text-body text-dark">
+            Менеджер перезвонит в рабочее время: подтвердит наличие, согласует доставку
+            и способ оплаты.
+          </p>
+          <Link href="/catalog" className="text-nav text-blue hover:underline">
+            Вернуться в каталог →
+          </Link>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main id="main" className="mx-auto max-w-content px-4 pb-20">
@@ -36,14 +66,28 @@ export default async function CartPage() {
 
       <h1 className="mt-6 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-h2 text-black lg:text-h1">
         Корзина
-        {items.length > 0 && (
+        {lines.length > 0 && (
           <span className="tnum text-field text-grey">
-            {items.length} товара · {totalQty} шт.
+            {lines.length} товара · {formatNumber(totalQty)} шт.
           </span>
         )}
       </h1>
 
-      {items.length === 0 ? (
+      {/* Undo вместо мгновенного удаления и вместо confirm() */}
+      {undo && (
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-card-lg bg-dark px-5 py-4">
+          <p className="text-body text-white">Позиция убрана из корзины</p>
+          <form action={undoRemove}>
+            <input type="hidden" name="slug" value={undo} />
+            <input type="hidden" name="qty" value={undoQty ?? "4"} />
+            <button type="submit" className="min-h-touch cursor-pointer text-body font-semibold text-white underline">
+              Вернуть
+            </button>
+          </form>
+        </div>
+      )}
+
+      {lines.length === 0 ? (
         <div className="mt-8 flex flex-col items-start gap-4 rounded-container bg-light p-10">
           <p className="text-h2 text-black">Корзина пуста</p>
           <Link href="/catalog" className="text-nav text-blue hover:underline">
@@ -53,7 +97,7 @@ export default async function CartPage() {
       ) : (
         <div className="mt-8 flex flex-col items-stretch gap-6 lg:flex-row lg:items-start lg:gap-4">
           <ul className="flex flex-1 flex-col gap-4">
-            {items.map((p) => (
+            {lines.map(({ product: p, qty }) => (
               <li
                 key={p.slug}
                 className="flex flex-wrap items-center gap-3 rounded-card-lg border border-line bg-white p-4 sm:gap-4"
@@ -65,7 +109,7 @@ export default async function CartPage() {
                   className="relative block size-20 shrink-0 overflow-hidden rounded-field border border-line bg-white"
                 >
                   <img
-                    src="/images/tire-placeholder.png"
+                    src={p.image_url || "/images/tire-placeholder.png"}
                     alt=""
                     loading="lazy"
                     className="absolute inset-0 size-full object-contain p-1.5"
@@ -80,18 +124,20 @@ export default async function CartPage() {
                   </p>
                   <p className="tnum text-caption text-grey">{formatPrice(p.price)} / шт.</p>
                 </div>
-                <Stepper defaultValue={DEMO_QTY} max={p.stock} />
+                <CartQty slug={p.slug} qty={qty} max={p.stock} />
                 <p className="tnum ml-auto text-right text-price text-black lg:ml-0 lg:w-27">
-                  {formatPrice(p.price * DEMO_QTY)}
+                  {formatPrice(p.price * qty)}
                 </p>
-                {/* TODO: удаление с undo-снекбаром, не мгновенно и не confirm() */}
-                <button
-                  type="button"
-                  aria-label={`Убрать ${p.name} из корзины`}
-                  className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-field hover:bg-light"
-                >
-                  <img src="/icons/close.svg" alt="" width={20} height={20} className="size-5" />
-                </button>
+                <form action={removeFromCart}>
+                  <input type="hidden" name="slug" value={p.slug} />
+                  <button
+                    type="submit"
+                    aria-label={`Убрать ${p.name} из корзины`}
+                    className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-field hover:bg-light"
+                  >
+                    <img src="/icons/close.svg" alt="" width={20} height={20} className="size-5" />
+                  </button>
+                </form>
               </li>
             ))}
           </ul>
@@ -105,21 +151,63 @@ export default async function CartPage() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-caption-lg text-grey">Доставка</span>
-                <span className="text-caption text-grey">при оформлении</span>
+                <span className="text-caption text-grey">рассчитает менеджер</span>
               </div>
               <div className="h-px w-full bg-line" role="presentation" />
               <div className="flex items-baseline justify-between">
                 <span className="text-field font-semibold text-dark">Итого</span>
                 <span className="tnum text-price text-black">{formatPrice(totalSum)}</span>
               </div>
-              {/* TODO: checkout — макета ещё нет (см. TODO дизайна в DESIGN_SYSTEM.md) */}
-              <Button className="w-full px-5">Оформить заказ</Button>
-              <p className="text-legal text-grey">
-                Оплата при получении, переводом или электронными деньгами
-              </p>
+              <a href="#checkout" className="mt-1 text-center text-caption-lg font-semibold text-blue hover:underline">
+                Заполнить контакты ↓
+              </a>
             </div>
           </aside>
         </div>
+      )}
+
+      {lines.length > 0 && (
+        <section id="checkout" aria-labelledby="checkout-h" className="mt-14 max-w-160">
+          <h2 id="checkout-h" className="text-h2 text-black">
+            Оформление заказа
+          </h2>
+          <p className="mt-2 text-body text-grey">
+            Оставьте имя и телефон — менеджер перезвонит, подтвердит наличие и согласует
+            доставку и оплату. Онлайн-оплаты на сайте нет.
+          </p>
+          <form action={submitOrder} className="mt-6 flex flex-col gap-3">
+            {/* Ключ идемпотентности рождается вместе с формой: даблклик по одной
+                отрисованной форме = один заказ, а повторная покупка тех же шин
+                после перезагрузки — уже новый заказ. */}
+            <input type="hidden" name="idempotency_key" value={randomUUID()} />
+            <Field name="customer_name" autoComplete="name" required placeholder="Например: Иван…" aria-label="Имя" />
+            <Field
+              name="phone"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              spellCheck={false}
+              required
+              placeholder="Например: +7 (921) 123-45-67…"
+              aria-label="Телефон"
+            />
+            <Field name="comment" placeholder="Комментарий: удобное время, пункт выдачи…" aria-label="Комментарий" />
+            {error && (
+              <p className="text-body text-dark">
+                {error === "phone"
+                  ? "Укажите телефон — без него не сможем перезвонить."
+                  : error === "name"
+                    ? "Укажите имя, чтобы менеджер знал, к кому обращаться."
+                    : error === "empty"
+                      ? "Товары из корзины больше не доступны. Обновите состав."
+                      : "Не получилось оформить. Позвоните нам: +7 (812) 614-64-42."}
+              </p>
+            )}
+            <Button type="submit" className="mt-1 self-start px-10">
+              Оформить заказ
+            </Button>
+          </form>
+        </section>
       )}
     </main>
   );

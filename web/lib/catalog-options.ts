@@ -41,3 +41,37 @@ export function parseTireSize(size: string): { width: string; profile: string; d
 function toOptions(values: string[]): Option[] {
   return values.map((v) => ({ value: v, label: v }));
 }
+
+// Набор опций сайдбара. Собирается из фасетов каталога (реальные значения СПб)
+// с фолбэком на статику выше, если фасет пуст (пустой каталог / ошибка API).
+export type FilterOptions = {
+  widths: Option[];
+  profiles: Option[];
+  diameters: Option[];
+  brands: Option[];
+};
+
+export const staticFilterOptions: FilterOptions = {
+  widths: widthOptions,
+  profiles: profileOptions,
+  diameters: diameterOptions,
+  brands: brandOptions,
+};
+
+// Фасеты (brands: string[], widths/profiles/diameters: number[]) → опции.
+// Пустой массив фасета → фолбэк на соответствующую статику.
+export function optionsFromFacets(f: {
+  brands: string[];
+  widths: number[];
+  profiles: number[];
+  diameters: number[];
+}): FilterOptions {
+  const nums = (xs: number[], fb: Option[]) =>
+    xs.length ? toOptions(xs.map(String)) : fb;
+  return {
+    widths: nums(f.widths, widthOptions),
+    profiles: nums(f.profiles, profileOptions),
+    diameters: nums(f.diameters, diameterOptions),
+    brands: f.brands.length ? toOptions(f.brands) : brandOptions,
+  };
+}

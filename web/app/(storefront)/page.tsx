@@ -1,12 +1,26 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { BenefitsBar } from "@/components/blocks/BenefitsBar";
 import { ProductCard } from "@/components/blocks/ProductCard";
 import { SearchWidget } from "@/components/blocks/SearchWidget";
 import { ServicesSection } from "@/components/blocks/ServicesSection";
 import { listProducts, type Product } from "@/lib/api/client";
+import { metadataFor } from "@/lib/seo";
 
 // Главная (Figma → Desktop, 1:2). Server Component: данные через lib/api.
 // Ритм по макету: hero-текст ↑80, виджет ↑36, преимущества ↑24, секции через 80.
+// ISR: «Популярные» берут свежий каталог (иначе статика заморозит выдачу на билде).
+export const revalidate = 300;
+
+// SEO-мета из админки (раздел «SEO-мета»), фолбэк — значения корневого layout.
+export function generateMetadata(): Promise<Metadata> {
+  return metadataFor("/", {
+    title: "TireStock — шины и диски в Санкт-Петербурге",
+    description:
+      "Интернет-магазин шин и дисков: подбор по размеру и по авто, шиномонтаж, хранение колёс.",
+  });
+}
+
 export default async function Home() {
   let products: Product[] = [];
   try {
@@ -51,7 +65,6 @@ export default async function Home() {
           </div>
           <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             {products.map((p) => (
-              // TODO: изображения товаров придут из SelectTyres; пока плейсхолдер
               <ProductCard key={p.slug} product={p} />
             ))}
           </div>

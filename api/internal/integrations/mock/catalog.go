@@ -28,7 +28,24 @@ func (s *CatalogSource) List(_ context.Context, f catalog.Filters, page, perPage
 			matched = append(matched, p)
 		}
 	}
-	sort.SliceStable(matched, func(i, j int) bool { return matched[i].Price < matched[j].Price })
+	// Наличие всегда сверху; внутри — выбранная сортировка (дефолт: цена ↑).
+	sort.SliceStable(matched, func(i, j int) bool {
+		ai, aj := matched[i].Stock > 0, matched[j].Stock > 0
+		if ai != aj {
+			return ai
+		}
+		switch f.Sort {
+		case "price_desc":
+			return matched[i].Price > matched[j].Price
+		case "name":
+			if matched[i].Brand != matched[j].Brand {
+				return matched[i].Brand < matched[j].Brand
+			}
+			return matched[i].Model < matched[j].Model
+		default: // "" и price_asc
+			return matched[i].Price < matched[j].Price
+		}
+	})
 
 	total := len(matched)
 	from := (page - 1) * perPage
@@ -145,4 +162,41 @@ var mockProducts = []catalog.Product{
 		Season: catalog.SeasonWinter, Spikes: true, Runflat: false,
 		Price: 7490, Stock: 18,
 	},
+}
+
+// Facets собирает уникальные значения фильтров из мок-товаров.
+func (s *CatalogSource) Facets(_ context.Context) (catalog.Facets, error) {
+	bset := map[string]struct{}{}
+	wset, pset, dset := map[int]struct{}{}, map[int]struct{}{}, map[int]struct{}{}
+	for _, p := range s.products {
+		bset[p.Brand] = struct{}{}
+		wset[p.Width] = struct{}{}
+		pset[p.Profile] = struct{}{}
+		dset[p.Diameter] = struct{}{}
+	}
+	f := catalog.Facets{
+		Brands:    sortedStrings(bset),
+		Widths:    sortedInts(wset),
+		Profiles:  sortedInts(pset),
+		Diameters: sortedInts(dset),
+	}
+	return f, nil
+}
+
+func sortedStrings(m map[string]struct{}) []string {
+	out := make([]string, 0, len(m))
+	for k := range m {
+		out = append(out, k)
+	}
+	sort.Strings(out)
+	return out
+}
+
+func sortedInts(m map[int]struct{}) []int {
+	out := make([]int, 0, len(m))
+	for k := range m {
+		out = append(out, k)
+	}
+	sort.Ints(out)
+	return out
 }

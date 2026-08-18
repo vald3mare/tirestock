@@ -3,6 +3,7 @@ package catalog
 import (
 	"net/url"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -150,5 +151,19 @@ func TestParseFiltersValidation(t *testing.T) {
 		if _, _, _, err := ParseFilters(q); err == nil {
 			t.Errorf("query %q: ожидалась ошибка валидации, получен nil", query)
 		}
+	}
+}
+
+// Мультигород отменён: параметр city больше не разбирается и не влияет на выборку.
+func TestParseFilters_IgnoresCity(t *testing.T) {
+	f, _, _, err := ParseFilters(url.Values{"city": {"msk"}, "brand": {"Nokian"}})
+	if err != nil {
+		t.Fatalf("неожиданная ошибка: %v", err)
+	}
+	if f.Brand == nil || *f.Brand != "Nokian" {
+		t.Error("остальные фильтры должны разбираться как обычно")
+	}
+	if where, _ := f.WhereSQL(1); strings.Contains(where, "city") {
+		t.Errorf("город не должен попадать в SQL: %s", where)
 	}
 }

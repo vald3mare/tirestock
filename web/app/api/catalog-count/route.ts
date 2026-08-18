@@ -12,6 +12,8 @@ export async function GET(req: NextRequest) {
   const str = (k: string) => sp.get(k) || undefined;
   const bool = (k: string) => (sp.get(k) === "true" ? true : undefined);
 
+  // Город берём из куки (сервер), а не из query — клиентский счётчик его не шлёт.
+
   const filters: ProductFilters = {
     q: str("q"),
     width: num("width"),

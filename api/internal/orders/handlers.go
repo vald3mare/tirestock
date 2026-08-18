@@ -22,6 +22,7 @@ func NewHandlers(svc *Service) *Handlers {
 func (h *Handlers) Mount(r chi.Router) {
 	r.Post("/orders", h.createOrder)
 	r.Post("/callbacks", h.createCallback)
+	r.Post("/requests", h.createRequest)
 }
 
 // CreateOrderResponse — ответ POST /api/v1/orders.
@@ -49,6 +50,26 @@ func (h *Handlers) createOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httpx.JSON(w, http.StatusCreated, CreateOrderResponse{OrderID: id})
+}
+
+// createRequest — заявка с формы услуги (шиномонтаж, хранение, ремонт дисков…).
+// Отличается от обратного звонка типом услуги: в tradesk уходит отдельным полем.
+func (h *Handlers) createRequest(w http.ResponseWriter, r *http.Request) {
+	var in RequestInput
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+		httpx.ValidationFailed(w, "некорректный JSON")
+		return
+	}
+	err := h.svc.CreateRequest(r.Context(), in)
+	if errors.Is(err, ErrValidation) {
+		httpx.ValidationFailed(w, err.Error())
+		return
+	}
+	if err != nil {
+		httpx.Internal(w, err)
+		return
+	}
+	httpx.JSON(w, http.StatusCreated, map[string]string{"status": "accepted"})
 }
 
 func (h *Handlers) createCallback(w http.ResponseWriter, r *http.Request) {

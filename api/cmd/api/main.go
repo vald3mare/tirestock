@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -16,6 +18,10 @@ import (
 
 	"tirestock/api/internal/admin"
 	"tirestock/api/internal/catalog"
+	"tirestock/api/internal/benefits"
+	"tirestock/api/internal/content"
+	"tirestock/api/internal/pickups"
+	"tirestock/api/internal/seo"
 	"tirestock/api/internal/db"
 	"tirestock/api/internal/httpx"
 	"tirestock/api/internal/integrations/mock"
@@ -36,8 +42,10 @@ type config struct {
 	AdminBootstrapPassword string
 	AdminBootstrapName     string
 	// Синк каталога из SelectTyres (пусто → каталог на моке).
-	Selecttyres  selecttyres.Config
-	SyncInterval time.Duration
+	Selecttyres    selecttyres.Config
+	PhotoFeedURL   string
+	SyncInterval   time.Duration
+	SyncMinHealthy float64 // порог здоровья синка (доля от прошлого размера); 0 → дефолт
 }
 
 // Конфиг читается из env один раз в main и передаётся явно.
@@ -58,14 +66,40 @@ func loadConfig() config {
 	cfg.AdminBootstrapUser = os.Getenv("ADMIN_BOOTSTRAP_USER")
 	cfg.AdminBootstrapPassword = os.Getenv("ADMIN_BOOTSTRAP_PASSWORD")
 	cfg.AdminBootstrapName = os.Getenv("ADMIN_BOOTSTRAP_NAME")
-	cfg.Selecttyres = selecttyres.Config{FeedURL: os.Getenv("SELECTYRES_FEED_URL")}
+	cfg.Selecttyres = selecttyres.Config{
+		FeedURL:     os.Getenv("SELECTYRES_FEED_URL"),
+		StockFilter: stockFilterFromEnv(),
+	}
+	cfg.PhotoFeedURL = os.Getenv("SELECTYRES_PHOTO_FEED_URL")
 	cfg.SyncInterval = time.Hour
 	if v := os.Getenv("SELECTYRES_SYNC_INTERVAL"); v != "" {
 		if d, err := time.ParseDuration(v); err == nil {
 			cfg.SyncInterval = d
 		}
 	}
+	if v := os.Getenv("SELECTYRES_MIN_HEALTHY_RATIO"); v != "" {
+		if r, err := strconv.ParseFloat(v, 64); err == nil {
+			cfg.SyncMinHealthy = r
+		}
+	}
 	return cfg
+}
+
+// stockFilterFromEnv читает подстроки петербургских складов из env
+// (SELECTYRES_STOCK_SPB, через запятую); пусто → дефолт пакета.
+// Магазин работает только по СПб — фильтров по другим городам больше нет.
+func stockFilterFromEnv() []string {
+	v := strings.TrimSpace(os.Getenv("SELECTYRES_STOCK_SPB"))
+	if v == "" {
+		return selecttyres.DefaultStockFilter
+	}
+	var out []string
+	for _, s := range strings.Split(v, ",") {
+		if s = strings.TrimSpace(strings.ToLower(s)); s != "" {
+			out = append(out, s)
+		}
+	}
+	return out
 }
 
 func main() {
@@ -96,36 +130,52 @@ func main() {
 	// иначе мок (этап без интеграции). Синк-воркер стартует ниже.
 	var catSource catalog.CatalogSource
 	var syncer *selecttyres.Syncer
+	var photoSyncer *selecttyres.PhotoSyncer
 	if cfg.Selecttyres.FeedURL != "" {
 		stClient, err := selecttyres.NewClient(cfg.Selecttyres)
 		if err != nil {
 			log.Error("selecttyres client", "err", err)
 			os.Exit(1)
 		}
-		syncer = selecttyres.NewSyncer(stClient, catalog.NewSyncStore(pool), cfg.SyncInterval, log)
+		store := catalog.NewSyncStore(pool)
+		syncer = selecttyres.NewSyncer(stClient, store, cfg.SyncInterval, cfg.SyncMinHealthy, log)
 		catSource = catalog.NewDBSource(pool)
 		log.Info("каталог: SelectTyres (синк в read-модель)", "interval", cfg.SyncInterval.String())
+
+		if cfg.PhotoFeedURL != "" {
+			pClient, err := selecttyres.NewPhotoClient(selecttyres.PhotoConfig{FeedURL: cfg.PhotoFeedURL})
+			if err != nil {
+				log.Error("selecttyres photo client", "err", err)
+				os.Exit(1)
+			}
+			photoSyncer = selecttyres.NewPhotoSyncer(pClient, store, cfg.SyncInterval, log)
+			log.Info("каталог: синк чистых фото (Avito-фид) включён")
+		}
 	} else {
 		catSource = mock.NewCatalogSource()
 		log.Info("каталог: мок (SELECTYRES_FEED_URL не задан)")
 	}
 	catalogSvc := catalog.NewService(catSource)
-	ordersSvc := orders.NewService(pool)
+	// DELIVERY_TEST_MARK — пометка стенда в комментарии заявок и заказов.
+	// Задаётся на локальном/тестовом стенде, который шлёт в БОЕВОЙ tradesk, чтобы
+	// менеджер видел тестовые записи и не тратил звонок. На проде — пусто.
+	ordersSvc := orders.NewService(pool).WithCommentPrefix(os.Getenv("DELIVERY_TEST_MARK"))
+	if m := os.Getenv("DELIVERY_TEST_MARK"); m != "" {
+		log.Warn("заявки помечаются как тестовые", "пометка", m)
+	}
 
-	// Доставка заявок. Приоритет: мост через старый сайт (OLDSITE_BASE_URL) →
-	// прямой tradesk (TRADESK_BASE_URL) → мок. См. ARCHITECTURE.md: мост временный,
-	// до вскрытия прямого приёмника tradesk.
+	// Доставка заявок и заказов. Приоритет: ПРЯМОЙ tradesk (TRADESK_BASE_URL) →
+	// мост через Битрикс (OLDSITE_BASE_URL, аварийный) → мок.
+	//
+	// Контракт приёмников вскрыт 11.08.2026 (docs/OLDSITE_AJAX.md), поэтому
+	// Битрикс из цепочки выведен: он был тонким прокси и больше не нужен.
+	// Мост оставлен как запасной путь на время параллельного запуска — если
+	// прямой контур вдруг откажет, достаточно задать OLDSITE_BASE_URL и снять
+	// TRADESK_BASE_URL.
 	var delivery orders.OrderDelivery
 	switch {
-	case cfg.OldSite.BaseURL != "":
-		oc, err := oldsite.NewClient(cfg.OldSite)
-		if err != nil {
-			log.Error("oldsite client", "err", err)
-			os.Exit(1)
-		}
-		delivery = oc
-		log.Info("доставка: мост через старый сайт (Битрикс)", "base_url", cfg.OldSite.BaseURL)
 	case cfg.Tradesk.BaseURL != "":
+		cfg.Tradesk.Log = log
 		tc, err := tradesk.NewClient(cfg.Tradesk)
 		if err != nil {
 			log.Error("tradesk client", "err", err)
@@ -133,6 +183,14 @@ func main() {
 		}
 		delivery = tc
 		log.Info("доставка: прямой tradesk", "base_url", cfg.Tradesk.BaseURL)
+	case cfg.OldSite.BaseURL != "":
+		oc, err := oldsite.NewClient(cfg.OldSite)
+		if err != nil {
+			log.Error("oldsite client", "err", err)
+			os.Exit(1)
+		}
+		delivery = oc
+		log.Warn("доставка: АВАРИЙНЫЙ мост через Битрикс — задайте TRADESK_BASE_URL", "base_url", cfg.OldSite.BaseURL)
 	default:
 		delivery = mock.NewOrderDelivery()
 		log.Info("доставка: мок (OLDSITE_BASE_URL/TRADESK_BASE_URL не заданы)")
@@ -140,6 +198,10 @@ func main() {
 
 	// Админка: сессии в БД, монитор заказов, оверрайды товаров.
 	adminSvc := admin.NewService(pool, catalogSvc)
+	contentSvc := content.NewService(pool)
+	benefitsSvc := benefits.NewService(pool)
+	seoSvc := seo.NewService(pool)
+	pickupsSvc := pickups.NewService(pool)
 	if err := adminSvc.Bootstrap(ctx, cfg.AdminBootstrapUser, cfg.AdminBootstrapPassword, cfg.AdminBootstrapName); err != nil {
 		log.Error("сид админа", "err", err)
 		os.Exit(1)
@@ -152,6 +214,9 @@ func main() {
 	// Фоновый контур: синк каталога из SelectTyres (если включён).
 	if syncer != nil {
 		go syncer.Run(ctx)
+	}
+	if photoSyncer != nil {
+		go photoSyncer.Run(ctx)
 	}
 
 	r := chi.NewRouter()
@@ -169,7 +234,11 @@ func main() {
 		})
 		catalog.NewHandlers(catalogSvc).Mount(r)
 		orders.NewHandlers(ordersSvc).Mount(r)
-		admin.NewHandlers(adminSvc).Mount(r)
+		content.NewPublicHandlers(contentSvc).Mount(r)
+		benefits.NewPublicHandlers(benefitsSvc).Mount(r)
+		seo.NewPublicHandlers(seoSvc).Mount(r)
+		pickups.NewPublicHandlers(pickupsSvc).Mount(r)
+		admin.NewHandlers(adminSvc, contentSvc, benefitsSvc, seoSvc, pickupsSvc).Mount(r)
 	})
 
 	srv := &http.Server{

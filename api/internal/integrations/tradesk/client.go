@@ -1,24 +1,25 @@
 // Package tradesk — адаптер доставки заказов/заявок в учётную систему tradesk.ru
-// (Yii2, самопись). Реализует orders.OrderDelivery. Заменяет мок после разведки
-// механизма приёма форм.
+// (Yii2, самопись). Реализует orders.OrderDelivery. Заменяет мост oldsite, когда
+// выключается Битрикс.
 //
-// Разведка (read-only) показала:
+// Приём заявок (вскрыто из /ajax/call.php старого сайта, 11.08.2026): публичное
+// пространство `/data/<сущность>` — простой GET с query-параметрами, БЕЗ входа,
+// сессии и CSRF. Именно так заявки со старого сайта попадают в учётку. См. delivery.go.
+//
+// Админ-контур (вход по логину/паролю) остаётся здесь на будущее — он нужен для
+// чтения/служебных действий, но НЕ для доставки заявок. Поэтому Username/Password
+// необязательны: клиент без кредов умеет доставлять обратные звонки.
 //   - Вход: GET /site/login → CSRF-токен из <meta name="csrf-token"> и куки _csrf →
 //     POST /site/login с полями _csrf-frontend + LoginForm[username]/[password].
 //   - Сессия: куки _identity (30д), PHPSESSID, _csrf. Держим в cookiejar.
-//   - Кодировка: сервер отдаёт UTF-8 (иногда рендерит как CP1251 в чужих клиентах) —
-//     шлём и парсим UTF-8, Content-Type формы application/x-www-form-urlencoded.
-//   - Контроллеры контура: order, backcall, request (заявка), storage.
-//
-// ВНИМАНИЕ: точные имена полей приёмника («создать обратный звонок» и «создать заказ»)
-// в админке отсутствуют (backcall/create → 404). Их контракт берётся из формы старого
-// сайта tirestock.ru и подставляется в backcall.go / order.go (см. TODO там).
+//   - Кодировка: UTF-8 в обе стороны.
 package tradesk
 
 import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -34,6 +35,7 @@ type Config struct {
 	Username string
 	Password string
 	Timeout  time.Duration // на один HTTP-запрос; 0 → 15s
+	Log      *slog.Logger  // 0 → slog.Default(); пишем номера принятых заказов
 }
 
 // Client — HTTP-клиент к tradesk с ленивой авторизацией и переиспользованием сессии.
@@ -54,12 +56,14 @@ func NewClient(cfg Config) (*Client, error) {
 	if strings.TrimSpace(cfg.BaseURL) == "" {
 		return nil, fmt.Errorf("tradesk: BaseURL обязателен")
 	}
-	if cfg.Username == "" || cfg.Password == "" {
-		return nil, fmt.Errorf("tradesk: нужны Username и Password")
-	}
+	// Креды не обязательны: доставка заявок идёт в публичное /data/* без входа.
+	// Они нужны только админ-контуру (postForm) — там отсутствие проверяется явно.
 	cfg.BaseURL = strings.TrimRight(cfg.BaseURL, "/")
 	if cfg.Timeout == 0 {
 		cfg.Timeout = 15 * time.Second
+	}
+	if cfg.Log == nil {
+		cfg.Log = slog.Default()
 	}
 	jar, err := cookiejar.New(nil)
 	if err != nil {
@@ -71,6 +75,76 @@ func NewClient(cfg Config) (*Client, error) {
 	}, nil
 }
 
+// getData дёргает публичный приёмник /data/<сущность> — GET с query-параметрами,
+// без входа и CSRF (ровно так делает мост старого сайта через file_get_contents).
+// Успех — любой 2xx; приёмник отвечает пустым телом.
+func (c *Client) getData(ctx context.Context, path string, params url.Values) error {
+	u := c.cfg.BaseURL + path
+	if len(params) > 0 {
+		u += "?" + params.Encode()
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+	if err != nil {
+		return err
+	}
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return fmt.Errorf("tradesk GET %s: %w", path, err)
+	}
+	defer drain(resp)
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("tradesk GET %s: status %d", path, resp.StatusCode)
+	}
+	return nil
+}
+
+// getDataString — как getData, но возвращает тело ответа. Приёмник заказа отдаёт
+// номер заказа в кавычках (`"12345"`) либо строку `error`; кавычки снимаем — ровно
+// это делал мост старого сайта (`str_replace('"', '', $data)`).
+func (c *Client) getDataString(ctx context.Context, path string, params url.Values) (string, error) {
+	u := c.cfg.BaseURL + path
+	if len(params) > 0 {
+		u += "?" + params.Encode()
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+	if err != nil {
+		return "", err
+	}
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("tradesk GET %s: %w", path, err)
+	}
+	defer drain(resp)
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return "", fmt.Errorf("tradesk GET %s: status %d", path, resp.StatusCode)
+	}
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<16))
+	if err != nil {
+		return "", fmt.Errorf("tradesk GET %s: чтение ответа: %w", path, err)
+	}
+	return strings.Trim(strings.TrimSpace(string(body)), `"`), nil
+}
+
+// postPlainForm — POST формой БЕЗ авторизации и CSRF (так шлёт мост старого сайта
+// через curl в /api/request и /api/record). Не путать с postForm — тот для
+// админ-контура Yii2 с сессией и токеном.
+func (c *Client) postPlainForm(ctx context.Context, path string, fields url.Values) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.cfg.BaseURL+path, strings.NewReader(fields.Encode()))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return fmt.Errorf("tradesk POST %s: %w", path, err)
+	}
+	defer drain(resp)
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("tradesk POST %s: status %d", path, resp.StatusCode)
+	}
+	return nil
+}
+
 // ensureLogin гарантирует активную сессию: если ещё не входили — выполняет вход.
 // Переавторизация по протухшей сессии обрабатывается в postForm (retry once).
 func (c *Client) ensureLogin(ctx context.Context) error {
@@ -78,6 +152,9 @@ func (c *Client) ensureLogin(ctx context.Context) error {
 	defer c.mu.Unlock()
 	if c.loggedIn {
 		return nil
+	}
+	if c.cfg.Username == "" || c.cfg.Password == "" {
+		return fmt.Errorf("tradesk: для админ-контура нужны Username и Password")
 	}
 	return c.loginLocked(ctx)
 }

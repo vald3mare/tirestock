@@ -10,9 +10,10 @@ type NavItem = { href?: string; label: string; soon?: boolean };
 const nav: NavItem[] = [
   { href: "/admin/orders", label: "Заказы" },
   { href: "/admin/products", label: "Товары" },
-  { label: "Страницы", soon: true },
-  { label: "Преимущества", soon: true },
-  { label: "SEO-мета", soon: true },
+  { href: "/admin/pages", label: "Страницы" },
+  { href: "/admin/benefits", label: "Преимущества" },
+  { href: "/admin/pickups", label: "Пункты выдачи" },
+  { href: "/admin/seo", label: "SEO-мета" },
 ];
 
 export function AdminSidebar({ userName }: { userName: string }) {

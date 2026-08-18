@@ -2,7 +2,10 @@ package selecttyres
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
+	"sort"
+	"strings"
 	"time"
 
 	"tirestock/api/internal/catalog"
@@ -11,23 +14,32 @@ import (
 // Store — приёмник результатов синка (read-модель каталога). Объявляет потребитель.
 type Store interface {
 	Upsert(ctx context.Context, p catalog.SyncProduct) error
-	ZeroStaleBefore(ctx context.Context, before time.Time) (int64, error)
+	PruneStaleBefore(ctx context.Context, before time.Time) (int64, error)
+	CountSynced(ctx context.Context) (int64, error) // текущий размер каталога (до синка)
 }
+
+// DefaultMinHealthyRatio — доля от прошлого размера каталога, ниже которой синк
+// считается «усохшим» и prune пропускается (сохраняем последнее состояние).
+const DefaultMinHealthyRatio = 0.5
 
 // Syncer — фоновый контур: раз в Interval тянет фид SelectTyres и обновляет каталог.
 // Рядом с outbox-воркером в том же процессе.
 type Syncer struct {
-	client   *Client
-	store    Store
-	interval time.Duration
-	log      *slog.Logger
+	client      *Client
+	store       Store
+	interval    time.Duration
+	minHealthy  float64 // порог здоровья: kept ≥ minHealthy*prev, иначе prune пропускаем
+	log         *slog.Logger
 }
 
-func NewSyncer(client *Client, store Store, interval time.Duration, log *slog.Logger) *Syncer {
+func NewSyncer(client *Client, store Store, interval time.Duration, minHealthyRatio float64, log *slog.Logger) *Syncer {
 	if interval <= 0 {
 		interval = time.Hour
 	}
-	return &Syncer{client: client, store: store, interval: interval, log: log}
+	if minHealthyRatio <= 0 || minHealthyRatio > 1 {
+		minHealthyRatio = DefaultMinHealthyRatio
+	}
+	return &Syncer{client: client, store: store, interval: interval, minHealthy: minHealthyRatio, log: log}
 }
 
 // Run делает первый синк сразу, затем по тикеру. Блокирует до отмены ctx.
@@ -49,23 +61,67 @@ func (s *Syncer) Run(ctx context.Context) {
 	}
 }
 
+// topStocks форматирует «склад=число_офферов» по убыванию, не более n позиций.
+func topStocks(m map[string]int, n int) string {
+	type kv struct {
+		k string
+		v int
+	}
+	arr := make([]kv, 0, len(m))
+	for k, v := range m {
+		arr = append(arr, kv{k, v})
+	}
+	sort.Slice(arr, func(i, j int) bool { return arr[i].v > arr[j].v })
+	if len(arr) > n {
+		arr = arr[:n]
+	}
+	parts := make([]string, len(arr))
+	for i, e := range arr {
+		parts[i] = fmt.Sprintf("%s=%d", e.k, e.v)
+	}
+	return strings.Join(parts, " ")
+}
+
 // SyncOnce выполняет один цикл: скачать фид → upsert товаров → погасить пропавшие.
+// Живучесть: при ошибке Fetch (фид недоступен, 403, сеть) офферы НЕ трогаем —
+// каталог живёт из последнего состояния. При успешном, но «усохшем» фиде
+// (пришло < minHealthy доли от прошлого размера) prune ПРОПУСКАЕМ, чтобы не
+// снести каталог из-за обрезанной/пустой выгрузки.
 func (s *Syncer) SyncOnce(ctx context.Context) error {
 	start := time.Now()
 	s.log.Info("selecttyres: синк начат")
+
+	prev, err := s.store.CountSynced(ctx)
+	if err != nil {
+		s.log.Error("selecttyres: подсчёт текущего каталога", "err", err)
+		prev = 0 // не смогли узнать прошлый размер — порог не применяем
+	}
 
 	parsed, kept, err := s.client.Fetch(ctx, func(p catalog.SyncProduct) error {
 		return s.store.Upsert(ctx, p)
 	})
 	if err != nil {
-		return err
+		return err // офферы не трогаем — последнее состояние сохраняется
 	}
-	zeroed, err := s.store.ZeroStaleBefore(ctx, start)
+
+	if u := s.client.UnrecognizedStocks(); len(u) > 0 {
+		s.log.Warn("selecttyres: склады вне Санкт-Петербурга — товар с них в каталог НЕ попал",
+			"складов", len(u), "детали", topStocks(u, 20))
+	}
+
+	if prev > 0 && float64(kept) < s.minHealthy*float64(prev) {
+		s.log.Warn("selecttyres: усохший фид — prune пропущен, сохраняю последнее состояние",
+			"пришло", kept, "было", prev, "порог", s.minHealthy,
+			"длительность", time.Since(start).Round(time.Second).String())
+		return nil
+	}
+
+	pruned, err := s.store.PruneStaleBefore(ctx, start)
 	if err != nil {
-		s.log.Error("selecttyres: гашение пропавших", "err", err)
+		s.log.Error("selecttyres: удаление устаревших предложений", "err", err)
 	}
 	s.log.Info("selecttyres: синк завершён",
-		"в_фиде", parsed, "с_наличием_спб", kept, "погашено", zeroed,
+		"в_фиде", parsed, "на_складах_спб", kept, "обнулено_остатков", pruned,
 		"длительность", time.Since(start).Round(time.Second).String())
 	return nil
 }

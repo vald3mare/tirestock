@@ -1,6 +1,8 @@
-import type { InputHTMLAttributes } from "react";
+import type { ComponentPropsWithRef } from "react";
 
-type Props = InputHTMLAttributes<HTMLInputElement> & {
+// ComponentPropsWithRef, а не InputHTMLAttributes: в React 19 ref — обычный проп,
+// и модалке обратного звонка нужно ставить фокус в первое поле при открытии.
+type Props = ComponentPropsWithRef<"input"> & {
   label?: string;
 };
 
