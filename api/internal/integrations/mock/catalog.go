@@ -56,7 +56,7 @@ func (s *CatalogSource) List(_ context.Context, f catalog.Filters, page, perPage
 	return matched[from:to], total, nil
 }
 
-func (s *CatalogSource) BySlug(_ context.Context, slug string) (catalog.Product, error) {
+func (s *CatalogSource) BySlug(_ context.Context, slug, _ string) (catalog.Product, error) {
 	for _, p := range s.products {
 		if p.Slug == slug {
 			return p, nil
@@ -165,7 +165,7 @@ var mockProducts = []catalog.Product{
 }
 
 // Facets собирает уникальные значения фильтров из мок-товаров.
-func (s *CatalogSource) Facets(_ context.Context) (catalog.Facets, error) {
+func (s *CatalogSource) Facets(_ context.Context, _ string) (catalog.Facets, error) {
 	bset := map[string]struct{}{}
 	wset, pset, dset := map[int]struct{}{}, map[int]struct{}{}, map[int]struct{}{}
 	for _, p := range s.products {

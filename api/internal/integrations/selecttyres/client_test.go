@@ -11,7 +11,7 @@ import (
 
 func testClient(t *testing.T) *Client {
 	t.Helper()
-	c, err := NewClient(Config{FeedURL: "http://x", StockFilter: []string{"spb"}})
+	c, err := NewClient(Config{FeedURL: "http://x", CityStocks: map[string][]string{"spb": {"spb"}}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -76,7 +76,7 @@ func TestFetchStreamsFeed(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	c, err := NewClient(Config{FeedURL: srv.URL, StockFilter: []string{"spb"}})
+	c, err := NewClient(Config{FeedURL: srv.URL, CityStocks: map[string][]string{"spb": {"spb"}}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -110,7 +110,7 @@ func TestFetchReportsUnrecognizedStocks(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	c, err := NewClient(Config{FeedURL: srv.URL, StockFilter: []string{"spb"}})
+	c, err := NewClient(Config{FeedURL: srv.URL, CityStocks: map[string][]string{"spb": {"spb"}}})
 	if err != nil {
 		t.Fatal(err)
 	}

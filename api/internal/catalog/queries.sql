@@ -33,14 +33,29 @@ ON CONFLICT (code) WHERE code <> '' DO UPDATE SET
 UPDATE products SET stock = 0, synced_at = now()
 WHERE code <> '' AND synced_at < $1 AND stock <> 0;
 
+-- name: UpsertProductOffer :exec
+-- Цена/остаток товара в городе (мультигород). Ключ — (product_code, city).
+INSERT INTO product_offers (product_code, city, price, stock, updated_at)
+VALUES ($1, $2, $3, $4, now())
+ON CONFLICT (product_code, city) DO UPDATE SET
+    price = EXCLUDED.price, stock = EXCLUDED.stock, updated_at = now();
+
+-- name: ZeroStaleOffers :execrows
+-- Офферы, не обновлённые в текущем прогоне синка (товар пропал со складов города),
+-- гасим до нуля остатка. Строки не удаляем — заказы/URL могут ссылаться.
+UPDATE product_offers SET stock = 0, updated_at = now()
+WHERE updated_at < $1 AND stock <> 0;
+
 -- name: GetCatalogProductBySlug :one
+-- City-aware: цена/остаток из оффера города ($2). Товар без оффера в городе → нет строки.
 SELECT
     p.id, p.slug, p.code, p.brand, p.model, p.name, p.size_label,
     p.width, p.profile, p.diameter, p.season, p.spikes, p.runflat,
-    p.price, p.stock,
+    po.price, po.stock,
     COALESCE(NULLIF(p.image_clean_url, ''), p.image_url) AS image_url,
     COALESCE(o.badge_hit, false) AS badge_hit
 FROM products p
+JOIN product_offers po ON po.product_code = p.code AND po.city = $2
 LEFT JOIN product_overrides o ON o.slug = p.slug
 WHERE p.slug = $1 AND COALESCE(o.hidden, false) = false;
 

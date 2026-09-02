@@ -15,8 +15,11 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"encoding/json"
+
 	"tirestock/api/internal/catalog"
 	"tirestock/api/internal/db"
+	"tirestock/api/internal/orderstatus"
 )
 
 // Sentinel-ошибки фичи.
@@ -40,10 +43,11 @@ type Service struct {
 	pool    *pgxpool.Pool
 	q       *db.Queries
 	catalog *catalog.Service
+	status  *orderstatus.Service // живой статус заказа из tradesk (обратная интеграция)
 }
 
-func NewService(pool *pgxpool.Pool, cat *catalog.Service) *Service {
-	return &Service{pool: pool, q: db.New(pool), catalog: cat}
+func NewService(pool *pgxpool.Pool, cat *catalog.Service, status *orderstatus.Service) *Service {
+	return &Service{pool: pool, q: db.New(pool), catalog: cat, status: status}
 }
 
 // Bootstrap заводит первого пользователя из env, если таблица пуста (иначе no-op).
@@ -193,6 +197,64 @@ func (s *Service) Orders(ctx context.Context, status string, page int) (OrdersPa
 		Items: items,
 		Stats: OrderStats{Today: int(st.Today), Queued: int(st.Queued), Failed: int(st.Failed)},
 	}, nil
+}
+
+// OrderDetail — детальная карточка заказа: наши данные + живой статус из tradesk.
+type OrderDetail struct {
+	ID             int64             `json:"id"`
+	CustomerName   string            `json:"customer_name"`
+	Phone          string            `json:"phone"`
+	Comment        string            `json:"comment"`
+	Total          int               `json:"total"`
+	CreatedAt      time.Time         `json:"created_at"`
+	DeliveryStatus string            `json:"delivery_status"` // доставка В tradesk: pending|delivered|failed
+	Attempts       int               `json:"attempts"`
+	LastError      string            `json:"last_error"`
+	TradeskNumber  string            `json:"tradesk_number"`
+	Items          []OrderItem       `json:"items"`
+	// Status — живой статус ИЗ tradesk (обратная интеграция) по tradesk_number.
+	// nil, если номера ещё нет (заказ не доставлен) или tradesk недоступен.
+	Status *orderstatus.Status `json:"status"`
+}
+
+// OrderItem — позиция заказа (снимок на момент оформления).
+type OrderItem struct {
+	Slug  string `json:"slug"`
+	Code  string `json:"code"`
+	Name  string `json:"name"`
+	Price int    `json:"price"`
+	Qty   int    `json:"qty"`
+}
+
+// ErrOrderNotFound — заказ не найден.
+var ErrOrderNotFound = errors.New("admin: заказ не найден")
+
+// Order возвращает детальную карточку заказа с живым статусом из tradesk.
+func (s *Service) Order(ctx context.Context, id int64) (OrderDetail, error) {
+	r, err := s.q.GetAdminOrder(ctx, id)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return OrderDetail{}, ErrOrderNotFound
+	}
+	if err != nil {
+		return OrderDetail{}, fmt.Errorf("get order: %w", err)
+	}
+	d := OrderDetail{
+		ID: r.ID, CustomerName: r.CustomerName, Phone: r.Phone, Comment: r.Comment,
+		Total: int(r.Total), CreatedAt: r.CreatedAt.Time, DeliveryStatus: r.DeliveryStatus,
+		Attempts: int(r.Attempts), LastError: r.LastError, TradeskNumber: r.TradeskNumber,
+		Items: []OrderItem{},
+	}
+	if len(r.Items) > 0 {
+		_ = json.Unmarshal(r.Items, &d.Items) // items — jsonb-снимок; ошибка → пустой состав
+	}
+	// Живой статус из tradesk по номеру (если доставлен). Ошибку глушим —
+	// карточка заказа должна открываться даже при недоступном tradesk.
+	if r.TradeskNumber != "" {
+		if st, err := s.status.Lookup(ctx, r.TradeskNumber); err == nil {
+			d.Status = &st
+		}
+	}
+	return d, nil
 }
 
 // RetryOrder возвращает недоставленный заказ (status=failed) в очередь.

@@ -29,15 +29,16 @@ type Benefit struct {
 	Icon      string    `json:"icon"`
 	Title     string    `json:"title"`
 	Note      string    `json:"note"`
+	Href      string    `json:"href"` // ссылка на страницу сервиса (пусто — не кликабелен)
 	SortOrder int       `json:"sort_order"`
 	Published bool      `json:"published"`
 	UpdatedBy string    `json:"updated_by"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-func mk(id int64, icon, title, note string, sort int32, pub bool, by string, at pgtype.Timestamptz) Benefit {
+func mk(id int64, icon, title, note, href string, sort int32, pub bool, by string, at pgtype.Timestamptz) Benefit {
 	return Benefit{
-		ID: id, Icon: icon, Title: title, Note: note, SortOrder: int(sort),
+		ID: id, Icon: icon, Title: title, Note: note, Href: href, SortOrder: int(sort),
 		Published: pub, UpdatedBy: by, UpdatedAt: at.Time,
 	}
 }
@@ -47,6 +48,7 @@ type Input struct {
 	Icon      string
 	Title     string
 	Note      string
+	Href      string
 	SortOrder int
 	Published bool
 }
@@ -68,7 +70,7 @@ func (s *Service) List(ctx context.Context) ([]Benefit, error) {
 	}
 	out := make([]Benefit, 0, len(rows))
 	for _, r := range rows {
-		out = append(out, mk(r.ID, r.Icon, r.Title, r.Note, r.SortOrder, r.Published, r.UpdatedBy, r.UpdatedAt))
+		out = append(out, mk(r.ID, r.Icon, r.Title, r.Note, r.Href, r.SortOrder, r.Published, r.UpdatedBy, r.UpdatedAt))
 	}
 	return out, nil
 }
@@ -81,7 +83,7 @@ func (s *Service) ListPublished(ctx context.Context) ([]Benefit, error) {
 	}
 	out := make([]Benefit, 0, len(rows))
 	for _, r := range rows {
-		out = append(out, mk(r.ID, r.Icon, r.Title, r.Note, r.SortOrder, r.Published, r.UpdatedBy, r.UpdatedAt))
+		out = append(out, mk(r.ID, r.Icon, r.Title, r.Note, r.Href, r.SortOrder, r.Published, r.UpdatedBy, r.UpdatedAt))
 	}
 	return out, nil
 }
@@ -94,7 +96,7 @@ func (s *Service) Get(ctx context.Context, id int64) (Benefit, error) {
 	if err != nil {
 		return Benefit{}, fmt.Errorf("get benefit: %w", err)
 	}
-	return mk(r.ID, r.Icon, r.Title, r.Note, r.SortOrder, r.Published, r.UpdatedBy, r.UpdatedAt), nil
+	return mk(r.ID, r.Icon, r.Title, r.Note, r.Href, r.SortOrder, r.Published, r.UpdatedBy, r.UpdatedAt), nil
 }
 
 func (s *Service) Create(ctx context.Context, in Input, editor string) (Benefit, error) {
@@ -104,12 +106,12 @@ func (s *Service) Create(ctx context.Context, in Input, editor string) (Benefit,
 	}
 	r, err := s.q.CreateBenefit(ctx, db.CreateBenefitParams{
 		Icon: strings.TrimSpace(in.Icon), Title: title, Note: strings.TrimSpace(in.Note),
-		SortOrder: int32(in.SortOrder), UpdatedBy: editor,
+		Href: strings.TrimSpace(in.Href), SortOrder: int32(in.SortOrder), UpdatedBy: editor,
 	})
 	if err != nil {
 		return Benefit{}, fmt.Errorf("create benefit: %w", err)
 	}
-	return mk(r.ID, r.Icon, r.Title, r.Note, r.SortOrder, r.Published, r.UpdatedBy, r.UpdatedAt), nil
+	return mk(r.ID, r.Icon, r.Title, r.Note, r.Href, r.SortOrder, r.Published, r.UpdatedBy, r.UpdatedAt), nil
 }
 
 func (s *Service) Update(ctx context.Context, id int64, in Input, editor string) error {
@@ -122,7 +124,7 @@ func (s *Service) Update(ctx context.Context, id int64, in Input, editor string)
 	}
 	return s.q.UpdateBenefit(ctx, db.UpdateBenefitParams{
 		ID: id, Icon: strings.TrimSpace(in.Icon), Title: title, Note: strings.TrimSpace(in.Note),
-		SortOrder: int32(in.SortOrder), Published: in.Published, UpdatedBy: editor,
+		Href: strings.TrimSpace(in.Href), SortOrder: int32(in.SortOrder), Published: in.Published, UpdatedBy: editor,
 	})
 }
 

@@ -45,6 +45,7 @@ func (h *Handlers) Mount(r chi.Router) {
 			r.Post("/logout", h.logout)
 			r.Get("/me", h.me)
 			r.Get("/orders", h.orders)
+			r.Get("/orders/{id}", h.order)
 			r.Post("/orders/{id}/retry", h.retryOrder)
 			r.Get("/products", h.products)
 			r.Put("/products/{slug}/override", h.setOverride)
@@ -160,6 +161,24 @@ func (h *Handlers) orders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httpx.JSON(w, http.StatusOK, res)
+}
+
+func (h *Handlers) order(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	if err != nil {
+		httpx.ValidationFailed(w, "некорректный id заказа")
+		return
+	}
+	d, err := h.svc.Order(r.Context(), id)
+	if errors.Is(err, ErrOrderNotFound) {
+		httpx.NotFound(w, "заказ не найден")
+		return
+	}
+	if err != nil {
+		httpx.Internal(w, err)
+		return
+	}
+	httpx.JSON(w, http.StatusOK, d)
 }
 
 func (h *Handlers) retryOrder(w http.ResponseWriter, r *http.Request) {

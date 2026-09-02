@@ -29,3 +29,8 @@ graphify-out/
 Thumbs.db
 .idea/
 .vscode/
+
+# Артефакты пентеста Strix (локальные прогоны, не для репозитория)
+strix_runs/
+deploy/.strix-run.log
+deploy/.cf-tunnel.log

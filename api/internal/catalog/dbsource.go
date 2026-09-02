@@ -24,17 +24,34 @@ func NewDBSource(pool *pgxpool.Pool) *DBSource {
 	return &DBSource{pool: pool, q: db.New(pool)}
 }
 
+// DefaultCity — базовый город каталога (мультигород: СПб + Москва).
+const DefaultCity = "spb"
+
+func cityOrDefault(c string) string {
+	if c = strings.TrimSpace(c); c != "" {
+		return c
+	}
+	return DefaultCity
+}
+
+// Цена/остаток — из оффера города (po.*), не из снапшота products.
 const listCols = `p.id, p.slug, p.brand, p.model, p.name, p.size_label,
 	p.width, p.profile, p.diameter, p.season, p.spikes, p.runflat,
-	p.price, p.stock, COALESCE(NULLIF(p.image_clean_url, ''), p.image_url), COALESCE(o.badge_hit, false)`
+	po.price, po.stock, COALESCE(NULLIF(p.image_clean_url, ''), p.image_url), COALESCE(o.badge_hit, false)`
 
 func (s *DBSource) List(ctx context.Context, f Filters, page, perPage int) ([]Product, int, error) {
-	where, allArgs := f.WhereSQL(1)
+	// $1 — город (INNER JOIN оффера); фильтры нумеруются с $2.
+	city := cityOrDefault(f.City)
+	where, filterArgs := f.WhereSQL(2)
+	allArgs := append([]any{city}, filterArgs...)
+
 	cond := "p.code <> '' AND COALESCE(o.hidden, false) = false"
 	if where != "" {
 		cond += " AND " + strings.TrimPrefix(where, "WHERE ")
 	}
+	// INNER JOIN product_offers: товар без оффера в городе в каталог не попадает.
 	from := "FROM products p " +
+		"JOIN product_offers po ON po.product_code = p.code AND po.city = $1 " +
 		"LEFT JOIN product_overrides o ON o.slug = p.slug WHERE " + cond
 
 	var total int
@@ -71,8 +88,10 @@ func (s *DBSource) List(ctx context.Context, f Filters, page, perPage int) ([]Pr
 	return items, total, nil
 }
 
-func (s *DBSource) BySlug(ctx context.Context, slug string) (Product, error) {
-	r, err := s.q.GetCatalogProductBySlug(ctx, slug)
+func (s *DBSource) BySlug(ctx context.Context, slug, city string) (Product, error) {
+	r, err := s.q.GetCatalogProductBySlug(ctx, db.GetCatalogProductBySlugParams{
+		Slug: slug, City: cityOrDefault(city),
+	})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Product{}, ErrNotFound
 	}
@@ -106,25 +125,68 @@ func scanProduct(rows pgx.Rows) (Product, error) {
 // Facets возвращает реальные значения фильтров, присутствующие в каталоге
 // (не скрытые товары). array_agg с FILTER отсекает пустые бренды; NULL-массивы
 // (пустой каталог) сканируются в nil-срезы — витрина отдаст пустые списки.
-func (s *DBSource) Facets(ctx context.Context) (Facets, error) {
-	const q = `
+func (s *DBSource) Facets(ctx context.Context, city string) (Facets, error) {
+	city = cityOrDefault(city)
+	// City-aware: только товары с оффером в городе. FILTER по санитарным диапазонам
+	// отсекает битые значения фида (width=7 и т.п.).
+	q := fmt.Sprintf(`
 SELECT
   array_agg(DISTINCT p.brand ORDER BY p.brand) FILTER (WHERE p.brand <> ''),
-  array_agg(DISTINCT p.width ORDER BY p.width),
-  array_agg(DISTINCT p.profile ORDER BY p.profile),
-  array_agg(DISTINCT p.diameter ORDER BY p.diameter)
+  array_agg(DISTINCT p.width ORDER BY p.width) FILTER (WHERE p.width BETWEEN %d AND %d),
+  array_agg(DISTINCT p.profile ORDER BY p.profile) FILTER (WHERE p.profile BETWEEN %d AND %d),
+  array_agg(DISTINCT p.diameter ORDER BY p.diameter) FILTER (WHERE p.diameter BETWEEN %d AND %d)
 FROM products p
+JOIN product_offers po ON po.product_code = p.code AND po.city = $1
 LEFT JOIN product_overrides o ON o.slug = p.slug
-WHERE p.code <> '' AND COALESCE(o.hidden, false) = false`
+WHERE p.code <> '' AND COALESCE(o.hidden, false) = false`,
+		MinWidth, MaxWidth, MinProfile, MaxProfile, MinDiameter, MaxDiameter)
 	var f Facets
 	var w, pr, d []int32
-	if err := s.pool.QueryRow(ctx, q).Scan(&f.Brands, &w, &pr, &d); err != nil {
+	if err := s.pool.QueryRow(ctx, q, city).Scan(&f.Brands, &w, &pr, &d); err != nil {
 		return Facets{}, fmt.Errorf("facets: %w", err)
 	}
 	f.Widths = int32sToInts(w)
 	f.Profiles = int32sToInts(pr)
 	f.Diameters = int32sToInts(d)
+
+	sizes, err := s.popularSizes(ctx, city)
+	if err != nil {
+		return Facets{}, err
+	}
+	f.PopularSizes = sizes
 	return f, nil
+}
+
+// popularSizes — топ типоразмеров по числу товаров в наличии в городе (чипы «Популярно»).
+func (s *DBSource) popularSizes(ctx context.Context, city string) ([]Size, error) {
+	q := fmt.Sprintf(`
+SELECT p.width, p.profile, p.diameter
+FROM products p
+JOIN product_offers po ON po.product_code = p.code AND po.city = $1
+LEFT JOIN product_overrides o ON o.slug = p.slug
+WHERE p.code <> '' AND COALESCE(o.hidden, false) = false AND po.stock > 0
+  AND p.width BETWEEN %d AND %d AND p.profile BETWEEN %d AND %d AND p.diameter BETWEEN %d AND %d
+GROUP BY p.width, p.profile, p.diameter
+ORDER BY count(*) DESC, p.width, p.profile, p.diameter
+LIMIT 4`,
+		MinWidth, MaxWidth, MinProfile, MaxProfile, MinDiameter, MaxDiameter)
+	rows, err := s.pool.Query(ctx, q, city)
+	if err != nil {
+		return nil, fmt.Errorf("popular sizes: %w", err)
+	}
+	defer rows.Close()
+	var out []Size
+	for rows.Next() {
+		var wd, pf, dm int32
+		if err := rows.Scan(&wd, &pf, &dm); err != nil {
+			return nil, fmt.Errorf("scan popular size: %w", err)
+		}
+		out = append(out, Size{
+			Width: int(wd), Profile: int(pf), Diameter: int(dm),
+			Label: fmt.Sprintf("%d/%d R%d", wd, pf, dm),
+		})
+	}
+	return out, rows.Err()
 }
 
 func int32sToInts(src []int32) []int {

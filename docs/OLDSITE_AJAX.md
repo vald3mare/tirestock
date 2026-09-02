@@ -22,6 +22,19 @@ PHP-скрипт просто дёргает `tradesk.ru` серверным з�
 | `/api/record` | POST | `point_id`, `phone`, `name`, `date`, `time`, `comment`, `promo` | — |
 | `/api/gift` | GET | `code`, `check` | — |
 | `/api/login` | GET | `phone` | — (файл сломан) |
+| `/data/status` | GET | `order_code` | **JSON статуса заказа** (обратная связь, см. ниже) |
+| `/api/status` | GET | `id` (внутренний) | JSON: `order_code`, `order_status`(bool оплачен), `order_sum`, `products[]` |
+
+### Обратная интеграция — статус заказа (`/data/status?order_code=`)
+Контракт снят с `/status/index.php` старого сайта (получен через админку Битрикса 25.08.2026).
+Клиент вводит номер → сайт server-side дёргает `GET tradesk.ru/data/status?order_code=<номер>`.
+Ответ JSON: `{status, date, point, point_id, driver_id, products:[{product_name, product_qty, product_retail_price}]}`.
+Пустой ответ = заказ не найден. Маппинг сырых статусов (1:1 со старым сайтом):
+`new`→Новый · `process|payment|prepayed|payed|checkout`→В работе · `transit|move`→Сборка/погрузка ·
+`stock`→(point 26 или после 15:00 без водителя → Водитель в пути, иначе Сборка) ·
+`reload|load`→Водитель в пути · `ready`→Готов к выдаче · `complete`→Выполнен · `cancel|return`→Отменён.
+**✅ РЕАЛИЗОВАНО:** `integrations/tradesk/status.go` (fetch), `internal/orderstatus` (маппинг+API),
+витрина `/status/` (URL 1:1), футер «Что с моим заказом?».
 
 ## ⚠️ Коды товаров — разные пространства
 

@@ -1,0 +1,1 @@
+ALTER TABLE benefits DROP COLUMN IF EXISTS href;

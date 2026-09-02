@@ -46,20 +46,39 @@ type Product struct {
 var ErrNotFound = errors.New("catalog: product not found")
 
 // Facets — реальные значения фильтров, присутствующие в каталоге (не статика).
-// Витрина строит из них опции сайдбара, чтобы предлагать только то, что есть в СПб.
+// Витрина строит из них опции фильтра и hero-поиска, чтобы всё подтягивалось
+// из выгрузки SelectTyres автоматически, а не хардкодилось. Числовые значения
+// отфильтрованы санитарными диапазонами (мусор из фида вроде width=7 не попадает).
 type Facets struct {
-	Brands    []string `json:"brands"`
-	Widths    []int    `json:"widths"`
-	Profiles  []int    `json:"profiles"`
-	Diameters []int    `json:"diameters"`
+	Brands       []string `json:"brands"`
+	Widths       []int    `json:"widths"`
+	Profiles     []int    `json:"profiles"`
+	Diameters    []int    `json:"diameters"`
+	PopularSizes []Size   `json:"popular_sizes"` // топ размеров по числу товаров в наличии
 }
+
+// Size — типоразмер (для чипов «Популярно» в hero). Label — «205/55 R16».
+type Size struct {
+	Width    int    `json:"width"`
+	Profile  int    `json:"profile"`
+	Diameter int    `json:"diameter"`
+	Label    string `json:"label"`
+}
+
+// Санитарные диапазоны значений фильтров: отсекают битые записи фида, чтобы в
+// выпадашки не попадали ширина «7» и подобное. Границы с запасом под легковые/SUV.
+const (
+	MinWidth, MaxWidth       = 125, 405
+	MinProfile, MaxProfile   = 20, 95
+	MinDiameter, MaxDiameter = 10, 30
+)
 
 // CatalogSource — источник каталога. Реализации: integrations/mock (сейчас),
 // synced-БД / selecttyres (позже). Интерфейс объявляет потребитель — catalog.
 type CatalogSource interface {
 	List(ctx context.Context, f Filters, page, perPage int) (items []Product, total int, err error)
-	BySlug(ctx context.Context, slug string) (Product, error)
-	Facets(ctx context.Context) (Facets, error)
+	BySlug(ctx context.Context, slug, city string) (Product, error)
+	Facets(ctx context.Context, city string) (Facets, error)
 }
 
 // Service — бизнес-логика каталога поверх источника.
@@ -75,10 +94,10 @@ func (s *Service) List(ctx context.Context, f Filters, page, perPage int) ([]Pro
 	return s.src.List(ctx, f, page, perPage)
 }
 
-func (s *Service) BySlug(ctx context.Context, slug string) (Product, error) {
-	return s.src.BySlug(ctx, slug)
+func (s *Service) BySlug(ctx context.Context, slug, city string) (Product, error) {
+	return s.src.BySlug(ctx, slug, city)
 }
 
-func (s *Service) Facets(ctx context.Context) (Facets, error) {
-	return s.src.Facets(ctx)
+func (s *Service) Facets(ctx context.Context, city string) (Facets, error) {
+	return s.src.Facets(ctx, city)
 }

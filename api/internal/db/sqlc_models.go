@@ -33,6 +33,7 @@ type Benefit struct {
 	UpdatedBy string
 	UpdatedAt pgtype.Timestamptz
 	CreatedAt pgtype.Timestamptz
+	Href      string
 }
 
 type ContentPage struct {
@@ -87,6 +88,9 @@ type PickupPoint struct {
 	UpdatedBy string
 	UpdatedAt pgtype.Timestamptz
 	CreatedAt pgtype.Timestamptz
+	Slug      string
+	IsMain    bool
+	City      string
 }
 
 type Product struct {
@@ -108,6 +112,14 @@ type Product struct {
 	Code          string
 	ImageUrl      string
 	ImageCleanUrl string
+}
+
+type ProductOffer struct {
+	ProductCode string
+	City        string
+	Price       int64
+	Stock       int32
+	UpdatedAt   pgtype.Timestamptz
 }
 
 type ProductOverride struct {

@@ -49,6 +49,25 @@ WHERE sqlc.arg('status')::text = '' OR COALESCE(ob.status, 'pending') = sqlc.arg
 ORDER BY o.id DESC
 LIMIT $1 OFFSET $2;
 
+-- name: GetAdminOrder :one
+-- Один заказ с деталями (состав, комментарий) + статус доставки в tradesk.
+SELECT
+    o.id,
+    o.customer_name,
+    o.phone,
+    o.comment,
+    o.items,
+    o.total,
+    o.created_at,
+    COALESCE(ob.status, 'pending') AS delivery_status,
+    COALESCE(ob.attempts, 0)       AS attempts,
+    COALESCE(ob.last_error, '')    AS last_error,
+    COALESCE(ob.result, '')        AS tradesk_number
+FROM orders o
+LEFT JOIN outbox ob
+    ON ob.kind = 'order' AND (ob.payload->>'order_id')::bigint = o.id
+WHERE o.id = $1;
+
 -- name: OrderStats :one
 SELECT
     count(*) FILTER (WHERE o.created_at::date = now()::date)          AS today,

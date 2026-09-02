@@ -33,7 +33,7 @@ func (h *Handlers) Mount(r chi.Router) {
 }
 
 func (h *Handlers) facets(w http.ResponseWriter, r *http.Request) {
-	f, err := h.svc.Facets(r.Context())
+	f, err := h.svc.Facets(r.Context(), ParseCity(r.URL.Query().Get("city")))
 	if err != nil {
 		httpx.Internal(w, err)
 		return
@@ -60,7 +60,7 @@ func (h *Handlers) list(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handlers) bySlug(w http.ResponseWriter, r *http.Request) {
 	slug := chi.URLParam(r, "slug")
-	p, err := h.svc.BySlug(r.Context(), slug)
+	p, err := h.svc.BySlug(r.Context(), slug, ParseCity(r.URL.Query().Get("city")))
 	if errors.Is(err, ErrNotFound) {
 		httpx.NotFound(w, "товар не найден")
 		return

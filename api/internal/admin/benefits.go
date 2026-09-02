@@ -68,6 +68,7 @@ type benefitInput struct {
 	Icon      string `json:"icon"`
 	Title     string `json:"title"`
 	Note      string `json:"note"`
+	Href      string `json:"href"`
 	SortOrder int    `json:"sort_order"`
 	Published bool   `json:"published"`
 }
@@ -79,7 +80,7 @@ func (h *Handlers) createBenefit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	b, err := h.benefits.Create(r.Context(), benefits.Input{
-		Icon: in.Icon, Title: in.Title, Note: in.Note, SortOrder: in.SortOrder, Published: in.Published,
+		Icon: in.Icon, Title: in.Title, Note: in.Note, Href: in.Href, SortOrder: in.SortOrder, Published: in.Published,
 	}, h.editor(r))
 	if mapBenefitErr(w, err) {
 		return
@@ -98,7 +99,7 @@ func (h *Handlers) updateBenefit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	err := h.benefits.Update(r.Context(), id, benefits.Input{
-		Icon: in.Icon, Title: in.Title, Note: in.Note, SortOrder: in.SortOrder, Published: in.Published,
+		Icon: in.Icon, Title: in.Title, Note: in.Note, Href: in.Href, SortOrder: in.SortOrder, Published: in.Published,
 	}, h.editor(r))
 	if mapBenefitErr(w, err) {
 		return

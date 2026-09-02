@@ -77,15 +77,16 @@ func (q *Queries) CountSyncedProducts(ctx context.Context) (int64, error) {
 }
 
 const createBenefit = `-- name: CreateBenefit :one
-INSERT INTO benefits (icon, title, note, sort_order, updated_by)
-VALUES ($1, $2, $3, $4, $5)
-RETURNING id, icon, title, note, sort_order, published, updated_by, updated_at
+INSERT INTO benefits (icon, title, note, href, sort_order, updated_by)
+VALUES ($1, $2, $3, $4, $5, $6)
+RETURNING id, icon, title, note, href, sort_order, published, updated_by, updated_at
 `
 
 type CreateBenefitParams struct {
 	Icon      string
 	Title     string
 	Note      string
+	Href      string
 	SortOrder int32
 	UpdatedBy string
 }
@@ -95,6 +96,7 @@ type CreateBenefitRow struct {
 	Icon      string
 	Title     string
 	Note      string
+	Href      string
 	SortOrder int32
 	Published bool
 	UpdatedBy string
@@ -106,6 +108,7 @@ func (q *Queries) CreateBenefit(ctx context.Context, arg CreateBenefitParams) (C
 		arg.Icon,
 		arg.Title,
 		arg.Note,
+		arg.Href,
 		arg.SortOrder,
 		arg.UpdatedBy,
 	)
@@ -115,6 +118,7 @@ func (q *Queries) CreateBenefit(ctx context.Context, arg CreateBenefitParams) (C
 		&i.Icon,
 		&i.Title,
 		&i.Note,
+		&i.Href,
 		&i.SortOrder,
 		&i.Published,
 		&i.UpdatedBy,
@@ -170,18 +174,21 @@ func (q *Queries) CreateContentPage(ctx context.Context, arg CreateContentPagePa
 }
 
 const createPickupPoint = `-- name: CreatePickupPoint :one
-INSERT INTO pickup_points (address, metro, hours, badge, note, is_central, sort_order, published, updated_by)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-RETURNING id, address, metro, hours, badge, note, is_central, sort_order, published, updated_by, updated_at
+INSERT INTO pickup_points (slug, address, metro, hours, badge, note, is_central, is_main, city, sort_order, published, updated_by)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+RETURNING id, slug, address, metro, hours, badge, note, is_central, is_main, city, sort_order, published, updated_by, updated_at
 `
 
 type CreatePickupPointParams struct {
+	Slug      string
 	Address   string
 	Metro     string
 	Hours     string
 	Badge     string
 	Note      string
 	IsCentral bool
+	IsMain    bool
+	City      string
 	SortOrder int32
 	Published bool
 	UpdatedBy string
@@ -189,12 +196,15 @@ type CreatePickupPointParams struct {
 
 type CreatePickupPointRow struct {
 	ID        int64
+	Slug      string
 	Address   string
 	Metro     string
 	Hours     string
 	Badge     string
 	Note      string
 	IsCentral bool
+	IsMain    bool
+	City      string
 	SortOrder int32
 	Published bool
 	UpdatedBy string
@@ -203,12 +213,15 @@ type CreatePickupPointRow struct {
 
 func (q *Queries) CreatePickupPoint(ctx context.Context, arg CreatePickupPointParams) (CreatePickupPointRow, error) {
 	row := q.db.QueryRow(ctx, createPickupPoint,
+		arg.Slug,
 		arg.Address,
 		arg.Metro,
 		arg.Hours,
 		arg.Badge,
 		arg.Note,
 		arg.IsCentral,
+		arg.IsMain,
+		arg.City,
 		arg.SortOrder,
 		arg.Published,
 		arg.UpdatedBy,
@@ -216,12 +229,15 @@ func (q *Queries) CreatePickupPoint(ctx context.Context, arg CreatePickupPointPa
 	var i CreatePickupPointRow
 	err := row.Scan(
 		&i.ID,
+		&i.Slug,
 		&i.Address,
 		&i.Metro,
 		&i.Hours,
 		&i.Badge,
 		&i.Note,
 		&i.IsCentral,
+		&i.IsMain,
+		&i.City,
 		&i.SortOrder,
 		&i.Published,
 		&i.UpdatedBy,
@@ -291,6 +307,59 @@ func (q *Queries) DeleteSession(ctx context.Context, tokenHash string) error {
 	return err
 }
 
+const getAdminOrder = `-- name: GetAdminOrder :one
+SELECT
+    o.id,
+    o.customer_name,
+    o.phone,
+    o.comment,
+    o.items,
+    o.total,
+    o.created_at,
+    COALESCE(ob.status, 'pending') AS delivery_status,
+    COALESCE(ob.attempts, 0)       AS attempts,
+    COALESCE(ob.last_error, '')    AS last_error,
+    COALESCE(ob.result, '')        AS tradesk_number
+FROM orders o
+LEFT JOIN outbox ob
+    ON ob.kind = 'order' AND (ob.payload->>'order_id')::bigint = o.id
+WHERE o.id = $1
+`
+
+type GetAdminOrderRow struct {
+	ID             int64
+	CustomerName   string
+	Phone          string
+	Comment        string
+	Items          []byte
+	Total          int32
+	CreatedAt      pgtype.Timestamptz
+	DeliveryStatus string
+	Attempts       int32
+	LastError      string
+	TradeskNumber  string
+}
+
+// Один заказ с деталями (состав, комментарий) + статус доставки в tradesk.
+func (q *Queries) GetAdminOrder(ctx context.Context, id int64) (GetAdminOrderRow, error) {
+	row := q.db.QueryRow(ctx, getAdminOrder, id)
+	var i GetAdminOrderRow
+	err := row.Scan(
+		&i.ID,
+		&i.CustomerName,
+		&i.Phone,
+		&i.Comment,
+		&i.Items,
+		&i.Total,
+		&i.CreatedAt,
+		&i.DeliveryStatus,
+		&i.Attempts,
+		&i.LastError,
+		&i.TradeskNumber,
+	)
+	return i, err
+}
+
 const getAdminUserByUsername = `-- name: GetAdminUserByUsername :one
 SELECT id, username, password_hash, display_name
 FROM admin_users
@@ -317,7 +386,7 @@ func (q *Queries) GetAdminUserByUsername(ctx context.Context, username string) (
 }
 
 const getBenefit = `-- name: GetBenefit :one
-SELECT id, icon, title, note, sort_order, published, updated_by, updated_at
+SELECT id, icon, title, note, href, sort_order, published, updated_by, updated_at
 FROM benefits WHERE id = $1
 `
 
@@ -326,6 +395,7 @@ type GetBenefitRow struct {
 	Icon      string
 	Title     string
 	Note      string
+	Href      string
 	SortOrder int32
 	Published bool
 	UpdatedBy string
@@ -340,6 +410,7 @@ func (q *Queries) GetBenefit(ctx context.Context, id int64) (GetBenefitRow, erro
 		&i.Icon,
 		&i.Title,
 		&i.Note,
+		&i.Href,
 		&i.SortOrder,
 		&i.Published,
 		&i.UpdatedBy,
@@ -352,13 +423,19 @@ const getCatalogProductBySlug = `-- name: GetCatalogProductBySlug :one
 SELECT
     p.id, p.slug, p.code, p.brand, p.model, p.name, p.size_label,
     p.width, p.profile, p.diameter, p.season, p.spikes, p.runflat,
-    p.price, p.stock,
+    po.price, po.stock,
     COALESCE(NULLIF(p.image_clean_url, ''), p.image_url) AS image_url,
     COALESCE(o.badge_hit, false) AS badge_hit
 FROM products p
+JOIN product_offers po ON po.product_code = p.code AND po.city = $2
 LEFT JOIN product_overrides o ON o.slug = p.slug
 WHERE p.slug = $1 AND COALESCE(o.hidden, false) = false
 `
+
+type GetCatalogProductBySlugParams struct {
+	Slug string
+	City string
+}
 
 type GetCatalogProductBySlugRow struct {
 	ID        int64
@@ -374,14 +451,15 @@ type GetCatalogProductBySlugRow struct {
 	Season    string
 	Spikes    bool
 	Runflat   bool
-	Price     int32
+	Price     int64
 	Stock     int32
 	ImageUrl  string
 	BadgeHit  bool
 }
 
-func (q *Queries) GetCatalogProductBySlug(ctx context.Context, slug string) (GetCatalogProductBySlugRow, error) {
-	row := q.db.QueryRow(ctx, getCatalogProductBySlug, slug)
+// City-aware: цена/остаток из оффера города ($2). Товар без оффера в городе → нет строки.
+func (q *Queries) GetCatalogProductBySlug(ctx context.Context, arg GetCatalogProductBySlugParams) (GetCatalogProductBySlugRow, error) {
+	row := q.db.QueryRow(ctx, getCatalogProductBySlug, arg.Slug, arg.City)
 	var i GetCatalogProductBySlugRow
 	err := row.Scan(
 		&i.ID,
@@ -526,18 +604,21 @@ func (q *Queries) GetOutbox(ctx context.Context, id int64) (GetOutboxRow, error)
 }
 
 const getPickupPoint = `-- name: GetPickupPoint :one
-SELECT id, address, metro, hours, badge, note, is_central, sort_order, published, updated_by, updated_at
+SELECT id, slug, address, metro, hours, badge, note, is_central, is_main, city, sort_order, published, updated_by, updated_at
 FROM pickup_points WHERE id = $1
 `
 
 type GetPickupPointRow struct {
 	ID        int64
+	Slug      string
 	Address   string
 	Metro     string
 	Hours     string
 	Badge     string
 	Note      string
 	IsCentral bool
+	IsMain    bool
+	City      string
 	SortOrder int32
 	Published bool
 	UpdatedBy string
@@ -549,12 +630,60 @@ func (q *Queries) GetPickupPoint(ctx context.Context, id int64) (GetPickupPointR
 	var i GetPickupPointRow
 	err := row.Scan(
 		&i.ID,
+		&i.Slug,
 		&i.Address,
 		&i.Metro,
 		&i.Hours,
 		&i.Badge,
 		&i.Note,
 		&i.IsCentral,
+		&i.IsMain,
+		&i.City,
+		&i.SortOrder,
+		&i.Published,
+		&i.UpdatedBy,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getPickupPointBySlug = `-- name: GetPickupPointBySlug :one
+SELECT id, slug, address, metro, hours, badge, note, is_central, is_main, city, sort_order, published, updated_by, updated_at
+FROM pickup_points WHERE slug = $1 AND slug <> '' AND published = true
+`
+
+type GetPickupPointBySlugRow struct {
+	ID        int64
+	Slug      string
+	Address   string
+	Metro     string
+	Hours     string
+	Badge     string
+	Note      string
+	IsCentral bool
+	IsMain    bool
+	City      string
+	SortOrder int32
+	Published bool
+	UpdatedBy string
+	UpdatedAt pgtype.Timestamptz
+}
+
+// Опубликованный пункт по slug — для отдельной страницы /points/<slug>.
+func (q *Queries) GetPickupPointBySlug(ctx context.Context, slug string) (GetPickupPointBySlugRow, error) {
+	row := q.db.QueryRow(ctx, getPickupPointBySlug, slug)
+	var i GetPickupPointBySlugRow
+	err := row.Scan(
+		&i.ID,
+		&i.Slug,
+		&i.Address,
+		&i.Metro,
+		&i.Hours,
+		&i.Badge,
+		&i.Note,
+		&i.IsCentral,
+		&i.IsMain,
+		&i.City,
 		&i.SortOrder,
 		&i.Published,
 		&i.UpdatedBy,
@@ -671,7 +800,7 @@ func (q *Queries) InsertOutbox(ctx context.Context, arg InsertOutboxParams) (int
 
 const listBenefits = `-- name: ListBenefits :many
 
-SELECT id, icon, title, note, sort_order, published, updated_by, updated_at
+SELECT id, icon, title, note, href, sort_order, published, updated_by, updated_at
 FROM benefits
 ORDER BY sort_order, id
 `
@@ -681,6 +810,7 @@ type ListBenefitsRow struct {
 	Icon      string
 	Title     string
 	Note      string
+	Href      string
 	SortOrder int32
 	Published bool
 	UpdatedBy string
@@ -703,6 +833,7 @@ func (q *Queries) ListBenefits(ctx context.Context) ([]ListBenefitsRow, error) {
 			&i.Icon,
 			&i.Title,
 			&i.Note,
+			&i.Href,
 			&i.SortOrder,
 			&i.Published,
 			&i.UpdatedBy,
@@ -876,19 +1007,22 @@ func (q *Queries) ListOverrides(ctx context.Context) ([]ListOverridesRow, error)
 
 const listPickupPoints = `-- name: ListPickupPoints :many
 
-SELECT id, address, metro, hours, badge, note, is_central, sort_order, published, updated_by, updated_at
+SELECT id, slug, address, metro, hours, badge, note, is_central, is_main, city, sort_order, published, updated_by, updated_at
 FROM pickup_points
-ORDER BY is_central DESC, sort_order, id
+ORDER BY is_main DESC, sort_order, id
 `
 
 type ListPickupPointsRow struct {
 	ID        int64
+	Slug      string
 	Address   string
 	Metro     string
 	Hours     string
 	Badge     string
 	Note      string
 	IsCentral bool
+	IsMain    bool
+	City      string
 	SortOrder int32
 	Published bool
 	UpdatedBy string
@@ -896,7 +1030,7 @@ type ListPickupPointsRow struct {
 }
 
 // Раздел «Пункты выдачи» админки. Правила — в сервисе internal/pickups.
-// Все пункты для админки (любой статус), центральный первым, затем по порядку.
+// Все пункты для админки (любой статус), основные первыми, затем по порядку.
 func (q *Queries) ListPickupPoints(ctx context.Context) ([]ListPickupPointsRow, error) {
 	rows, err := q.db.Query(ctx, listPickupPoints)
 	if err != nil {
@@ -908,12 +1042,15 @@ func (q *Queries) ListPickupPoints(ctx context.Context) ([]ListPickupPointsRow, 
 		var i ListPickupPointsRow
 		if err := rows.Scan(
 			&i.ID,
+			&i.Slug,
 			&i.Address,
 			&i.Metro,
 			&i.Hours,
 			&i.Badge,
 			&i.Note,
 			&i.IsCentral,
+			&i.IsMain,
+			&i.City,
 			&i.SortOrder,
 			&i.Published,
 			&i.UpdatedBy,
@@ -930,7 +1067,7 @@ func (q *Queries) ListPickupPoints(ctx context.Context) ([]ListPickupPointsRow, 
 }
 
 const listPublishedBenefits = `-- name: ListPublishedBenefits :many
-SELECT id, icon, title, note, sort_order, published, updated_by, updated_at
+SELECT id, icon, title, note, href, sort_order, published, updated_by, updated_at
 FROM benefits
 WHERE published = true
 ORDER BY sort_order, id
@@ -941,6 +1078,7 @@ type ListPublishedBenefitsRow struct {
 	Icon      string
 	Title     string
 	Note      string
+	Href      string
 	SortOrder int32
 	Published bool
 	UpdatedBy string
@@ -962,6 +1100,7 @@ func (q *Queries) ListPublishedBenefits(ctx context.Context) ([]ListPublishedBen
 			&i.Icon,
 			&i.Title,
 			&i.Note,
+			&i.Href,
 			&i.SortOrder,
 			&i.Published,
 			&i.UpdatedBy,
@@ -978,29 +1117,32 @@ func (q *Queries) ListPublishedBenefits(ctx context.Context) ([]ListPublishedBen
 }
 
 const listPublishedPickupPoints = `-- name: ListPublishedPickupPoints :many
-SELECT id, address, metro, hours, badge, note, is_central, sort_order, published, updated_by, updated_at
+SELECT id, slug, address, metro, hours, badge, note, is_central, is_main, city, sort_order, published, updated_by, updated_at
 FROM pickup_points
-WHERE published = true
-ORDER BY is_central DESC, sort_order, id
+WHERE published = true AND city = $1
+ORDER BY is_main DESC, sort_order, id
 `
 
 type ListPublishedPickupPointsRow struct {
 	ID        int64
+	Slug      string
 	Address   string
 	Metro     string
 	Hours     string
 	Badge     string
 	Note      string
 	IsCentral bool
+	IsMain    bool
+	City      string
 	SortOrder int32
 	Published bool
 	UpdatedBy string
 	UpdatedAt pgtype.Timestamptz
 }
 
-// Опубликованные пункты для витрины.
-func (q *Queries) ListPublishedPickupPoints(ctx context.Context) ([]ListPublishedPickupPointsRow, error) {
-	rows, err := q.db.Query(ctx, listPublishedPickupPoints)
+// Опубликованные пункты для витрины (по городу).
+func (q *Queries) ListPublishedPickupPoints(ctx context.Context, city string) ([]ListPublishedPickupPointsRow, error) {
+	rows, err := q.db.Query(ctx, listPublishedPickupPoints, city)
 	if err != nil {
 		return nil, err
 	}
@@ -1010,12 +1152,15 @@ func (q *Queries) ListPublishedPickupPoints(ctx context.Context) ([]ListPublishe
 		var i ListPublishedPickupPointsRow
 		if err := rows.Scan(
 			&i.ID,
+			&i.Slug,
 			&i.Address,
 			&i.Metro,
 			&i.Hours,
 			&i.Badge,
 			&i.Note,
 			&i.IsCentral,
+			&i.IsMain,
+			&i.City,
 			&i.SortOrder,
 			&i.Published,
 			&i.UpdatedBy,
@@ -1192,8 +1337,8 @@ func (q *Queries) SetContentPagePublished(ctx context.Context, arg SetContentPag
 
 const updateBenefit = `-- name: UpdateBenefit :exec
 UPDATE benefits SET
-    icon = $2, title = $3, note = $4, sort_order = $5, published = $6,
-    updated_by = $7, updated_at = now()
+    icon = $2, title = $3, note = $4, href = $5, sort_order = $6, published = $7,
+    updated_by = $8, updated_at = now()
 WHERE id = $1
 `
 
@@ -1202,6 +1347,7 @@ type UpdateBenefitParams struct {
 	Icon      string
 	Title     string
 	Note      string
+	Href      string
 	SortOrder int32
 	Published bool
 	UpdatedBy string
@@ -1213,6 +1359,7 @@ func (q *Queries) UpdateBenefit(ctx context.Context, arg UpdateBenefitParams) er
 		arg.Icon,
 		arg.Title,
 		arg.Note,
+		arg.Href,
 		arg.SortOrder,
 		arg.Published,
 		arg.UpdatedBy,
@@ -1250,19 +1397,23 @@ func (q *Queries) UpdateContentPage(ctx context.Context, arg UpdateContentPagePa
 
 const updatePickupPoint = `-- name: UpdatePickupPoint :exec
 UPDATE pickup_points SET
-    address = $2, metro = $3, hours = $4, badge = $5, note = $6,
-    is_central = $7, sort_order = $8, published = $9, updated_by = $10, updated_at = now()
+    slug = $2, address = $3, metro = $4, hours = $5, badge = $6, note = $7,
+    is_central = $8, is_main = $9, city = $10, sort_order = $11, published = $12,
+    updated_by = $13, updated_at = now()
 WHERE id = $1
 `
 
 type UpdatePickupPointParams struct {
 	ID        int64
+	Slug      string
 	Address   string
 	Metro     string
 	Hours     string
 	Badge     string
 	Note      string
 	IsCentral bool
+	IsMain    bool
+	City      string
 	SortOrder int32
 	Published bool
 	UpdatedBy string
@@ -1271,12 +1422,15 @@ type UpdatePickupPointParams struct {
 func (q *Queries) UpdatePickupPoint(ctx context.Context, arg UpdatePickupPointParams) error {
 	_, err := q.db.Exec(ctx, updatePickupPoint,
 		arg.ID,
+		arg.Slug,
 		arg.Address,
 		arg.Metro,
 		arg.Hours,
 		arg.Badge,
 		arg.Note,
 		arg.IsCentral,
+		arg.IsMain,
+		arg.City,
 		arg.SortOrder,
 		arg.Published,
 		arg.UpdatedBy,
@@ -1420,6 +1574,46 @@ func (q *Queries) UpsertProduct(ctx context.Context, arg UpsertProductParams) er
 		arg.ImageUrl,
 	)
 	return err
+}
+
+const upsertProductOffer = `-- name: UpsertProductOffer :exec
+INSERT INTO product_offers (product_code, city, price, stock, updated_at)
+VALUES ($1, $2, $3, $4, now())
+ON CONFLICT (product_code, city) DO UPDATE SET
+    price = EXCLUDED.price, stock = EXCLUDED.stock, updated_at = now()
+`
+
+type UpsertProductOfferParams struct {
+	ProductCode string
+	City        string
+	Price       int64
+	Stock       int32
+}
+
+// Цена/остаток товара в городе (мультигород). Ключ — (product_code, city).
+func (q *Queries) UpsertProductOffer(ctx context.Context, arg UpsertProductOfferParams) error {
+	_, err := q.db.Exec(ctx, upsertProductOffer,
+		arg.ProductCode,
+		arg.City,
+		arg.Price,
+		arg.Stock,
+	)
+	return err
+}
+
+const zeroStaleOffers = `-- name: ZeroStaleOffers :execrows
+UPDATE product_offers SET stock = 0, updated_at = now()
+WHERE updated_at < $1 AND stock <> 0
+`
+
+// Офферы, не обновлённые в текущем прогоне синка (товар пропал со складов города),
+// гасим до нуля остатка. Строки не удаляем — заказы/URL могут ссылаться.
+func (q *Queries) ZeroStaleOffers(ctx context.Context, updatedAt pgtype.Timestamptz) (int64, error) {
+	result, err := q.db.Exec(ctx, zeroStaleOffers, updatedAt)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const zeroStaleStock = `-- name: ZeroStaleStock :execrows

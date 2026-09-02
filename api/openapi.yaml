@@ -47,6 +47,7 @@ paths:
         - { name: spikes,    in: query, schema: { type: boolean }, description: "Шипы" }
         - { name: runflat,   in: query, schema: { type: boolean }, description: "RunFlat" }
         - { name: sort,      in: query, schema: { type: string, enum: [price_asc, price_desc, name] }, description: "Сортировка (по умолчанию — наличие + релевантность)" }
+        - { name: city,      in: query, schema: { type: string, enum: [spb, msk], default: spb }, description: "Город (мультигород): цена/остаток и ассортимент по городу" }
         - { name: page,      in: query, schema: { type: integer, minimum: 1, default: 1 } }
         - { name: per_page,  in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 24 } }
       responses:
@@ -64,8 +65,10 @@ paths:
       operationId: getCatalogFacets
       summary: Реальные значения фильтров, присутствующие в каталоге
       description: >
-        Бренды и типоразмеры, фактически имеющиеся в наличии/ассортименте СПб.
+        Бренды и типоразмеры, фактически имеющиеся в ассортименте города.
         Витрина строит из них опции сайдбара вместо статики.
+      parameters:
+        - { name: city, in: query, schema: { type: string, enum: [spb, msk], default: spb }, description: "Город" }
       responses:
         "200":
           description: Фасеты каталога
@@ -74,17 +77,36 @@ paths:
               schema:
                 $ref: "#/components/schemas/CatalogFacets"
 
+  /order-status:
+    get:
+      operationId: getOrderStatus
+      summary: Статус заказа по номеру (обратная интеграция tradesk)
+      description: >
+        Читает статус заказа ИЗ tradesk (GET /data/status?order_code=). Страница
+        /status/ витрины. found=false — заказ не найден или tradesk-приём выключен.
+      parameters:
+        - { name: code, in: query, required: true, schema: { type: string }, description: "Номер заказа" }
+      responses:
+        "200":
+          description: Статус заказа (или found=false)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderStatus"
+
   /pickup-points:
     get:
       operationId: listPickupPoints
       summary: Опубликованные пункты выдачи (страница /points)
       description: >
-        Пункты выдачи заказов витрины. Контент редактируется в админке (раздел
-        «Пункты выдачи»): адрес, метро, часы и бейдж-акция у каждого — свои.
-        is_central — центральный склад (рендерится отдельной карточкой).
+        Пункты выдачи заказов витрины города (city, по умолчанию spb). Контент
+        редактируется в админке: адрес, метро, часы, бейдж-акция у каждого — свои.
+        is_main — «основной адрес» (крупная карточка, первым).
+      parameters:
+        - { name: city, in: query, schema: { type: string, default: spb }, description: "Город пунктов (spb|msk)" }
       responses:
         "200":
-          description: Пункты в порядке вывода (центральный первым)
+          description: Пункты в порядке вывода (основные первыми)
           content:
             application/json:
               schema:
@@ -95,6 +117,22 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/PickupPoint"
+
+  /pickup-points/{slug}:
+    get:
+      operationId: getPickupPoint
+      summary: Пункт выдачи по slug (отдельная страница /points/<slug>)
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Пункт выдачи
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PickupPoint"
+        "404":
+          $ref: "#/components/responses/Error"
 
   /benefits:
     get:
@@ -144,6 +182,7 @@ paths:
           in: path
           required: true
           schema: { type: string }
+        - { name: city, in: query, schema: { type: string, enum: [spb, msk], default: spb }, description: "Город: цена/остаток по городу; нет оффера → 404" }
       responses:
         "200":
           description: Товар
@@ -319,35 +358,72 @@ components:
 
     CatalogFacets:
       type: object
-      required: [brands, widths, profiles, diameters]
+      required: [brands, widths, profiles, diameters, popular_sizes]
       properties:
         brands: { type: array, items: { type: string } }
         widths: { type: array, items: { type: integer } }
         profiles: { type: array, items: { type: integer } }
         diameters: { type: array, items: { type: integer } }
+        popular_sizes:
+          type: array
+          description: "Топ типоразмеров по числу товаров в наличии (чипы «Популярно» в hero)"
+          items:
+            type: object
+            required: [width, profile, diameter, label]
+            properties:
+              width: { type: integer }
+              profile: { type: integer }
+              diameter: { type: integer }
+              label: { type: string, example: "205/55 R16" }
+
+    OrderStatus:
+      type: object
+      required: [found, code, status, status_text, step, date, point, products]
+      properties:
+        found: { type: boolean }
+        code: { type: string, example: C288416 }
+        status: { type: string, description: "Сырой код статуса tradesk", example: ready }
+        status_text: { type: string, example: "Готов к выдаче" }
+        step: { type: integer, description: "Этап прогресса 0..4 (0 — без полосы)" }
+        date: { type: string, description: "Дата исполнения dd-mm-yyyy или пусто" }
+        point: { type: string, description: "Пункт выдачи" }
+        products:
+          type: array
+          items:
+            type: object
+            required: [name, qty, price, sum]
+            properties:
+              name: { type: string }
+              qty: { type: integer }
+              price: { type: integer }
+              sum: { type: integer }
 
     PickupPoint:
       type: object
-      required: [id, address, metro, hours, badge, note, is_central, sort_order, published]
+      required: [id, slug, address, metro, hours, badge, note, is_central, is_main, city, sort_order, published]
       properties:
         id: { type: integer, format: int64 }
-        address: { type: string, example: "Советский пр., 37А" }
-        metro: { type: string, example: "м. Рыбацкое" }
-        hours: { type: string, example: "09:00–21:00 ежедневно" }
+        slug: { type: string, description: "URL-slug для страницы /points/<slug>", example: novoselov-49 }
+        address: { type: string, example: "ул. Новосёлов, 49" }
+        metro: { type: string, example: "м. Ломоносовская" }
+        hours: { type: string, example: "09:00–21:00" }
         badge: { type: string, description: "Акция-бейдж", example: "−15% на шиномонтаж" }
-        note: { type: string, description: "Строка услуг центрального склада" }
-        is_central: { type: boolean, description: "Центральный склад (телефон, полный сервис)" }
+        note: { type: string, description: "Доп. описание пункта" }
+        is_central: { type: boolean, description: "Устаревший флаг центрального склада" }
+        is_main: { type: boolean, description: "Основной адрес (крупная карточка, первым)" }
+        city: { type: string, description: "Город пункта", example: spb }
         sort_order: { type: integer }
         published: { type: boolean }
 
     Benefit:
       type: object
-      required: [id, icon, title, note, sort_order, published]
+      required: [id, icon, title, note, href, sort_order, published]
       properties:
         id: { type: integer, format: int64 }
         icon: { type: string, description: "Путь к svg-иконке", example: /icons/benefit-mount.svg }
         title: { type: string, example: "−15% на шиномонтаж" }
         note: { type: string, example: при покупке шин }
+        href: { type: string, description: "Ссылка на страницу сервиса (пусто — не кликабелен)", example: /mounting/ }
         sort_order: { type: integer }
         published: { type: boolean }
 

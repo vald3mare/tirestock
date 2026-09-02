@@ -65,20 +65,24 @@ func (h *Handlers) pickup(w http.ResponseWriter, r *http.Request) {
 }
 
 type pickupInput struct {
+	Slug      string `json:"slug"`
 	Address   string `json:"address"`
 	Metro     string `json:"metro"`
 	Hours     string `json:"hours"`
 	Badge     string `json:"badge"`
 	Note      string `json:"note"`
 	IsCentral bool   `json:"is_central"`
+	IsMain    bool   `json:"is_main"`
+	City      string `json:"city"`
 	SortOrder int    `json:"sort_order"`
 	Published bool   `json:"published"`
 }
 
 func (in pickupInput) toDomain() pickups.Input {
 	return pickups.Input{
-		Address: in.Address, Metro: in.Metro, Hours: in.Hours, Badge: in.Badge,
-		Note: in.Note, IsCentral: in.IsCentral, SortOrder: in.SortOrder, Published: in.Published,
+		Slug: in.Slug, Address: in.Address, Metro: in.Metro, Hours: in.Hours, Badge: in.Badge,
+		Note: in.Note, IsCentral: in.IsCentral, IsMain: in.IsMain, City: in.City,
+		SortOrder: in.SortOrder, Published: in.Published,
 	}
 }
 

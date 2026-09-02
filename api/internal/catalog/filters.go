@@ -24,16 +24,32 @@ type Filters struct {
 	// Availability — фильтр наличия: "" (все) | "in" (в наличии) | "out" (распродано).
 	// Нужен админке, чтобы найти распроданные товары (их синк не удаляет, обнуляет остаток).
 	Availability string
+	// City — город (мультигород): каталог показывает товары с оффером в этом городе,
+	// цена/остаток берутся из оффера. Пусто → базовый город (СПб).
+	City string
+}
+
+// Cities — поддерживаемые города (мультигород: СПб + Москва). Ключ = код в URL/БД.
+var Cities = map[string]bool{"spb": true, "msk": true}
+
+// ParseCity нормализует код города из query: неизвестный/пустой → "spb".
+func ParseCity(s string) string {
+	s = strings.ToLower(strings.TrimSpace(s))
+	if Cities[s] {
+		return s
+	}
+	return "spb"
 }
 
 // SortOrders — допустимые значения сортировки → SQL-выражение ORDER BY.
 // Первичный ключ всегда «в наличии сверху», затем выбранная сортировка, затем id
 // (стабильность пагинации). Пустая строка = дефолт (наличие + id).
+// Цена/остаток — из оффера города (po.*). Наличие всегда сверху.
 var SortOrders = map[string]string{
-	"":           "(p.stock > 0) DESC, p.id",
-	"price_asc":  "(p.stock > 0) DESC, p.price ASC, p.id",
-	"price_desc": "(p.stock > 0) DESC, p.price DESC, p.id",
-	"name":       "(p.stock > 0) DESC, p.brand ASC, p.model ASC, p.id",
+	"":           "(po.stock > 0) DESC, p.id",
+	"price_asc":  "(po.stock > 0) DESC, po.price ASC, p.id",
+	"price_desc": "(po.stock > 0) DESC, po.price DESC, p.id",
+	"name":       "(po.stock > 0) DESC, p.brand ASC, p.model ASC, p.id",
 }
 
 // DefaultPerPage — дефолт пагинации каталога по конвенциям API.
@@ -111,6 +127,7 @@ func ParseFilters(q url.Values) (Filters, int, int, error) {
 		}
 		f.Availability = s
 	}
+	f.City = ParseCity(q.Get("city"))
 
 	page := 1
 	if s := q.Get("page"); s != "" {
@@ -163,11 +180,13 @@ func (f Filters) WhereSQL(startArg int) (string, []any) {
 	if f.Brand != nil {
 		add("brand ILIKE $%d", *f.Brand)
 	}
+	// Цена/остаток берутся из оффера города (po.*) — квалифицируем, т.к. в JOIN
+	// присутствуют и products.price/stock (снапшот базового города).
 	if f.PriceMin != nil {
-		add("price >= $%d", *f.PriceMin)
+		add("po.price >= $%d", *f.PriceMin)
 	}
 	if f.PriceMax != nil {
-		add("price <= $%d", *f.PriceMax)
+		add("po.price <= $%d", *f.PriceMax)
 	}
 	if f.Spikes != nil {
 		add("spikes = $%d", *f.Spikes)
@@ -178,9 +197,9 @@ func (f Filters) WhereSQL(startArg int) (string, []any) {
 	// Наличие — без плейсхолдера (константное выражение), значение из белого списка.
 	switch f.Availability {
 	case "in":
-		conds = append(conds, "stock > 0")
+		conds = append(conds, "po.stock > 0")
 	case "out":
-		conds = append(conds, "stock = 0")
+		conds = append(conds, "po.stock = 0")
 	}
 
 	if len(conds) == 0 {
