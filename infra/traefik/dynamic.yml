@@ -1,0 +1,18 @@
+# Динамический конфиг Traefik (файловый провайдер) для IP-деплоя без домена.
+# Файловый провайдер выбран вместо docker-провайдера сознательно: docker-провайдер
+# требует доступа к Docker API, а на очень свежем Docker v29 Traefik v3.1 с ним
+# несовместим (client version 1.24 отвергается) → 404 на всё. Здесь Traefik не
+# трогает Docker API, а маршрут задан статически: любой хост → витрина web:3000
+# (по имени сервиса в общей docker-сети).
+http:
+  routers:
+    web:
+      rule: "HostRegexp(`.+`)"
+      entryPoints:
+        - web
+      service: web
+  services:
+    web:
+      loadBalancer:
+        servers:
+          - url: "http://web:3000"

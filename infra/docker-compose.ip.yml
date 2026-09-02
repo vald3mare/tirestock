@@ -1,13 +1,26 @@
-# Прод-развёртывание TireStock БЕЗ домена — по публичному IP, HTTP (:80).
+# Прод-развёртывание TireStock БЕЗ домена — по публичному IP, HTTP (:80), с Traefik.
 # Для старта, пока не куплен домен. TLS нет (Let's Encrypt требует домен).
-# Reverse-proxy НЕ нужен: единственная задача — проброс :80 → web:3000, это делает
-# нативный docker port-mapping. (Traefik остаётся в docker-compose.prod.yml для
-# домена+HTTPS; на очень свежем Docker он не совместим с провайдером — решим при
-# переезде на домен, напр. через Caddy/новый Traefik.)
+# Traefik работает через ФАЙЛОВЫЙ провайдер (traefik/dynamic.yml), а НЕ docker-провайдер:
+# на очень свежем Docker v29 docker-провайдер Traefik v3.1 несовместим (API 1.24
+# отвергается демоном) → 404. Файловый провайдер не трогает Docker API вовсе.
 # Индексация ВЫКЛЮЧЕНА (SITE_INDEXABLE=false): сырой IP не для поисковиков.
 #
 # Запуск: cd infra && docker compose -f docker-compose.ip.yml --env-file .env.prod up -d --build
 services:
+  traefik:
+    image: traefik:v3.1
+    restart: always
+    command:
+      - --entrypoints.web.address=:80
+      - --providers.file.directory=/etc/traefik/dynamic
+      - --providers.file.watch=true
+    ports:
+      - "80:80"
+    volumes:
+      - ./traefik/dynamic:/etc/traefik/dynamic:ro
+    depends_on:
+      - web
+
   api:
     build: ../api
     restart: always
@@ -42,9 +55,8 @@ services:
       API_URL: http://api:8080
       HOSTNAME: "0.0.0.0"
       SITE_INDEXABLE: "false"
-    # Витрина напрямую на 80-м порту хоста (без reverse-proxy).
-    ports:
-      - "80:3000"
+    expose:
+      - "3000"
     depends_on:
       api:
         condition: service_healthy
