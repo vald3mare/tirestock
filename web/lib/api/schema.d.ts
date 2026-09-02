@@ -50,9 +50,29 @@ export interface paths {
         };
         /**
          * Реальные значения фильтров, присутствующие в каталоге
-         * @description Бренды и типоразмеры, фактически имеющиеся в наличии/ассортименте СПб. Витрина строит из них опции сайдбара вместо статики.
+         * @description Бренды и типоразмеры, фактически имеющиеся в ассортименте города. Витрина строит из них опции сайдбара вместо статики.
          */
         get: operations["getCatalogFacets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/order-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Статус заказа по номеру (обратная интеграция tradesk)
+         * @description Читает статус заказа ИЗ tradesk (GET /data/status?order_code=). Страница /status/ витрины. found=false — заказ не найден или tradesk-приём выключен.
+         */
+        get: operations["getOrderStatus"];
         put?: never;
         post?: never;
         delete?: never;
@@ -70,9 +90,26 @@ export interface paths {
         };
         /**
          * Опубликованные пункты выдачи (страница /points)
-         * @description Пункты выдачи заказов витрины. Контент редактируется в админке (раздел «Пункты выдачи»): адрес, метро, часы и бейдж-акция у каждого — свои. is_central — центральный склад (рендерится отдельной карточкой).
+         * @description Пункты выдачи заказов витрины города (city, по умолчанию spb). Контент редактируется в админке: адрес, метро, часы, бейдж-акция у каждого — свои. is_main — «основной адрес» (крупная карточка, первым).
          */
         get: operations["listPickupPoints"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pickup-points/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Пункт выдачи по slug (отдельная страница /points/<slug>) */
+        get: operations["getPickupPoint"];
         put?: never;
         post?: never;
         delete?: never;
@@ -279,25 +316,69 @@ export interface components {
             widths: number[];
             profiles: number[];
             diameters: number[];
+            /** @description Топ типоразмеров по числу товаров в наличии (чипы «Популярно» в hero) */
+            popular_sizes: {
+                width: number;
+                profile: number;
+                diameter: number;
+                /** @example 205/55 R16 */
+                label: string;
+            }[];
+        };
+        OrderStatus: {
+            found: boolean;
+            /** @example C288416 */
+            code: string;
+            /**
+             * @description Сырой код статуса tradesk
+             * @example ready
+             */
+            status: string;
+            /** @example Готов к выдаче */
+            status_text: string;
+            /** @description Этап прогресса 0..4 (0 — без полосы) */
+            step: number;
+            /** @description Дата исполнения dd-mm-yyyy или пусто */
+            date: string;
+            /** @description Пункт выдачи */
+            point: string;
+            products: {
+                name: string;
+                qty: number;
+                price: number;
+                sum: number;
+            }[];
         };
         PickupPoint: {
             /** Format: int64 */
             id: number;
-            /** @example Советский пр., 37А */
+            /**
+             * @description URL-slug для страницы /points/<slug>
+             * @example novoselov-49
+             */
+            slug: string;
+            /** @example ул. Новосёлов, 49 */
             address: string;
-            /** @example м. Рыбацкое */
+            /** @example м. Ломоносовская */
             metro: string;
-            /** @example 09:00–21:00 ежедневно */
+            /** @example 09:00–21:00 */
             hours: string;
             /**
              * @description Акция-бейдж
              * @example −15% на шиномонтаж
              */
             badge: string;
-            /** @description Строка услуг центрального склада */
+            /** @description Доп. описание пункта */
             note: string;
-            /** @description Центральный склад (телефон, полный сервис) */
+            /** @description Устаревший флаг центрального склада */
             is_central: boolean;
+            /** @description Основной адрес (крупная карточка, первым) */
+            is_main: boolean;
+            /**
+             * @description Город пункта
+             * @example spb
+             */
+            city: string;
             sort_order: number;
             published: boolean;
         };
@@ -313,6 +394,11 @@ export interface components {
             title: string;
             /** @example при покупке шин */
             note: string;
+            /**
+             * @description Ссылка на страницу сервиса (пусто — не кликабелен)
+             * @example /mounting/
+             */
+            href: string;
             sort_order: number;
             published: boolean;
         };
@@ -414,6 +500,8 @@ export interface operations {
                 runflat?: boolean;
                 /** @description Сортировка (по умолчанию — наличие + релевантность) */
                 sort?: "price_asc" | "price_desc" | "name";
+                /** @description Город (мультигород): цена/остаток и ассортимент по городу */
+                city?: "spb" | "msk";
                 page?: number;
                 per_page?: number;
             };
@@ -437,7 +525,10 @@ export interface operations {
     };
     getCatalogFacets: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Город */
+                city?: "spb" | "msk";
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -455,16 +546,42 @@ export interface operations {
             };
         };
     };
-    listPickupPoints: {
+    getOrderStatus: {
         parameters: {
-            query?: never;
+            query: {
+                /** @description Номер заказа */
+                code: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Пункты в порядке вывода (центральный первым) */
+            /** @description Статус заказа (или found=false) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderStatus"];
+                };
+            };
+        };
+    };
+    listPickupPoints: {
+        parameters: {
+            query?: {
+                /** @description Город пунктов (spb|msk) */
+                city?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Пункты в порядке вывода (основные первыми) */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -475,6 +592,29 @@ export interface operations {
                     };
                 };
             };
+        };
+    };
+    getPickupPoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Пункт выдачи */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PickupPoint"];
+                };
+            };
+            404: components["responses"]["Error"];
         };
     };
     listBenefits: {
@@ -524,7 +664,10 @@ export interface operations {
     };
     getProductBySlug: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Город: цена/остаток по городу; нет оффера → 404 */
+                city?: "spb" | "msk";
+            };
             header?: never;
             path: {
                 slug: string;

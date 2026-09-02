@@ -30,8 +30,23 @@ export function PickupForm({
 
       <label className="block">
         <span className="mb-1.5 block text-caption text-grey">Адрес</span>
-        <input name="address" required defaultValue={point?.address} placeholder="Например: Советский пр., 37А…" className={fieldCls} />
+        <input name="address" required defaultValue={point?.address} placeholder="Например: ул. Новосёлов, 49…" className={fieldCls} />
       </label>
+
+      <div className="mt-5 flex flex-col gap-5 sm:flex-row">
+        <label className="block flex-1">
+          <span className="mb-1.5 block text-caption text-grey">URL-адрес (slug)</span>
+          <input name="slug" defaultValue={point?.slug} placeholder="novoselov-49" className={`${fieldCls} tnum`} />
+          <p className="mt-1.5 text-legal text-grey">Для ссылки /points/… Пусто — сгенерируется из адреса.</p>
+        </label>
+        <label className="block sm:w-40">
+          <span className="mb-1.5 block text-caption text-grey">Город</span>
+          <select name="city" defaultValue={point?.city ?? "spb"} className={fieldCls}>
+            <option value="spb">Санкт-Петербург</option>
+            <option value="msk">Москва</option>
+          </select>
+        </label>
+      </div>
 
       <div className="mt-5 flex flex-col gap-5 sm:flex-row">
         <label className="block flex-1">
@@ -51,8 +66,8 @@ export function PickupForm({
       </label>
 
       <label className="mt-5 block">
-        <span className="mb-1.5 block text-caption text-grey">Услуги (для центрального склада)</span>
-        <input name="note" defaultValue={point?.note} placeholder="Например: Полный сервис: выдача, шиномонтаж, хранение…" className={fieldCls} />
+        <span className="mb-1.5 block text-caption text-grey">Описание (необязательно)</span>
+        <input name="note" defaultValue={point?.note} placeholder="Например: круглосуточно, парковка рядом…" className={fieldCls} />
       </label>
 
       <label className="mt-5 block max-w-40">
@@ -62,8 +77,8 @@ export function PickupForm({
       </label>
 
       <label className="mt-5 flex items-center gap-2.5">
-        <input name="is_central" type="checkbox" defaultChecked={point?.is_central ?? false} className="size-4.5 accent-blue" />
-        <span className="text-caption-lg text-dark">Центральный склад (телефон, «основной», полный сервис)</span>
+        <input name="is_main" type="checkbox" defaultChecked={point?.is_main ?? false} className="size-4.5 accent-blue" />
+        <span className="text-caption-lg text-dark">Основной адрес (крупная карточка с телефоном, первым в списке)</span>
       </label>
 
       <label className="mt-3 flex items-center gap-2.5">

@@ -9,6 +9,8 @@ import { ProductCard } from "@/components/blocks/ProductCard";
 import { SeasonBadge } from "@/components/ui/SeasonBadge";
 import { ApiError, getProductBySlug, listProducts, type Product } from "@/lib/api/client";
 import { inquiryComment } from "@/lib/inquiry";
+import { CITIES } from "@/lib/city";
+import { getCity } from "@/lib/get-city";
 import { SHOP } from "@/lib/shop";
 import { formatNumber, formatPrice, seasonLabel } from "@/lib/format";
 import { parseTireIndices } from "@/lib/tire-indices";
@@ -19,14 +21,12 @@ import { parseTireIndices } from "@/lib/tire-indices";
 
 type Params = { slug: string };
 
-// React.cache: generateMetadata и страница делят один запрос к api
-// в рамках одного рендера (иначе товар грузился бы дважды).
-// Ключ кэша — slug: generateMetadata и сам рендер зовут загрузку один раз за запрос.
-// Было (slug, city) — мультигород отменён, товар
-// разные цену/наличие.
-const loadProduct = cache(async (slug: string): Promise<Product | null> => {
+// React.cache: generateMetadata и страница делят один запрос к api в рамках
+// одного рендера (иначе товар грузился бы дважды). Ключ кэша — (slug, city):
+// мультигород, у товара разная цена/наличие по городам; нет оффера → 404.
+const loadProduct = cache(async (slug: string, city: string): Promise<Product | null> => {
   try {
-    return await getProductBySlug(slug);
+    return await getProductBySlug(slug, city);
   } catch (e) {
     if (e instanceof ApiError && e.status === 404) return null;
     throw e;
@@ -34,19 +34,22 @@ const loadProduct = cache(async (slug: string): Promise<Product | null> => {
 });
 
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
-  const product = await loadProduct((await params).slug);
+  const city = await getCity();
+  const product = await loadProduct((await params).slug, city);
   if (!product) return { title: "Товар не найден | TireStock" };
+  const loc = CITIES[city].loc;
   return {
-    title: `${product.name} — купить в ${SHOP.loc} | TireStock`,
-    description: `${seasonLabel[product.season]} шины ${product.name}: в наличии ${product.stock} шт., цена ${formatPrice(product.price)}/шт. Доставка по ${SHOP.loc} и России.`,
+    title: `${product.name} — купить в ${loc} | TireStock`,
+    description: `${seasonLabel[product.season]} шины ${product.name}: в наличии ${product.stock} шт., цена ${formatPrice(product.price)}/шт. Доставка по ${loc} и России.`,
   };
 }
 
 export default async function ProductPage({ params }: { params: Promise<Params> }) {
-  const product = await loadProduct((await params).slug);
+  const city = await getCity();
+  const product = await loadProduct((await params).slug, city);
   if (!product) notFound();
 
-  const related = (await listProducts({ season: product.season, per_page: 5 })).items
+  const related = (await listProducts({ season: product.season, per_page: 5, city })).items
     .filter((p) => p.slug !== product.slug)
     .slice(0, 4);
 

@@ -15,6 +15,7 @@ export type CatalogFacets = components["schemas"]["CatalogFacets"];
 export type Benefit = components["schemas"]["Benefit"];
 export type SeoResolved = components["schemas"]["SeoResolved"];
 export type PickupPoint = components["schemas"]["PickupPoint"];
+export type OrderStatus = components["schemas"]["OrderStatus"];
 export type ErrorBody = components["schemas"]["ErrorBody"];
 
 // Фильтры каталога = query-параметры URL витрины (имена совпадают 1:1).
@@ -30,6 +31,7 @@ export type ProductFilters = {
   spikes?: boolean;
   runflat?: boolean;
   sort?: "price_asc" | "price_desc" | "name";
+  city?: "spb" | "msk";
   page?: number;
   per_page?: number;
 };
@@ -80,14 +82,14 @@ export function listProducts(filters: ProductFilters = {}): Promise<ProductList>
   return request(`/products${query}`);
 }
 
-export function getProductBySlug(slug: string): Promise<Product> {
-  return request(`/products/${encodeURIComponent(slug)}`);
+export function getProductBySlug(slug: string, city = "spb"): Promise<Product> {
+  return request(`/products/${encodeURIComponent(slug)}?city=${encodeURIComponent(city)}`);
 }
 
-// Фасеты каталога — реальные бренды/размеры в наличии (СПб). Строят опции
+// Фасеты каталога — реальные бренды/размеры в наличии города. Строят опции
 // сайдбара вместо статики; фолбэк на lib/catalog-options при пустом ответе.
-export function getCatalogFacets(): Promise<CatalogFacets> {
-  return request("/catalog/facets");
+export function getCatalogFacets(city = "spb"): Promise<CatalogFacets> {
+  return request(`/catalog/facets?city=${encodeURIComponent(city)}`);
 }
 
 // Контентная страница витрины (тексты/SEO из админки). Только опубликованные.
@@ -112,10 +114,21 @@ export function listBenefits(): Promise<{ items: Benefit[] }> {
   return request("/benefits", { cache: "no-store" });
 }
 
-// Пункты выдачи для страницы /points. Контент из админки; no-store — правки
-// видны сразу. Фолбэк на статику — на стороне вызывающего компонента.
-export function listPickupPoints(): Promise<{ items: PickupPoint[] }> {
-  return request("/pickup-points", { cache: "no-store" });
+// Пункты выдачи города для страницы /points. Контент из админки; no-store —
+// правки видны сразу. Фолбэк на статику — на стороне вызывающего компонента.
+export function listPickupPoints(city = "spb"): Promise<{ items: PickupPoint[] }> {
+  return request(`/pickup-points?city=${encodeURIComponent(city)}`, { cache: "no-store" });
+}
+
+// Пункт выдачи по slug — для отдельной страницы /points/<slug>.
+export function getPickupPoint(slug: string): Promise<PickupPoint> {
+  return request(`/pickup-points/${encodeURIComponent(slug)}`, { cache: "no-store" });
+}
+
+// Статус заказа по номеру (обратная интеграция tradesk). Страница /status/.
+// no-store — статус живой. found=false, если не найден.
+export function getOrderStatus(code: string): Promise<OrderStatus> {
+  return request(`/order-status?code=${encodeURIComponent(code)}`, { cache: "no-store" });
 }
 
 // Эффективная SEO-мета маршрута для generateMetadata. Мета из админки (раздел

@@ -32,6 +32,14 @@ export const brandOptions: Option[] = toOptions([
 // Чипы «Популярно:» в hero-поиске
 export const popularSizes = ["205/55 R16", "195/65 R15", "225/45 R17", "215/60 R16"];
 
+// Популярные размеры из данных (топ по наличию) → лейблы для чипов hero.
+// Фолбэк на статику popularSizes, если фасеты пусты (пустой каталог / ошибка).
+export function popularSizesFromFacets(
+  sizes: { label: string }[] | undefined | null,
+): string[] {
+  return sizes && sizes.length ? sizes.map((s) => s.label) : popularSizes;
+}
+
 // «205/55 R16» → { width, profile, diameter }
 export function parseTireSize(size: string): { width: string; profile: string; diameter: string } | null {
   const m = size.match(/^(\d+)\/(\d+) R(\d+)$/);

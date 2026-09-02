@@ -79,6 +79,25 @@ export function BenefitForm({
         </p>
       </label>
 
+      <label className="mt-5 block">
+        <span className="mb-1.5 block text-caption text-grey">Ссылка (куда ведёт)</span>
+        <input
+          name="href"
+          defaultValue={benefit?.href}
+          placeholder="/mounting/"
+          list="benefit-hrefs"
+          className={`${fieldCls} tnum`}
+        />
+        <datalist id="benefit-hrefs">
+          <option value="/mounting/" />
+          <option value="/services/storage" />
+          <option value="/delivery/" />
+        </datalist>
+        <p className="mt-1.5 text-legal text-grey">
+          Страница услуги. Пусто — оффер не кликабельный.
+        </p>
+      </label>
+
       <label className="mt-5 block max-w-40">
         <span className="mb-1.5 block text-caption text-grey">Порядок</span>
         <input

@@ -8,25 +8,33 @@ import { Dropdown } from "@/components/ui/Dropdown";
 import { Field } from "@/components/ui/Field";
 import { Tab } from "@/components/ui/Tab";
 import {
-  diameterOptions,
   parseTireSize,
-  popularSizes,
-  profileOptions,
+  popularSizes as staticPopularSizes,
   seasonOptions,
-  widthOptions,
+  staticFilterOptions,
+  type FilterOptions,
 } from "@/lib/catalog-options";
 import { formatNumber } from "@/lib/format";
 import { useLiveCount } from "@/lib/use-live-count";
 
 // Поиск в hero = фильтр каталога (один компонент, два контекста).
 // Выбранные параметры уходят в каталог через URL query params.
-// Три режима: по размеру / по авто / по каталогу (текст).
+// Режимы: по размеру / по каталогу (текст). «По авто» скрыт до готовности фичи.
 // TODO: живое число «Показать N шин» — при вёрстке каталога;
-// TODO: таб «По авто» — база подбора SelectTyres ещё в разведке (ARCHITECTURE.md).
+// Таб «По авто» временно скрыт (фича не готова — база подбора SelectTyres в
+// разведке, ARCHITECTURE.md). Вернуть, добавив "По авто" в TABS и блоки формы/подсказки.
 
-const TABS = ["По размеру", "По авто", "Поиск по каталогу"] as const;
+const TABS = ["По размеру", "Поиск по каталогу"] as const;
 
-export function SearchWidget() {
+// options и popularSizes подтягиваются из фасетов каталога (выгрузка SelectTyres);
+// дефолт — статика, если фасеты недоступны.
+export function SearchWidget({
+  options = staticFilterOptions,
+  popularSizes = staticPopularSizes,
+}: {
+  options?: FilterOptions;
+  popularSizes?: string[];
+} = {}) {
   const router = useRouter();
   const [tab, setTab] = useState(0);
   const [width, setWidth] = useState<string>();
@@ -45,7 +53,7 @@ export function SearchWidget() {
       if (profile) params.set("profile", profile);
       if (diameter) params.set("diameter", diameter);
       if (season) params.set("season", season);
-    } else if (tab === 2 && query.trim()) {
+    } else if (tab === 1 && query.trim()) {
       params.set("q", query.trim());
     }
     router.push(`/catalog${params.size > 0 ? `?${params}` : ""}`);
@@ -76,13 +84,13 @@ export function SearchWidget() {
       {tab === 0 && (
         <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2 lg:flex">
           <div className="flex-1">
-            <Dropdown placeholder="Ширина" options={widthOptions} value={width} onChange={setWidth} />
+            <Dropdown placeholder="Ширина" options={options.widths} value={width} onChange={setWidth} />
           </div>
           <div className="flex-1">
-            <Dropdown placeholder="Профиль" options={profileOptions} value={profile} onChange={setProfile} />
+            <Dropdown placeholder="Профиль" options={options.profiles} value={profile} onChange={setProfile} />
           </div>
           <div className="flex-1">
-            <Dropdown placeholder="Диаметр" options={diameterOptions} value={diameter} onChange={setDiameter} />
+            <Dropdown placeholder="Диаметр" options={options.diameters} value={diameter} onChange={setDiameter} />
           </div>
           <div className="flex-1">
             <Dropdown placeholder="Сезон" options={seasonOptions} value={season} onChange={setSeason} />
@@ -94,24 +102,6 @@ export function SearchWidget() {
       )}
 
       {tab === 1 && (
-        <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2 lg:flex">
-          <div className="flex-1">
-            <Dropdown placeholder="Марка" options={[]} disabled />
-          </div>
-          <div className="flex-1">
-            <Dropdown placeholder="Модель" options={[]} disabled />
-          </div>
-          <div className="flex-1">
-            <Dropdown placeholder="Год" options={[]} disabled />
-          </div>
-          <div className="flex-1">
-            <Dropdown placeholder="Модификация" options={[]} disabled />
-          </div>
-          <Button disabled className="sm:col-span-2 lg:w-auto">Подобрать</Button>
-        </div>
-      )}
-
-      {tab === 2 && (
         <form
           className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-start"
           onSubmit={(e) => {
@@ -139,11 +129,6 @@ export function SearchWidget() {
             </Chip>
           ))}
         </div>
-      )}
-      {tab === 1 && (
-        <p className="text-caption-lg text-grey">
-          Подбор по автомобилю скоро заработает — пока воспользуйтесь поиском по размеру.
-        </p>
       )}
     </section>
   );

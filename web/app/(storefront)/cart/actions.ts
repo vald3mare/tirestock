@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { CART_MAX_ITEMS, readCart, writeCart, type CartLine } from "@/lib/cart";
 import { createOrder, getProductBySlug } from "@/lib/api/client";
+import { getCity } from "@/lib/get-city";
 
 // Все изменения корзины — server actions поверх куки. Клиентского стейта нет,
 // после каждого действия страница перерисовывается сервером.
@@ -73,17 +74,38 @@ export async function undoRemove(formData: FormData) {
 export async function submitOrder(formData: FormData) {
   const customerName = String(formData.get("customer_name") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
-  const comment = String(formData.get("comment") ?? "").trim();
+  const userComment = String(formData.get("comment") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim();
+  const cityLabel = String(formData.get("city_label") ?? "").trim();
+  const fulfilmentKind = String(formData.get("fulfilment_kind") ?? "delivery");
+  const fulfilmentPoint = String(formData.get("fulfilment_point") ?? "").trim();
+  const address = String(formData.get("address") ?? "").trim();
   if (!phone) redirect("/cart?error=phone#checkout");
   if (!customerName) redirect("/cart?error=name#checkout");
+  // Адрес обязателен только при курьерской доставке (как на старом сайте).
+  if (fulfilmentKind === "delivery" && !address) redirect("/cart?error=address#checkout");
+
+  // Способ получения + контакты уходят в комментарий заказа: в addorder tradesk
+  // отдельных полей под это нет (подтверждено контрактом /ajax/order.php).
+  const parts: string[] = [];
+  if (fulfilmentKind === "pickup" && fulfilmentPoint) {
+    parts.push(`Самовывоз: ${fulfilmentPoint}`);
+  } else {
+    parts.push(`Доставка курьером${address ? `: ${address}` : ""}`);
+  }
+  if (cityLabel) parts.push(`Город: ${cityLabel}`);
+  if (email) parts.push(`E-mail: ${email}`);
+  if (userComment) parts.push(userComment);
+  const comment = parts.join(". ");
 
   const lines = await readCart();
   if (lines.length === 0) redirect("/cart");
 
+  const city = await getCity();
   const items = [];
   for (const line of lines) {
     try {
-      const p = await getProductBySlug(line.slug);
+      const p = await getProductBySlug(line.slug, city);
       items.push({
         slug: p.slug,
         code: p.code,

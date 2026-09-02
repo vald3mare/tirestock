@@ -90,6 +90,37 @@ export function adminRetryOrder(token: string, id: number): Promise<{ status: st
   return request(`/admin/orders/${id}/retry`, token, { method: "POST" });
 }
 
+// Живой статус заказа ИЗ tradesk (обратная интеграция), приходит в OrderDetail.status.
+export type TradeskStatus = {
+  found: boolean;
+  code: string;
+  status: string;
+  status_text: string;
+  step: number;
+  date: string;
+  point: string;
+  products: { name: string; qty: number; price: number; sum: number }[];
+};
+
+export type AdminOrderDetail = {
+  id: number;
+  customer_name: string;
+  phone: string;
+  comment: string;
+  total: number;
+  created_at: string;
+  delivery_status: DeliveryStatus;
+  attempts: number;
+  last_error: string;
+  tradesk_number: string;
+  items: { slug: string; code: string; name: string; price: number; qty: number }[];
+  status: TradeskStatus | null; // живой статус из tradesk; null — номера нет / tradesk недоступен
+};
+
+export function adminOrder(token: string, id: number): Promise<AdminOrderDetail> {
+  return request(`/admin/orders/${id}`, token);
+}
+
 // stock: "" (все) | "in" (в наличии) | "out" (нет в наличии). Распроданные не
 // удаляются синком (обнуляется остаток) — фильтр «out» позволяет их найти.
 export function adminProducts(
@@ -185,6 +216,7 @@ export type AdminBenefit = {
   icon: string;
   title: string;
   note: string;
+  href: string;
   sort_order: number;
   published: boolean;
   updated_by: string;
@@ -195,6 +227,7 @@ export type AdminBenefitInput = {
   icon: string;
   title: string;
   note: string;
+  href: string;
   sort_order: number;
   published: boolean;
 };
@@ -254,12 +287,15 @@ export function adminUpdateSeo(
 
 export type AdminPickupPoint = {
   id: number;
+  slug: string;
   address: string;
   metro: string;
   hours: string;
   badge: string;
   note: string;
   is_central: boolean;
+  is_main: boolean;
+  city: string;
   sort_order: number;
   published: boolean;
   updated_by: string;
@@ -267,12 +303,15 @@ export type AdminPickupPoint = {
 };
 
 export type AdminPickupInput = {
+  slug: string;
   address: string;
   metro: string;
   hours: string;
   badge: string;
   note: string;
   is_central: boolean;
+  is_main: boolean;
+  city: string;
   sort_order: number;
   published: boolean;
 };

@@ -63,7 +63,7 @@ export default async function AdminPickupsPage() {
                   <td className="px-4 py-4">
                     <span className="flex items-center gap-2">
                       <span className="font-medium">{p.address}</span>
-                      {p.is_central && (
+                      {p.is_main && (
                         <span className="rounded-badge bg-blue px-2 py-0.5 text-legal font-semibold text-white">основной</span>
                       )}
                     </span>

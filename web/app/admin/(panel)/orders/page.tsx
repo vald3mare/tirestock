@@ -105,12 +105,18 @@ export default async function AdminOrdersPage({
                         <span className={"inline-flex rounded-badge px-2.5 py-1 text-caption font-semibold " + m.cls}>
                           {m.label}
                         </span>
+                        <Link
+                          href={`/admin/orders/${o.id}`}
+                          className="text-caption-lg font-semibold text-blue hover:underline"
+                        >
+                          Подробнее
+                        </Link>
                         {o.delivery_status === "failed" && (
                           <form action={retryOrderAction}>
                             <input type="hidden" name="id" value={o.id} />
                             <button
                               type="submit"
-                              className="cursor-pointer text-caption-lg font-semibold text-blue hover:underline"
+                              className="cursor-pointer text-caption-lg text-grey hover:text-blue"
                             >
                               Повторить
                             </button>

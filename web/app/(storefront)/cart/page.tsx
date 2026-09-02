@@ -5,9 +5,13 @@ import { Breadcrumbs } from "@/components/blocks/Breadcrumbs";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { CartQty } from "@/components/blocks/CartQty";
-import { getProductBySlug, type Product } from "@/lib/api/client";
+import { CheckoutFulfilment } from "@/components/blocks/CheckoutFulfilment";
+import { getProductBySlug, listPickupPoints, type Product } from "@/lib/api/client";
 import { formatNumber, formatPrice, seasonLabel } from "@/lib/format";
 import { readCart } from "@/lib/cart";
+import { CITIES } from "@/lib/city";
+import { getCity } from "@/lib/get-city";
+import { fallbackPickupPoints } from "@/lib/pickup-points";
 import { removeFromCart, submitOrder, undoRemove } from "./actions";
 
 // Корзина (Figma → «Корзина», 37:261): список позиций 824 + саммари 264.
@@ -28,16 +32,22 @@ export default async function CartPage({
   searchParams: Promise<{ undo?: string; qty?: string; ordered?: string; error?: string }>;
 }) {
   const { undo, qty: undoQty, ordered, error } = await searchParams;
+  const city = await getCity();
   const cart = await readCart();
 
   const lines: Line[] = [];
   for (const line of cart) {
     try {
-      lines.push({ product: await getProductBySlug(line.slug), qty: line.qty });
+      lines.push({ product: await getProductBySlug(line.slug, city), qty: line.qty });
     } catch {
       // товар пропал из каталога — просто не показываем позицию
     }
   }
+
+  // Пункты выдачи города для выбора способа получения (фолбэк на статику СПб).
+  const points = await listPickupPoints(city)
+    .then((r) => (r.items.length ? r.items : city === "spb" ? fallbackPickupPoints : []))
+    .catch(() => (city === "spb" ? fallbackPickupPoints : []));
 
   const totalQty = lines.reduce((n, l) => n + l.qty, 0);
   const totalSum = lines.reduce((sum, l) => sum + l.product.price * l.qty, 0);
@@ -172,38 +182,49 @@ export default async function CartPage({
             Оформление заказа
           </h2>
           <p className="mt-2 text-body text-grey">
-            Оставьте имя и телефон — менеджер перезвонит, подтвердит наличие и согласует
-            доставку и оплату. Онлайн-оплаты на сайте нет.
+            Оставьте контакты и выберите способ получения — менеджер перезвонит, подтвердит
+            наличие и согласует оплату. Онлайн-оплаты на сайте нет.
           </p>
-          <form action={submitOrder} className="mt-6 flex flex-col gap-3">
+          <form action={submitOrder} className="mt-6 flex flex-col gap-5">
             {/* Ключ идемпотентности рождается вместе с формой: даблклик по одной
                 отрисованной форме = один заказ, а повторная покупка тех же шин
                 после перезагрузки — уже новый заказ. */}
             <input type="hidden" name="idempotency_key" value={randomUUID()} />
-            <Field name="customer_name" autoComplete="name" required placeholder="Например: Иван…" aria-label="Имя" />
-            <Field
-              name="phone"
-              type="tel"
-              inputMode="tel"
-              autoComplete="tel"
-              spellCheck={false}
-              required
-              placeholder="Например: +7 (921) 123-45-67…"
-              aria-label="Телефон"
-            />
-            <Field name="comment" placeholder="Комментарий: удобное время, пункт выдачи…" aria-label="Комментарий" />
+            {/* Город — из переключателя (кука), уходит в комментарий заказа. */}
+            <input type="hidden" name="city_label" value={CITIES[city].label} />
+
+            <div className="flex flex-col gap-3">
+              <Field name="customer_name" autoComplete="name" required placeholder="Ф.И.О. — например: Иван Петров…" aria-label="Ф.И.О." />
+              <Field
+                name="phone"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                spellCheck={false}
+                required
+                placeholder="Телефон — например: +7 (921) 123-45-67…"
+                aria-label="Телефон"
+              />
+              <Field name="email" type="email" autoComplete="email" placeholder="E-mail (необязательно)…" aria-label="E-mail" />
+            </div>
+
+            <CheckoutFulfilment points={points} cityLabel={CITIES[city].label} />
+
+            <Field name="comment" placeholder="Комментарий: удобное время, детали…" aria-label="Комментарий" />
             {error && (
               <p className="text-body text-dark">
                 {error === "phone"
                   ? "Укажите телефон — без него не сможем перезвонить."
                   : error === "name"
-                    ? "Укажите имя, чтобы менеджер знал, к кому обращаться."
-                    : error === "empty"
-                      ? "Товары из корзины больше не доступны. Обновите состав."
-                      : "Не получилось оформить. Позвоните нам: +7 (812) 614-64-42."}
+                    ? "Укажите Ф.И.О., чтобы менеджер знал, к кому обращаться."
+                    : error === "address"
+                      ? "Укажите адрес доставки или выберите пункт самовывоза."
+                      : error === "empty"
+                        ? "Товары из корзины больше не доступны. Обновите состав."
+                        : "Не получилось оформить. Позвоните нам: +7 (812) 614-64-42."}
               </p>
             )}
-            <Button type="submit" className="mt-1 self-start px-10">
+            <Button type="submit" className="self-start px-10">
               Оформить заказ
             </Button>
           </form>

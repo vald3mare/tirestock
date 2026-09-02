@@ -8,6 +8,7 @@ import { SortSelect } from "@/components/blocks/SortSelect";
 import { getCatalogFacets, listProducts, type ProductFilters, type Season } from "@/lib/api/client";
 import { optionsFromFacets, staticFilterOptions } from "@/lib/catalog-options";
 import { formatNumber } from "@/lib/format";
+import { getCity } from "@/lib/get-city";
 import { metadataFor } from "@/lib/seo";
 
 // Каталог шин (Figma → «Каталог», 20:417). Server Component:
@@ -55,10 +56,11 @@ export default async function CatalogPage({
   searchParams: Promise<SearchParams>;
 }) {
   const sp = await searchParams;
-  const filters = parseFilters(sp);
+  const city = await getCity();
+  const filters = { ...parseFilters(sp), city };
   const [{ items, total, page, per_page }, filterOptions] = await Promise.all([
     listProducts(filters),
-    getCatalogFacets()
+    getCatalogFacets(city)
       .then(optionsFromFacets)
       .catch(() => staticFilterOptions), // фасеты недоступны → статика
   ]);

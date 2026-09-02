@@ -155,6 +155,7 @@ function benefitInputFrom(formData: FormData): AdminBenefitInput {
     icon: String(formData.get("icon") ?? "").trim(),
     title: String(formData.get("title") ?? "").trim(),
     note: String(formData.get("note") ?? "").trim(),
+    href: String(formData.get("href") ?? "").trim(),
     sort_order: Number(formData.get("sort_order")) || 0,
     published: formData.get("published") === "on",
   };
@@ -205,12 +206,15 @@ export async function deleteBenefitAction(formData: FormData) {
 
 function pickupInputFrom(formData: FormData): AdminPickupInput {
   return {
+    slug: String(formData.get("slug") ?? "").trim(),
     address: String(formData.get("address") ?? "").trim(),
     metro: String(formData.get("metro") ?? "").trim(),
     hours: String(formData.get("hours") ?? "").trim(),
     badge: String(formData.get("badge") ?? "").trim(),
     note: String(formData.get("note") ?? "").trim(),
-    is_central: formData.get("is_central") === "on",
+    is_central: false,
+    is_main: formData.get("is_main") === "on",
+    city: String(formData.get("city") ?? "spb").trim() || "spb",
     sort_order: Number(formData.get("sort_order")) || 0,
     published: formData.get("published") === "on",
   };

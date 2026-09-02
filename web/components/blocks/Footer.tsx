@@ -36,9 +36,11 @@ export function Footer() {
           <a href="mailto:info@tirestock.ru" className="text-caption-lg text-grey hover:text-blue">
             info@tirestock.ru
           </a>
-          {/* Заявка уходит в tradesk (раздел «Обратный звонок») через outbox.
-              TODO: страница проверки статуса заказа (/status/ на старом сайте). */}
+          {/* Заявка уходит в tradesk (раздел «Обратный звонок») через outbox. */}
           <CallbackModal className="text-left" />
+          <Link href="/status/" className="text-caption-lg font-semibold text-blue hover:underline">
+            Что с моим заказом?
+          </Link>
         </div>
         <div className="flex flex-col gap-2.5">
           <p className="text-body font-semibold text-dark">Часы работы</p>

@@ -10,7 +10,7 @@ const OPTIONS = [
   { value: "", label: "Сначала популярные" },
   { value: "price_asc", label: "Сначала дешёвые" },
   { value: "price_desc", label: "Сначала дорогие" },
-  { value: "name", label: "По названию" },
+  { value: "name", label: "По алфавиту" },
 ] as const;
 
 export function SortSelect({ value }: { value: string }) {

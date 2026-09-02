@@ -3,7 +3,10 @@ import { ButtonLink } from "@/components/ui/ButtonLink";
 import { NavDropdown, type NavItem } from "@/components/blocks/NavDropdown";
 import { CallbackModal } from "@/components/blocks/CallbackModal";
 import { MobileMenu } from "@/components/blocks/MobileMenu";
+import { CitySwitcher } from "@/components/blocks/CitySwitcher";
 import { SHOP } from "@/lib/shop";
+import { CITIES } from "@/lib/city";
+import { getCity } from "@/lib/get-city";
 import { cartCount, readCart } from "@/lib/cart";
 
 // Header = topbar (light: адрес слева; часы, телефон справа) + основная строка
@@ -18,7 +21,6 @@ const nav: { label: string; href: string; items?: NavItem[] }[] = [
     items: [
       { label: "Легковые шины", href: "/catalog" },
       { label: "Мотошины", href: "/catalog?category=moto" },
-      { label: "Подбор по авто", href: "/catalog" },
       { label: "Шинный калькулятор", href: "/tyres-calc/" },
     ],
   },
@@ -39,25 +41,30 @@ const nav: { label: string; href: string; items?: NavItem[] }[] = [
 export async function Header() {
   // Счётчик на кнопке корзины: состав лежит в куке, читаем на сервере.
   const cartQty = cartCount(await readCart());
+  const city = await getCity();
+  const cityMeta = CITIES[city];
   return (
     <header className="border-b border-line bg-white">
       <div className="bg-light">
         <div className="mx-auto flex max-w-content flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-2">
-          <p className="flex items-center gap-2 text-caption-lg text-grey">
-            <img src="/icons/pin.svg" alt="" width={16} height={16} className="size-4" />
-            {SHOP.city}, {SHOP.address}
-          </p>
+          <div className="flex items-center gap-3">
+            <CitySwitcher city={city} />
+            <p className="hidden items-center gap-2 text-caption-lg text-grey sm:flex">
+              <img src="/icons/pin.svg" alt="" width={16} height={16} className="size-4" />
+              {cityMeta.address}
+            </p>
+          </div>
           <div className="flex items-center gap-8">
             <p className="hidden items-center gap-2 text-caption-lg text-grey md:flex">
               <img src="/icons/clock.svg" alt="" width={16} height={16} className="size-4" />
               {SHOP.hours}
             </p>
             <a
-              href={SHOP.phoneHref}
+              href={cityMeta.phoneHref}
               className="flex items-center gap-2 text-caption-lg font-semibold text-dark"
             >
               <img src="/icons/phone.svg" alt="" width={16} height={16} className="size-4" />
-              {SHOP.phone}
+              {cityMeta.phone}
             </a>
             <CallbackModal className="hidden sm:block" />
           </div>
@@ -69,10 +76,10 @@ export async function Header() {
           <div className="flex items-center gap-2">
             <MobileMenu
               nav={nav}
-              phone={SHOP.phone}
-              phoneHref={SHOP.phoneHref}
-              cityLabel={SHOP.city}
-              address={SHOP.address}
+              phone={cityMeta.phone}
+              phoneHref={cityMeta.phoneHref}
+              cityLabel={cityMeta.label}
+              address={cityMeta.address}
               hours={SHOP.hours}
             />
             <Link href="/" className="flex min-h-touch items-center" aria-label="TireStock — на главную">

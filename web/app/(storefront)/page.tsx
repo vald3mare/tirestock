@@ -4,7 +4,14 @@ import { BenefitsBar } from "@/components/blocks/BenefitsBar";
 import { ProductCard } from "@/components/blocks/ProductCard";
 import { SearchWidget } from "@/components/blocks/SearchWidget";
 import { ServicesSection } from "@/components/blocks/ServicesSection";
-import { listProducts, type Product } from "@/lib/api/client";
+import { getCatalogFacets, listProducts, type Product } from "@/lib/api/client";
+import {
+  optionsFromFacets,
+  popularSizes as staticPopularSizes,
+  popularSizesFromFacets,
+  staticFilterOptions,
+} from "@/lib/catalog-options";
+import { getCity } from "@/lib/get-city";
 import { metadataFor } from "@/lib/seo";
 
 // Главная (Figma → Desktop, 1:2). Server Component: данные через lib/api.
@@ -17,16 +24,29 @@ export function generateMetadata(): Promise<Metadata> {
   return metadataFor("/", {
     title: "TireStock — шины и диски в Санкт-Петербурге",
     description:
-      "Интернет-магазин шин и дисков: подбор по размеру и по авто, шиномонтаж, хранение колёс.",
+      "Интернет-магазин шин и дисков: подбор по размеру, шиномонтаж, хранение колёс.",
   });
 }
 
 export default async function Home() {
+  const city = await getCity();
   let products: Product[] = [];
   try {
-    products = (await listProducts({ per_page: 8 })).items;
+    products = (await listProducts({ per_page: 8, city })).items;
   } catch {
     // api недоступен — секция «Популярные товары» просто скрывается
+  }
+
+  // Опции hero-поиска и чипы «Популярно» — из фасетов каталога города (выгрузка
+  // SelectTyres), фолбэк на статику. Всё подтягивается само, без хардкода.
+  let searchOptions = staticFilterOptions;
+  let popularSizes = staticPopularSizes;
+  try {
+    const facets = await getCatalogFacets(city);
+    searchOptions = optionsFromFacets(facets);
+    popularSizes = popularSizesFromFacets(facets.popular_sizes);
+  } catch {
+    // фасеты недоступны — остаётся статика
   }
 
   return (
@@ -40,11 +60,11 @@ export default async function Home() {
             </span>
           </h1>
           <p className="text-field text-grey lg:text-subtitle">
-            По размеру, по авто или поиск по каталогу
+            По размеру или поиск по каталогу
           </p>
         </div>
         <div className="mt-9">
-          <SearchWidget />
+          <SearchWidget options={searchOptions} popularSizes={popularSizes} />
         </div>
         <div className="mt-6">
           <BenefitsBar />

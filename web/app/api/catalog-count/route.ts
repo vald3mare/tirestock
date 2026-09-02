@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { listProducts, type ProductFilters, type Season } from "@/lib/api/client";
+import { getCity } from "@/lib/get-city";
 
 // Живой счётчик «Показать N шин»: клиентские фильтр/hero дёргают его при изменении
 // выбора (до применения). Серверный роут — чтобы браузер не ходил во внутренний API.
@@ -13,6 +14,7 @@ export async function GET(req: NextRequest) {
   const bool = (k: string) => (sp.get(k) === "true" ? true : undefined);
 
   // Город берём из куки (сервер), а не из query — клиентский счётчик его не шлёт.
+  const city = await getCity();
 
   const filters: ProductFilters = {
     q: str("q"),
@@ -25,6 +27,7 @@ export async function GET(req: NextRequest) {
     price_max: num("price_max"),
     spikes: bool("spikes"),
     runflat: bool("runflat"),
+    city,
     per_page: 1,
   };
 
