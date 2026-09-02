@@ -12,12 +12,14 @@ services:
     restart: always
     command:
       - --entrypoints.web.address=:80
-      - --providers.file.directory=/etc/traefik/dynamic
+      - --providers.file.filename=/etc/traefik/dynamic.yml
       - --providers.file.watch=true
     ports:
       - "80:80"
     volumes:
-      - ./traefik/dynamic:/etc/traefik/dynamic:ro
+      # Монтируем именно ФАЙЛ (не директорию): иначе docker создаёт пустую папку
+      # и Traefik не видит конфиг → 404.
+      - ./traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
     depends_on:
       - web
 
