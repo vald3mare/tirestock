@@ -1,29 +1,13 @@
 # Прод-развёртывание TireStock БЕЗ домена — по публичному IP, HTTP (:80).
-# Для старта, пока не куплен домен. TLS нет (Let's Encrypt требует домен) —
-# когда появится домен, переключиться на docker-compose.prod.yml (там HTTPS).
-# Индексация ВЫКЛЮЧЕНА (SITE_INDEXABLE=false): сырой IP не должен попасть в поиск.
+# Для старта, пока не куплен домен. TLS нет (Let's Encrypt требует домен).
+# Reverse-proxy НЕ нужен: единственная задача — проброс :80 → web:3000, это делает
+# нативный docker port-mapping. (Traefik остаётся в docker-compose.prod.yml для
+# домена+HTTPS; на очень свежем Docker он не совместим с провайдером — решим при
+# переезде на домен, напр. через Caddy/новый Traefik.)
+# Индексация ВЫКЛЮЧЕНА (SITE_INDEXABLE=false): сырой IP не для поисковиков.
 #
 # Запуск: cd infra && docker compose -f docker-compose.ip.yml --env-file .env.prod up -d --build
 services:
-  traefik:
-    image: traefik:v3.1
-    restart: always
-    environment:
-      # Свежий Docker (v29) отвергает старую версию API, к которой по умолчанию
-      # обращается docker-клиент Traefik → провайдер не видел лейблы (404 на всё).
-      # Пинним версию API в диапазоне, который принимает демон (min 1.40).
-      DOCKER_API_VERSION: "1.44"
-    command:
-      - --providers.docker=true
-      - --providers.docker.exposedbydefault=false
-      - --entrypoints.web.address=:80
-    ports:
-      - "80:80"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    depends_on:
-      - web
-
   api:
     build: ../api
     restart: always
@@ -57,21 +41,13 @@ services:
     environment:
       API_URL: http://api:8080
       HOSTNAME: "0.0.0.0"
-      # По IP индексацию НЕ открываем — сырой адрес не для поисковиков.
       SITE_INDEXABLE: "false"
-    expose:
-      - "3000"
+    # Витрина напрямую на 80-м порту хоста (без reverse-proxy).
+    ports:
+      - "80:3000"
     depends_on:
       api:
         condition: service_healthy
-    labels:
-      - traefik.enable=true
-      # Catch-all по любому хосту (голый IP тоже) — HostRegexp матчит Host-заголовок
-      # с IP-адресом, в отличие от Host(`домен`). Низкий priority — на будущее.
-      - traefik.http.routers.web.rule=HostRegexp(`.+`)
-      - traefik.http.routers.web.entrypoints=web
-      - traefik.http.routers.web.priority=1
-      - traefik.http.services.web.loadbalancer.server.port=3000
     volumes:
       - web-image-cache:/app/.next/cache/images
 
