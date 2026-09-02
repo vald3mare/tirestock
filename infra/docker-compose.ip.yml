@@ -61,9 +61,11 @@ services:
         condition: service_healthy
     labels:
       - traefik.enable=true
-      # Ловим любой Host (по IP), маршрутизируем на витрину.
-      - traefik.http.routers.web.rule=PathPrefix(`/`)
+      # Catch-all по любому хосту (голый IP тоже) — HostRegexp матчит Host-заголовок
+      # с IP-адресом, в отличие от Host(`домен`). Низкий priority — на будущее.
+      - traefik.http.routers.web.rule=HostRegexp(`.+`)
       - traefik.http.routers.web.entrypoints=web
+      - traefik.http.routers.web.priority=1
       - traefik.http.services.web.loadbalancer.server.port=3000
     volumes:
       - web-image-cache:/app/.next/cache/images
