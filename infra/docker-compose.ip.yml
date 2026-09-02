@@ -1,0 +1,72 @@
+# Прод-развёртывание TireStock БЕЗ домена — по публичному IP, HTTP (:80).
+# Для старта, пока не куплен домен. TLS нет (Let's Encrypt требует домен) —
+# когда появится домен, переключиться на docker-compose.prod.yml (там HTTPS).
+# Индексация ВЫКЛЮЧЕНА (SITE_INDEXABLE=false): сырой IP не должен попасть в поиск.
+#
+# Запуск: cd infra && docker compose -f docker-compose.ip.yml --env-file .env.prod up -d --build
+services:
+  traefik:
+    image: traefik:v3.1
+    restart: always
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+    ports:
+      - "80:80"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - web
+
+  api:
+    build: ../api
+    restart: always
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      API_ADDR: ":8080"
+      TRADESK_BASE_URL: ${TRADESK_BASE_URL}
+      TRADESK_USERNAME: ${TRADESK_USERNAME:-}
+      TRADESK_PASSWORD: ${TRADESK_PASSWORD:-}
+      SELECTYRES_FEED_URL: ${SELECTYRES_FEED_URL:-}
+      SELECTYRES_PHOTO_FEED_URL: ${SELECTYRES_PHOTO_FEED_URL:-}
+      SELECTYRES_SYNC_INTERVAL: ${SELECTYRES_SYNC_INTERVAL:-1h}
+      SELECTYRES_MIN_HEALTHY_RATIO: ${SELECTYRES_MIN_HEALTHY_RATIO:-0.5}
+      SELECTYRES_STOCK_SPB: ${SELECTYRES_STOCK_SPB:-spb,sankt-peterburg}
+      SELECTYRES_STOCK_MSK: ${SELECTYRES_STOCK_MSK:-moskva,moscow,mosobl}
+      ADMIN_BOOTSTRAP_USER: ${ADMIN_BOOTSTRAP_USER}
+      ADMIN_BOOTSTRAP_PASSWORD: ${ADMIN_BOOTSTRAP_PASSWORD}
+      ADMIN_BOOTSTRAP_NAME: ${ADMIN_BOOTSTRAP_NAME:-Администратор}
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/api/v1/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
+  web:
+    build: ../web
+    restart: always
+    environment:
+      API_URL: http://api:8080
+      HOSTNAME: "0.0.0.0"
+      # По IP индексацию НЕ открываем — сырой адрес не для поисковиков.
+      SITE_INDEXABLE: "false"
+    expose:
+      - "3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    labels:
+      - traefik.enable=true
+      # Ловим любой Host (по IP), маршрутизируем на витрину.
+      - traefik.http.routers.web.rule=PathPrefix(`/`)
+      - traefik.http.routers.web.entrypoints=web
+      - traefik.http.services.web.loadbalancer.server.port=3000
+    volumes:
+      - web-image-cache:/app/.next/cache/images
+
+volumes:
+  web-image-cache:
