@@ -1,0 +1,92 @@
+# Прод-развёртывание TireStock на Yandex Cloud (Compute VM + Managed PostgreSQL).
+# Postgres здесь НЕ поднимается — используется управляемая БД (DATABASE_URL в .env.prod).
+# Traefik терминирует TLS (Let's Encrypt) и публикует ТОЛЬКО витрину (web);
+# api остаётся внутренним в docker-сети (браузер в него не ходит напрямую).
+#
+# Запуск: cd infra && docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+services:
+  traefik:
+    image: traefik:v3.1
+    restart: always
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      # HTTP → HTTPS редирект на всём трафике
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      # Let's Encrypt (HTTP-01 challenge)
+      - --certificatesresolvers.le.acme.email=${ACME_EMAIL}
+      - --certificatesresolvers.le.acme.storage=/letsencrypt/acme.json
+      - --certificatesresolvers.le.acme.httpchallenge=true
+      - --certificatesresolvers.le.acme.httpchallenge.entrypoint=web
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - letsencrypt:/letsencrypt
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - web
+
+  api:
+    build: ../api
+    restart: always
+    environment:
+      # Managed PostgreSQL: эндпоинт из консоли Yandex Cloud. sslmode=require —
+      # шифрование канала; для верификации CA поднять до verify-full + смонтировать
+      # сертификат Yandex (см. README). Миграции накатываются автоматически при старте.
+      DATABASE_URL: ${DATABASE_URL}
+      API_ADDR: ":8080"
+      # Доставка заявок/заказов — боевой tradesk.
+      TRADESK_BASE_URL: ${TRADESK_BASE_URL}
+      TRADESK_USERNAME: ${TRADESK_USERNAME:-}
+      TRADESK_PASSWORD: ${TRADESK_PASSWORD:-}
+      # Синк каталога SelectTyres.
+      SELECTYRES_FEED_URL: ${SELECTYRES_FEED_URL:-}
+      SELECTYRES_PHOTO_FEED_URL: ${SELECTYRES_PHOTO_FEED_URL:-}
+      SELECTYRES_SYNC_INTERVAL: ${SELECTYRES_SYNC_INTERVAL:-1h}
+      SELECTYRES_MIN_HEALTHY_RATIO: ${SELECTYRES_MIN_HEALTHY_RATIO:-0.5}
+      SELECTYRES_STOCK_SPB: ${SELECTYRES_STOCK_SPB:-spb,sankt-peterburg}
+      SELECTYRES_STOCK_MSK: ${SELECTYRES_STOCK_MSK:-moskva,moscow,mosobl}
+      # Первый пользователь админки (создаётся, только если таблица пуста).
+      ADMIN_BOOTSTRAP_USER: ${ADMIN_BOOTSTRAP_USER}
+      ADMIN_BOOTSTRAP_PASSWORD: ${ADMIN_BOOTSTRAP_PASSWORD}
+      ADMIN_BOOTSTRAP_NAME: ${ADMIN_BOOTSTRAP_NAME:-Администратор}
+    # Порт наружу НЕ публикуем — api доступен только web'у по внутренней сети.
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/api/v1/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
+  web:
+    build: ../web
+    restart: always
+    environment:
+      API_URL: http://api:8080
+      HOSTNAME: "0.0.0.0"
+      # Боевой домен — открываем индексацию (иначе сайт закрыт от поисковиков).
+      SITE_INDEXABLE: ${SITE_INDEXABLE:-true}
+    expose:
+      - "3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.web.rule=Host(`${DOMAIN}`)
+      - traefik.http.routers.web.entrypoints=websecure
+      - traefik.http.routers.web.tls.certresolver=le
+      - traefik.http.services.web.loadbalancer.server.port=3000
+    volumes:
+      # Кэш оптимизированных фото — переживает пересборку образа.
+      - web-image-cache:/app/.next/cache/images
+
+volumes:
+  letsencrypt:
+  web-image-cache:
