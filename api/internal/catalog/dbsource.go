@@ -154,6 +154,15 @@ WHERE p.code <> '' AND COALESCE(o.hidden, false) = false`,
 		return Facets{}, err
 	}
 	f.PopularSizes = sizes
+	// Инвариант контракта: все required-массивы НЕ nil (JSON [], не null), даже при
+	// пустом каталоге города — иначе клиент падает на .length. array_agg возвращает
+	// NULL при отсутствии строк, поэтому Brands/PopularSizes страхуем явно.
+	if f.Brands == nil {
+		f.Brands = []string{}
+	}
+	if f.PopularSizes == nil {
+		f.PopularSizes = []Size{}
+	}
 	return f, nil
 }
 

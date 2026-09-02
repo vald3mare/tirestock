@@ -69,17 +69,19 @@ export const staticFilterOptions: FilterOptions = {
 // Фасеты (brands: string[], widths/profiles/diameters: number[]) → опции.
 // Пустой массив фасета → фолбэк на соответствующую статику.
 export function optionsFromFacets(f: {
-  brands: string[];
-  widths: number[];
-  profiles: number[];
-  diameters: number[];
+  brands: string[] | null;
+  widths: number[] | null;
+  profiles: number[] | null;
+  diameters: number[] | null;
 }): FilterOptions {
-  const nums = (xs: number[], fb: Option[]) =>
-    xs.length ? toOptions(xs.map(String)) : fb;
+  // Null-safe: даже если контракт нарушен и массив пришёл null, не падаем — фолбэк
+  // на статику (бэкенд гарантирует [], это второй рубеж обороны).
+  const nums = (xs: number[] | null, fb: Option[]) =>
+    xs && xs.length ? toOptions(xs.map(String)) : fb;
   return {
     widths: nums(f.widths, widthOptions),
     profiles: nums(f.profiles, profileOptions),
     diameters: nums(f.diameters, diameterOptions),
-    brands: f.brands.length ? toOptions(f.brands) : brandOptions,
+    brands: f.brands && f.brands.length ? toOptions(f.brands) : brandOptions,
   };
 }
