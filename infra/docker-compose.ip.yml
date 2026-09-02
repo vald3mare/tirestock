@@ -8,6 +8,11 @@ services:
   traefik:
     image: traefik:v3.1
     restart: always
+    environment:
+      # Свежий Docker (v29) отвергает старую версию API, к которой по умолчанию
+      # обращается docker-клиент Traefik → провайдер не видел лейблы (404 на всё).
+      # Пинним версию API в диапазоне, который принимает демон (min 1.40).
+      DOCKER_API_VERSION: "1.44"
     command:
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
