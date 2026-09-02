@@ -100,7 +100,16 @@ export default async function AdminProductsPage({
             ) : (
               items.map((p) => (
                 <tr key={p.slug} className="border-b border-line last:border-0 text-caption-lg text-dark">
-                  <td className="px-4 py-4">{p.name}</td>
+                  <td className="px-4 py-4">
+                    <Link
+                      href={`/catalog/${p.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-dark hover:text-blue hover:underline"
+                    >
+                      {p.name}
+                    </Link>
+                  </td>
                   <td className="tnum px-4 py-4">{formatPrice(p.price)}</td>
                   <td className="tnum px-4 py-4 text-grey">{formatNumber(p.stock)} шт.</td>
                   <td className="px-4 py-4">

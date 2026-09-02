@@ -14,6 +14,7 @@ import { getCity } from "@/lib/get-city";
 import { SHOP } from "@/lib/shop";
 import { formatNumber, formatPrice, seasonLabel } from "@/lib/format";
 import { parseTireIndices } from "@/lib/tire-indices";
+import { productDescription } from "@/lib/product-description";
 
 // Страница товара (Figma → «Товар», 36:188). Товар = отдельный URL.
 // Фото 544×440 + инфо-колонка 528; характеристики и описание шириной 720.
@@ -59,7 +60,7 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
     ["Модель", product.model],
     ["Сезонность", seasonLabel[product.season]],
     ["Ширина профиля", `${product.width} мм`],
-    ["Высота профиля", `${product.profile}%`],
+    ["Высота профиля", `${product.profile}% (${Math.round((product.width * product.profile) / 100)} мм)`],
     ["Диаметр", `R${product.diameter}`],
     ...(indices
       ? ([
@@ -67,6 +68,7 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
           ["Индекс скорости", indices.speed],
         ] as [string, string][])
       : []),
+    ["Камерность", "TL (бескамерная)"],
     ["Шипы", product.spikes ? "Да" : "Нет"],
     ["RunFlat", product.runflat ? "Да" : "Нет"],
   ];
@@ -166,14 +168,9 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
         <h2 id="desc-h" className="text-h2 text-black">
           Описание
         </h2>
-        {/* TODO: реальные описания придут из админки/SelectTyres */}
-        <p className="mt-4 text-body text-dark">
-          {seasonLabel[product.season]} шины {product.name} предназначены для легковых
-          автомобилей. Размер {product.size_label}
-          {product.spikes ? ", шипованные" : ""}
-          {product.runflat ? ", с технологией RunFlat" : ""}. Рисунок протектора обеспечивает
-          эффективный отвод воды из пятна контакта и уверенное сцепление с дорогой.
-        </p>
+        {/* Генерируется из атрибутов (расчётные данные, как на старом сайте);
+            редакторские описания из админки/SelectTyres заменят при появлении. */}
+        <p className="mt-4 text-body text-dark">{productDescription(product)}</p>
       </section>
 
       {related.length > 0 && (

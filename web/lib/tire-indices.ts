@@ -16,6 +16,8 @@ const speedKmh: Record<string, number> = {
 export type TireIndices = {
   load: string; // «95 (до 690 кг)»
   speed: string; // «V (до 240 км/ч)»
+  loadKg: number; // 690 — макс. нагрузка на шину, кг
+  speedKmh: number; // 240 — макс. скорость, км/ч
 };
 
 // «205/55 R16 94T» / «205/55 R16 91V RunFlat» → индексы; null, если не распознали.
@@ -28,5 +30,7 @@ export function parseTireIndices(sizeLabel: string): TireIndices | null {
   return {
     load: `${load} (до ${loadKg[load]} кг)`,
     speed: `${speed} (до ${speedKmh[speed]} км/ч)`,
+    loadKg: loadKg[load],
+    speedKmh: speedKmh[speed],
   };
 }

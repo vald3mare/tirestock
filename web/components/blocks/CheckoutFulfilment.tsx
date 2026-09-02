@@ -85,13 +85,16 @@ export function CheckoutFulfilment({
         </label>
 
         {isDelivery && (
-          <Field
-            name="address"
-            required
-            placeholder="Адрес доставки: улица, дом, квартира…"
-            aria-label="Адрес доставки"
-            className="ml-7"
-          />
+          // Отступ через padding контейнера, а не ml на самом поле: у Field ширина
+          // w-full, и внешний margin-left выталкивал его за правую границу fieldset.
+          <div className="pl-7">
+            <Field
+              name="address"
+              required
+              placeholder="Адрес доставки: улица, дом, квартира…"
+              aria-label="Адрес доставки"
+            />
+          </div>
         )}
 
         <div className="my-1 h-px w-full bg-line" role="presentation" />

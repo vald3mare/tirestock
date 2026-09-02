@@ -160,7 +160,22 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ id:
             <tbody>
               {order.items.map((it, i) => (
                 <tr key={i} className="border-b border-line last:border-0 text-caption-lg text-dark">
-                  <td className="px-4 py-3">{it.name}</td>
+                  <td className="px-4 py-3">
+                    {it.slug ? (
+                      // Клик по товару в заказе → его карточка (в новой вкладке,
+                      // чтобы не терять открытый заказ).
+                      <Link
+                        href={`/catalog/${it.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-medium text-blue hover:underline"
+                      >
+                        {it.name}
+                      </Link>
+                    ) : (
+                      it.name
+                    )}
+                  </td>
                   <td className="tnum px-4 py-3 text-grey">{it.code || "—"}</td>
                   <td className="tnum px-4 py-3">{it.qty} шт.</td>
                   <td className="tnum px-4 py-3">{formatPrice(it.price)}</td>
