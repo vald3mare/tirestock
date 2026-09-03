@@ -237,6 +237,28 @@ func main() {
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(30 * time.Second))
+	// Хардтенинг: лимит размера тела (DoS большим JSON) + rate-limit по IP.
+	// loginLimiter жёсткий (брутфорс пароля), formLimiter — публичные формы/заказы
+	// (спам в tradesk). Оба in-memory, IP берётся из X-Forwarded-For (за Traefik).
+	r.Use(httpx.MaxBodyBytes(1 << 20)) // 1 МБ на запрос
+	loginLimiter := httpx.NewRateLimiter("login", 0.1, 5)   // ~6/мин, пачка 5
+	formLimiter := httpx.NewRateLimiter("form", 0.5, 10)    // ~30/мин, пачка 10
+	r.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			// Прицельно: жёстко на вход в админку, средне — на публичные POST-формы.
+			switch {
+			case req.Method == http.MethodPost && req.URL.Path == "/api/v1/admin/login":
+				loginLimiter.Middleware(next).ServeHTTP(w, req)
+			case req.Method == http.MethodPost &&
+				(req.URL.Path == "/api/v1/orders" ||
+					req.URL.Path == "/api/v1/callbacks" ||
+					req.URL.Path == "/api/v1/requests"):
+				formLimiter.Middleware(next).ServeHTTP(w, req)
+			default:
+				next.ServeHTTP(w, req)
+			}
+		})
+	})
 
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
