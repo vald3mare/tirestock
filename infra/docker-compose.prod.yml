@@ -8,19 +8,22 @@ services:
   traefik:
     image: traefik:v3.1
     restart: always
-    environment:
-      # Свежий Docker (v29) отвергает старую версию API docker-клиента Traefik —
-      # пинним версию в диапазоне, который принимает демон (min 1.40).
-      DOCKER_API_VERSION: "1.44"
     command:
-      - --providers.docker=true
-      - --providers.docker.exposedbydefault=false
+      # ФАЙЛОВЫЙ провайдер (не docker): docker-провайдер несовместим с Docker v29
+      # (API 1.24 отвергается демоном) → 404. Файловый Docker API не трогает.
+      - --providers.file.filename=/etc/traefik/dynamic-tls.yml
+      - --providers.file.watch=true
       - --entrypoints.web.address=:80
       - --entrypoints.websecure.address=:443
-      # HTTP → HTTPS редирект на всём трафике
+      # HTTP → HTTPS редирект всего трафика.
       - --entrypoints.web.http.redirections.entrypoint.to=websecure
       - --entrypoints.web.http.redirections.entrypoint.scheme=https
-      # Let's Encrypt (HTTP-01 challenge)
+      # TLS на entrypoint: сертификат Let's Encrypt для ${DOMAIN} (compose подставит).
+      # Так домен задаётся здесь (в статике), а dynamic-tls.yml остаётся общим.
+      - --entrypoints.websecure.http.tls=true
+      - --entrypoints.websecure.http.tls.certresolver=le
+      - --entrypoints.websecure.http.tls.domains[0].main=${DOMAIN}
+      # Let's Encrypt (HTTP-01 challenge через 80-й порт).
       - --certificatesresolvers.le.acme.email=${ACME_EMAIL}
       - --certificatesresolvers.le.acme.storage=/letsencrypt/acme.json
       - --certificatesresolvers.le.acme.httpchallenge=true
@@ -30,7 +33,8 @@ services:
       - "443:443"
     volumes:
       - letsencrypt:/letsencrypt
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Монтируем именно ФАЙЛ (не директорию), иначе docker создаёт пустую папку.
+      - ./traefik/dynamic-tls.yml:/etc/traefik/dynamic-tls.yml:ro
     depends_on:
       - web
 
@@ -53,7 +57,7 @@ services:
       SELECTYRES_SYNC_INTERVAL: ${SELECTYRES_SYNC_INTERVAL:-1h}
       SELECTYRES_MIN_HEALTHY_RATIO: ${SELECTYRES_MIN_HEALTHY_RATIO:-0.5}
       SELECTYRES_STOCK_SPB: ${SELECTYRES_STOCK_SPB:-spb,sankt-peterburg}
-      SELECTYRES_STOCK_MSK: ${SELECTYRES_STOCK_MSK:-moskva,moscow,mosobl}
+      SELECTYRES_STOCK_MSK: ${SELECTYRES_STOCK_MSK:-moskva,moscow,mosobl,domodedovo,davydovo}
       # Первый пользователь админки (создаётся, только если таблица пуста).
       ADMIN_BOOTSTRAP_USER: ${ADMIN_BOOTSTRAP_USER}
       ADMIN_BOOTSTRAP_PASSWORD: ${ADMIN_BOOTSTRAP_PASSWORD}
@@ -81,12 +85,8 @@ services:
     depends_on:
       api:
         condition: service_healthy
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.web.rule=Host(`${DOMAIN}`)
-      - traefik.http.routers.web.entrypoints=websecure
-      - traefik.http.routers.web.tls.certresolver=le
-      - traefik.http.services.web.loadbalancer.server.port=3000
+    # Маршрут задан в traefik/dynamic-tls.yml (файловый провайдер), docker-labels
+    # не нужны — Traefik их не читает (docker-провайдер отключён из-за Docker v29).
     volumes:
       # Кэш оптимизированных фото — переживает пересборку образа.
       - web-image-cache:/app/.next/cache/images

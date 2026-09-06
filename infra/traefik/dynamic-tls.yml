@@ -1,0 +1,19 @@
+# Динамический конфиг Traefik для ПРОДА с доменом (HTTPS).
+# Файловый провайдер (не docker-провайдер): docker-провайдер несовместим с
+# Docker v29 (client API 1.24 отвергается) → 404. Здесь Traefik не трогает Docker API.
+# TLS (сертификат Let's Encrypt для домена) вешается на entrypoint websecure в
+# СТАТИКЕ (флаги compose, где подставляется ${DOMAIN}), поэтому здесь домена нет —
+# роутер ловит любой хост на websecure и шлёт на витрину web:3000.
+http:
+  routers:
+    web:
+      rule: "HostRegexp(`.+`)"
+      entryPoints:
+        - websecure
+      service: web
+      tls: {}
+  services:
+    web:
+      loadBalancer:
+        servers:
+          - url: "http://web:3000"

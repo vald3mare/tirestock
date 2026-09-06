@@ -26,10 +26,12 @@ const BaseCity = "spb"
 
 // DefaultCityStocks — подстроки stock_name складов по городам (нижний регистр).
 // NB: склад "sever-avto-msk_sankt-peterburg" содержит "msk", но физически питерский —
-// поэтому СПб матчим по "spb"/"sankt-peterburg", а Москву по "moskva"/"moscow"/"mosobl".
+// поэтому СПб матчим по "spb"/"sankt-peterburg". Москва — сам город + Подмосковье
+// (mosobl, Домодедово-Кучино, Давыдово): это склады МО, обслуживающие московского
+// клиента. Ярославль/Наб.Челны в Москву НЕ включаем (это отдельные города).
 var DefaultCityStocks = map[string][]string{
 	"spb": {"spb", "sankt-peterburg"},
-	"msk": {"moskva", "moscow", "mosobl"},
+	"msk": {"moskva", "moscow", "mosobl", "domodedovo", "davydovo"},
 }
 
 // Config — параметры источника.

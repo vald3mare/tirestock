@@ -53,12 +53,19 @@ cp .env.prod.example .env.prod
 nano .env.prod   # заполнить DOMAIN, ACME_EMAIL, DATABASE_URL, TRADESK_*, SELECTYRES_*, ADMIN_*
 ```
 
-## Шаг 5. Запуск
+## Шаг 5. Запуск с доменом (HTTPS)
+Заполни в `infra/.env.prod`: `DOMAIN=твой.домен.ru` и `ACME_EMAIL=...`, затем:
 ```bash
 cd ~/tirestock
-./infra/deploy.sh
+./infra/deploy.sh          # использует docker-compose.prod.yml (домен+TLS)
 ```
-Traefik выпустит TLS-сертификат автоматически (нужен доступный 80-й порт и корректная A-запись).
+Traefik (файловый провайдер — совместим с Docker v29) выпустит TLS-сертификат
+Let's Encrypt автоматически. Условия: A-запись `DOMAIN` → публичный IP VM, открыт
+80-й порт (HTTP-01 challenge) и 443-й. Первый выпуск сертификата — до минуты.
+
+Переезд с IP на домен: просто запусти `./infra/deploy.sh` без `COMPOSE_FILE`
+(дефолт — prod.yml с TLS). Старый IP-стек погаси: `docker compose -f
+infra/docker-compose.ip.yml --env-file infra/.env.prod down`.
 
 ## Шаг 6. Проверка
 - Витрина: `https://demo.твойдомен.ru`
