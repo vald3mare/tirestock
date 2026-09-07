@@ -108,6 +108,11 @@ export function getContentPage(path: string): Promise<ContentPage> {
   return request(`/content?path=${encodeURIComponent(path)}`, { cache: "no-store" });
 }
 
+// Список опубликованных страниц под префиксом URL (раздел-листинг, напр. Новости).
+export function listContentByPrefix(prefix: string): Promise<{ items: ContentPage[] }> {
+  return request(`/content-list?prefix=${encodeURIComponent(prefix)}`, { cache: "no-store" });
+}
+
 // Офферы строки «Преимущества» (главная). Контент из админки; no-store —
 // правки видны сразу. Фолбэк на статику — на стороне вызывающего компонента.
 export function listBenefits(): Promise<{ items: Benefit[] }> {

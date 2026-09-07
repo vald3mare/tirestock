@@ -6,6 +6,15 @@ SELECT id, slug, title, body, meta_title, meta_description,
 FROM content_pages
 ORDER BY published DESC, id;
 
+-- name: ListPublishedByPrefix :many
+-- Опубликованные страницы под префиксом URL (напр. '/news/') — для раздела-листинга.
+-- Сам префикс-индекс (slug = префикс) исключаем. Свежие сверху.
+SELECT id, slug, title, body, meta_title, meta_description,
+       published, indexed, system, updated_by, updated_at
+FROM content_pages
+WHERE published = true AND slug LIKE $1 || '%' AND slug <> $1
+ORDER BY updated_at DESC, id DESC;
+
 -- name: GetContentPage :one
 SELECT id, slug, title, body, meta_title, meta_description,
        published, indexed, system, updated_by, updated_at

@@ -81,6 +81,22 @@ func (s *Service) List(ctx context.Context) ([]Page, error) {
 	return pages, nil
 }
 
+// ListPublishedByPrefix — опубликованные страницы под префиксом URL (напр. '/news/'),
+// для раздела-листинга на витрине. Свежие сверху. Всегда не-nil срез.
+func (s *Service) ListPublishedByPrefix(ctx context.Context, prefix string) ([]Page, error) {
+	prefix = NormalizePath(prefix)
+	rows, err := s.q.ListPublishedByPrefix(ctx, &prefix)
+	if err != nil {
+		return nil, fmt.Errorf("list by prefix %s: %w", prefix, err)
+	}
+	pages := make([]Page, 0, len(rows))
+	for _, r := range rows {
+		pages = append(pages, mkPage(r.ID, r.Slug, r.Title, r.Body, r.MetaTitle, r.MetaDescription,
+			r.Published, r.Indexed, r.System, r.UpdatedBy, r.UpdatedAt))
+	}
+	return pages, nil
+}
+
 func (s *Service) Get(ctx context.Context, id int64) (Page, error) {
 	r, err := s.q.GetContentPage(ctx, id)
 	if errors.Is(err, pgx.ErrNoRows) {

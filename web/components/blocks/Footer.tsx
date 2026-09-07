@@ -15,6 +15,8 @@ const links: { label: string; href: string }[] = [
   { label: "Гарантия", href: "/warranty/" },
   { label: "Пункты выдачи", href: "/points/" },
   { label: "Контакты", href: "/contacts/" },
+  { label: "Новости", href: "/news/" },
+  { label: "Партнёрам", href: "/partnership/" },
 ];
 
 // SEO-посадочные каталога: сезон, ходовые радиусы, топ-бренды. Ведут на

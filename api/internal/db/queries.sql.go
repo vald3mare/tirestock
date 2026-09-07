@@ -1116,6 +1116,62 @@ func (q *Queries) ListPublishedBenefits(ctx context.Context) ([]ListPublishedBen
 	return items, nil
 }
 
+const listPublishedByPrefix = `-- name: ListPublishedByPrefix :many
+SELECT id, slug, title, body, meta_title, meta_description,
+       published, indexed, system, updated_by, updated_at
+FROM content_pages
+WHERE published = true AND slug LIKE $1 || '%' AND slug <> $1
+ORDER BY updated_at DESC, id DESC
+`
+
+type ListPublishedByPrefixRow struct {
+	ID              int64
+	Slug            string
+	Title           string
+	Body            string
+	MetaTitle       string
+	MetaDescription string
+	Published       bool
+	Indexed         bool
+	System          bool
+	UpdatedBy       string
+	UpdatedAt       pgtype.Timestamptz
+}
+
+// Опубликованные страницы под префиксом URL (напр. '/news/') — для раздела-листинга.
+// Сам префикс-индекс (slug = префикс) исключаем. Свежие сверху.
+func (q *Queries) ListPublishedByPrefix(ctx context.Context, dollar_1 *string) ([]ListPublishedByPrefixRow, error) {
+	rows, err := q.db.Query(ctx, listPublishedByPrefix, dollar_1)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListPublishedByPrefixRow
+	for rows.Next() {
+		var i ListPublishedByPrefixRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Slug,
+			&i.Title,
+			&i.Body,
+			&i.MetaTitle,
+			&i.MetaDescription,
+			&i.Published,
+			&i.Indexed,
+			&i.System,
+			&i.UpdatedBy,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listPublishedPickupPoints = `-- name: ListPublishedPickupPoints :many
 SELECT id, slug, address, metro, hours, badge, note, is_central, is_main, city, sort_order, published, updated_by, updated_at
 FROM pickup_points
