@@ -7,6 +7,8 @@ import { ProductCard } from "@/components/blocks/ProductCard";
 import { SortSelect } from "@/components/blocks/SortSelect";
 import { getCatalogFacets, listProducts, type ProductFilters, type Season } from "@/lib/api/client";
 import { optionsFromFacets, staticFilterOptions } from "@/lib/catalog-options";
+import { catalogSeo } from "@/lib/catalog-seo";
+import { CITIES } from "@/lib/city";
 import { formatNumber } from "@/lib/format";
 import { getCity } from "@/lib/get-city";
 import { metadataFor } from "@/lib/seo";
@@ -16,15 +18,42 @@ import { metadataFor } from "@/lib/seo";
 // SEO-мета из админки (раздел «SEO-мета»), фолбэк — значения ниже.
 // TODO: сверить URL со старым сайтом (SEO — священная корова).
 
-export function generateMetadata(): Promise<Metadata> {
-  return metadataFor("/catalog", {
-    title: "Шины — купить в Санкт-Петербурге | TireStock",
-    description:
-      "Каталог шин: подбор по размеру и сезону, наличие на складе в СПб, доставка по России.",
-  });
+type SearchParams = { [key: string]: string | string[] | undefined };
+
+// Есть ли активный фильтр (кроме города/страницы) — тогда это SEO-посадочная.
+function hasActiveFilter(f: ProductFilters): boolean {
+  return Boolean(
+    f.q || f.width || f.profile || f.diameter || f.season || f.brand ||
+      f.price_min || f.price_max || f.spikes || f.runflat,
+  );
 }
 
-type SearchParams = { [key: string]: string | string[] | undefined };
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}): Promise<Metadata> {
+  const sp = await searchParams;
+  const f = parseFilters(sp);
+  const city = await getCity();
+
+  // Базовый каталог (без фильтров) — мета из админки (раздел «SEO-мета»).
+  if (!hasActiveFilter(f)) {
+    return metadataFor("/catalog", {
+      title: `Шины — купить в ${CITIES[city].loc} | TireStock`,
+      description: `Каталог шин: подбор по размеру и сезону, наличие на складе в ${CITIES[city].loc}, доставка по России.`,
+    });
+  }
+  // Фильтрованная страница — генерим уникальные мета + canonical/robots.
+  const seo = catalogSeo(f, CITIES[city].loc, city);
+  return {
+    title: seo.title,
+    description: seo.description,
+    alternates: { canonical: seo.canonicalPath },
+    // Индексируем только чистые востребованные комбинации; остальное — noindex,follow.
+    robots: seo.indexable ? undefined : { index: false, follow: true },
+  };
+}
 
 function parseFilters(sp: SearchParams): ProductFilters {
   const num = (v: string | string[] | undefined) => {
@@ -72,17 +101,23 @@ export default async function CatalogPage({
   nextPageParams.set("page", String(page + 1));
   const hasMore = page * per_page < total;
 
+  // Заголовок H1: для фильтрованной страницы — сгенерированный («Шины R15»),
+  // для текстового поиска — «Поиск: …», иначе «Шины». Количество товаров — НЕ в H1
+  // (рекомендация сеошника), а отдельным элементом ниже.
+  const pageH1 = filters.q
+    ? `Поиск: ${filters.q}`
+    : catalogSeo(filters, CITIES[city].loc, city).h1;
+
   return (
     <main id="main" className="mx-auto max-w-content px-4 pb-20">
       <Breadcrumbs items={[{ label: "Главная", href: "/" }, { label: "Шины" }]} />
 
       <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-h2 text-black lg:text-h1">
-          {filters.q ? `Поиск: ${filters.q}` : "Шины"}
-          <span className="tnum text-body font-medium text-grey">
-            {formatNumber(total)} товаров
-          </span>
-        </h1>
+        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+          <h1 className="text-h2 text-black lg:text-h1">{pageH1}</h1>
+          {/* Количество — отдельно от H1 (SEO): не часть заголовка. */}
+          <p className="tnum text-body font-medium text-grey">{formatNumber(total)} товаров</p>
+        </div>
         <SortSelect value={filters.sort ?? ""} />
       </div>
 
@@ -122,6 +157,32 @@ export default async function CatalogPage({
 
         <FilterSidebar total={total} options={filterOptions} />
       </div>
+
+      {/* SEO-текст внизу каталога (был на старом сайте, здесь отсутствовал).
+          На фильтрованных страницах не выводим (чтобы не плодить одинаковый текст). */}
+      {!hasActiveFilter(filters) && (
+        <section className="mt-16 max-w-content text-body text-grey">
+          <h2 className="text-h2 text-black">Купить шины в {CITIES[city].loc}</h2>
+          <div className="mt-4 flex flex-col gap-3">
+            <p>
+              В каталоге TireStock — легковые шины ведущих производителей: подбор по
+              размеру (ширина, профиль, диаметр), сезону (летние, зимние шипованные и
+              нешипованные, всесезонные) и марке. Цены и наличие обновляются автоматически
+              со склада — вы видите актуальные остатки в {CITIES[city].loc}.
+            </p>
+            <p>
+              Уточните типоразмер на боковине покрышки (например, 195/65 R15) или
+              воспользуйтесь фильтром слева — счётчик покажет число подходящих моделей.
+              Шины продаются комплектами, в карточке по умолчанию 4 штуки.
+            </p>
+            <p>
+              Забрать заказ можно в пункте выдачи или заказать доставку курьером по городу
+              и транспортной компанией в регионы. Бесплатный шиномонтаж при покупке
+              комплекта — уточняйте у менеджера.
+            </p>
+          </div>
+        </section>
+      )}
     </main>
   );
 }

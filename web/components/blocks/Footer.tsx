@@ -17,6 +17,23 @@ const links: { label: string; href: string }[] = [
   { label: "Контакты", href: "/contacts/" },
 ];
 
+// SEO-посадочные каталога: сезон, ходовые радиусы, топ-бренды. Ведут на
+// фильтрованный каталог с уникальными мета (см. lib/catalog-seo.ts).
+const seoLinks: { label: string; href: string }[] = [
+  { label: "Летние шины", href: "/catalog/?season=summer" },
+  { label: "Зимние шины", href: "/catalog/?season=winter" },
+  { label: "Всесезонные шины", href: "/catalog/?season=allseason" },
+  { label: "Шины R15", href: "/catalog/?diameter=15" },
+  { label: "Шины R16", href: "/catalog/?diameter=16" },
+  { label: "Шины R17", href: "/catalog/?diameter=17" },
+  { label: "Шины R18", href: "/catalog/?diameter=18" },
+  { label: "Летние шины R17", href: "/catalog/?season=summer&diameter=17" },
+  { label: "Зимние шины R16", href: "/catalog/?season=winter&diameter=16" },
+  { label: "Шины Michelin", href: "/catalog/?brand=Michelin" },
+  { label: "Шины Nokian Tyres", href: "/catalog/?brand=Nokian+Tyres" },
+  { label: "Шины Cordiant", href: "/catalog/?brand=Cordiant" },
+];
+
 export function Footer() {
   return (
     <footer className="border-t border-line bg-white">
@@ -58,6 +75,22 @@ export function Footer() {
           ))}
         </div>
       </div>
+
+      {/* SEO-перелинковка (рекомендация сеошника #4): ссылки на посадочные каталога
+          по сезону/размеру/бренду — с уникальными мета. */}
+      <div className="border-t border-line">
+        <nav aria-label="Популярные запросы" className="mx-auto max-w-content px-4 py-6">
+          <p className="text-caption font-semibold text-dark">Популярные запросы</p>
+          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
+            {seoLinks.map((l) => (
+              <Link key={l.href} href={l.href} className="text-caption text-grey hover:text-blue">
+                {l.label}
+              </Link>
+            ))}
+          </div>
+        </nav>
+      </div>
+
       <div className="border-t border-line">
         <div className="mx-auto flex max-w-content flex-col justify-between gap-2 px-4 pb-6 pt-5 text-legal text-grey sm:flex-row sm:items-center sm:gap-4">
           <p className="max-w-175">

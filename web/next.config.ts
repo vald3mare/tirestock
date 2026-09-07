@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // Единый формат URL со слешем в конце (как на старом сайте tirestock.ru — SEO).
+  // Next добавляет «/» и делает 301-редирект с варианта без слеша на канонический.
+  trailingSlash: true,
   images: {
     // Фото товаров из SelectTyres: сервер оптимизирует (webp + ресайз) и кэширует,
     // браузер грузит лёгкую версию нужного размера.

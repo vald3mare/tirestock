@@ -25,7 +25,7 @@ export function CitySwitcher({ city }: { city: City }) {
     setOpen(false);
     if (next === city) return;
     try {
-      const res = await fetch(`/api/city?city=${next}`, { method: "POST" });
+      const res = await fetch(`/api/city/?city=${next}`, { method: "POST" });
       if (res.ok) {
         startTransition(() => router.refresh());
       }

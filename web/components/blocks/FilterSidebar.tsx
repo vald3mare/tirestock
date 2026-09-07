@@ -67,6 +67,21 @@ export function FilterSidebar({
     router.push(`/catalog${params.size > 0 ? `?${params}` : ""}`);
   };
 
+  // Сброс: очищаем локальный стейт полей И навигируем. Раньше был только
+  // router.push — поля (контролируемый стейт) сохраняли выбор до перезагрузки.
+  const reset = () => {
+    setWidth(undefined);
+    setProfile(undefined);
+    setDiameter(undefined);
+    setSeason(undefined);
+    setBrand(undefined);
+    setPriceMin("");
+    setPriceMax("");
+    setSpikes(false);
+    setRunflat(false);
+    router.push("/catalog");
+  };
+
   return (
     <aside aria-label="Фильтр каталога" className="w-full shrink-0 lg:w-col">
       <div className="flex flex-col gap-3 rounded-container bg-light p-6">
@@ -98,7 +113,7 @@ export function FilterSidebar({
         <Button onClick={apply} className="tnum w-full px-5">
           Показать {formatNumber(live ?? total)} шин →
         </Button>
-        <Button variant="secondary" className="w-full px-5" onClick={() => router.push("/catalog")}>
+        <Button variant="secondary" className="w-full px-5" onClick={reset}>
           Сбросить
         </Button>
       </div>

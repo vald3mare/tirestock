@@ -16,7 +16,7 @@ export function useLiveCount(params: Record<string, string | undefined>): number
     let cancelled = false;
     const t = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/catalog-count?${key}`);
+        const res = await fetch(`/api/catalog-count/?${key}`);
         const data = (await res.json()) as { total: number | null };
         if (!cancelled) setCount(data.total);
       } catch {
