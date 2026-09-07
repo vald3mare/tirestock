@@ -38,10 +38,11 @@ export async function generateMetadata({
   const city = await getCity();
 
   // Базовый каталог (без фильтров) — мета из админки (раздел «SEO-мета»).
+  // Фолбэк перенесён со старого сайта tirestock.ru/tyres/ (правка сеошника #2).
   if (!hasActiveFilter(f)) {
     return metadataFor("/catalog", {
-      title: `Шины — купить в ${CITIES[city].loc} | TireStock`,
-      description: `Каталог шин: подбор по размеру и сезону, наличие на складе в ${CITIES[city].loc}, доставка по России.`,
+      title: `Шины купить дёшево в ${CITIES[city].loc}, цены на резину`,
+      description: `Шины по низким ценам в ${CITIES[city].loc}. Большой ассортимент резины, доставка по России.`,
     });
   }
   // Фильтрованная страница — генерим уникальные мета + canonical/robots.
