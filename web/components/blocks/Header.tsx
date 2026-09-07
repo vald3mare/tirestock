@@ -24,8 +24,16 @@ const nav: { label: string; href: string; items?: NavItem[] }[] = [
       { label: "Шинный калькулятор", href: "/tyres-calc/" },
     ],
   },
-  // «Диски» скрыты до включения выгрузки дисков в кабинете SelectTyres
-  // (в фиде 0 дисков — задача у Виталия); вернуть раздел, когда появятся данные.
+  {
+    label: "Диски",
+    href: "/wheels/",
+    items: [
+      { label: "Все диски", href: "/wheels/" },
+      { label: "Литые", href: "/wheels/?type=Литой" },
+      { label: "Кованые", href: "/wheels/?type=Кованый" },
+      { label: "Штампованные", href: "/wheels/?type=Штампованный" },
+    ],
+  },
   {
     label: "Сервис",
     href: "/mounting/",

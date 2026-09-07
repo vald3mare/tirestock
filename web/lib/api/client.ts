@@ -86,6 +86,65 @@ export function getProductBySlug(slug: string, city = "spb"): Promise<Product> {
   return request(`/products/${encodeURIComponent(slug)}?city=${encodeURIComponent(city)}`);
 }
 
+// ── Диски (отдельный каталог /wheels/) ──────────────────────────────────────
+// Типы заданы вручную (эндпоинты дисков пока не в OpenAPI — кандидат на вынос,
+// как admin-API). Держать поля синхронно с catalog.Wheel (Go).
+export type Wheel = {
+  id: number;
+  slug: string;
+  code: string;
+  brand: string;
+  model: string;
+  name: string;
+  width: number; // дюймы
+  diameter: number; // R
+  pcd: string; // «5x112»
+  et: number; // вылет
+  dia: number; // ЦО
+  color: string;
+  wheel_type: string; // Литой/Кованый/Штампованный
+  price: number;
+  stock: number;
+  image_url: string;
+};
+export type WheelList = { items: Wheel[]; total: number; page: number; per_page: number };
+export type WheelFacets = {
+  brands: string[];
+  diameters: number[];
+  widths: number[];
+  pcds: string[];
+  types: string[];
+};
+export type WheelFilters = {
+  diameter?: number;
+  width?: number;
+  pcd?: string;
+  brand?: string;
+  type?: string;
+  price_min?: number;
+  price_max?: number;
+  sort?: "price_asc" | "price_desc" | "name";
+  city?: "spb" | "msk";
+  page?: number;
+  per_page?: number;
+};
+
+export function listWheels(filters: WheelFilters = {}): Promise<WheelList> {
+  const qs = new URLSearchParams();
+  for (const [key, value] of Object.entries(filters)) {
+    if (value !== undefined) qs.set(key, String(value));
+  }
+  return request(`/wheels${qs.size > 0 ? `?${qs}` : ""}`);
+}
+
+export function getWheelBySlug(slug: string, city = "spb"): Promise<Wheel> {
+  return request(`/wheels/${encodeURIComponent(slug)}?city=${encodeURIComponent(city)}`);
+}
+
+export function getWheelFacets(city = "spb"): Promise<WheelFacets> {
+  return request(`/wheels/facets?city=${encodeURIComponent(city)}`);
+}
+
 // Фасеты каталога — реальные бренды/размеры в наличии города. Строят опции
 // сайдбара вместо статики; фолбэк на lib/catalog-options при пустом ответе.
 export function getCatalogFacets(city = "spb"): Promise<CatalogFacets> {

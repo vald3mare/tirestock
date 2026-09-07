@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS wheel_offers;
+DROP TABLE IF EXISTS wheels;

@@ -139,3 +139,35 @@ type SeoMetum struct {
 	UpdatedBy   string
 	UpdatedAt   pgtype.Timestamptz
 }
+
+type Wheel struct {
+	ID         int64
+	Code       string
+	Slug       string
+	Brand      string
+	Model      string
+	Name       string
+	Category   string
+	Width      float64
+	Diameter   int32
+	Pcd        string
+	BoltsCount int32
+	BoltsSpace float64
+	Et         float64
+	Dia        float64
+	Color      string
+	ColorHuman string
+	WheelType  string
+	ImageUrl   string
+	Price      int64
+	Stock      int32
+	SyncedAt   pgtype.Timestamptz
+}
+
+type WheelOffer struct {
+	WheelCode string
+	City      string
+	Price     int64
+	Stock     int32
+	UpdatedAt pgtype.Timestamptz
+}

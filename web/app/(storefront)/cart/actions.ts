@@ -4,7 +4,8 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { CART_MAX_ITEMS, readCart, writeCart, type CartLine } from "@/lib/cart";
-import { createOrder, getProductBySlug } from "@/lib/api/client";
+import { createOrder } from "@/lib/api/client";
+import { resolveCartItem } from "@/lib/cart-resolve";
 import { getCity } from "@/lib/get-city";
 
 // Все изменения корзины — server actions поверх куки. Клиентского стейта нет,
@@ -104,18 +105,11 @@ export async function submitOrder(formData: FormData) {
   const city = await getCity();
   const items = [];
   for (const line of lines) {
-    try {
-      const p = await getProductBySlug(line.slug, city);
-      items.push({
-        slug: p.slug,
-        code: p.code,
-        name: p.name,
-        price: p.price,
-        qty: line.qty,
-      });
-    } catch {
-      // товар пропал из каталога (закончился/снят) — пропускаем позицию,
-      // остальной заказ должен уйти
+    // Позиция — шина ИЛИ диск (резолвится по slug). Снятый/закончившийся товар
+    // пропускаем, остальной заказ уходит.
+    const it = await resolveCartItem(line.slug, city).catch(() => null);
+    if (it) {
+      items.push({ slug: it.slug, code: it.code, name: it.name, price: it.price, qty: line.qty });
     }
   }
   if (items.length === 0) redirect("/cart?error=empty");

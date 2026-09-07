@@ -166,7 +166,7 @@ func (c *Client) Fetch(ctx context.Context, fn func(catalog.SyncProduct) error) 
 func (c *Client) mapTire(t feedTire) (catalog.SyncProduct, bool) {
 	var offers []catalog.CityOffer
 	for city, subs := range c.cfg.CityStocks {
-		if price, stock, ok := aggregateCity(t, subs); ok {
+		if price, stock, ok := aggregateCity(t.Offers, subs); ok {
 			offers = append(offers, catalog.CityOffer{City: city, Price: price, Stock: stock})
 		}
 	}
@@ -206,7 +206,7 @@ func (c *Client) mapTire(t feedTire) (catalog.SyncProduct, bool) {
 
 // aggregateCity суммирует остаток и берёт минимальную цену по складам города.
 // Цена — мин. РРЦ; фолбэк на мин. интернет-цену, если РРЦ нет. ok=false — города нет.
-func aggregateCity(t feedTire, subs []string) (price, stock int, ok bool) {
+func aggregateCity(offers []feedOffer, subs []string) (price, stock int, ok bool) {
 	hasPrice, found := false, false
 	consider := func(raw *string) {
 		if raw == nil {
@@ -220,7 +220,7 @@ func aggregateCity(t feedTire, subs []string) (price, stock int, ok bool) {
 			price, hasPrice = iv, true
 		}
 	}
-	for _, o := range t.Offers {
+	for _, o := range offers {
 		if !matchStock(o.StockName, subs) {
 			continue
 		}
@@ -232,7 +232,7 @@ func aggregateCity(t feedTire, subs []string) (price, stock int, ok bool) {
 		return 0, 0, false
 	}
 	if !hasPrice {
-		for _, o := range t.Offers {
+		for _, o := range offers {
 			if matchStock(o.StockName, subs) {
 				consider(o.MinInternet)
 			}

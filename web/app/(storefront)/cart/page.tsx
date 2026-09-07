@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { CartQty } from "@/components/blocks/CartQty";
 import { CheckoutFulfilment } from "@/components/blocks/CheckoutFulfilment";
-import { getProductBySlug, listPickupPoints, type Product } from "@/lib/api/client";
+import { listPickupPoints } from "@/lib/api/client";
+import { resolveCartItem, type CartItem } from "@/lib/cart-resolve";
 import { formatNumber, formatPrice, seasonLabel } from "@/lib/format";
 import { readCart } from "@/lib/cart";
 import { CITIES } from "@/lib/city";
@@ -24,7 +25,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-type Line = { product: Product; qty: number };
+type Line = { item: CartItem; qty: number };
 
 export default async function CartPage({
   searchParams,
@@ -37,11 +38,8 @@ export default async function CartPage({
 
   const lines: Line[] = [];
   for (const line of cart) {
-    try {
-      lines.push({ product: await getProductBySlug(line.slug, city), qty: line.qty });
-    } catch {
-      // товар пропал из каталога — просто не показываем позицию
-    }
+    const item = await resolveCartItem(line.slug, city).catch(() => null);
+    if (item) lines.push({ item, qty: line.qty }); // товар снят/закончился — не показываем
   }
 
   // Пункты выдачи города для выбора способа получения (фолбэк на статику СПб).
@@ -50,7 +48,7 @@ export default async function CartPage({
     .catch(() => (city === "spb" ? fallbackPickupPoints : []));
 
   const totalQty = lines.reduce((n, l) => n + l.qty, 0);
-  const totalSum = lines.reduce((sum, l) => sum + l.product.price * l.qty, 0);
+  const totalSum = lines.reduce((sum, l) => sum + l.item.price * l.qty, 0);
 
   if (ordered) {
     return (
@@ -107,49 +105,50 @@ export default async function CartPage({
       ) : (
         <div className="mt-8 flex flex-col items-stretch gap-6 lg:flex-row lg:items-start lg:gap-4">
           <ul className="flex flex-1 flex-col gap-4">
-            {lines.map(({ product: p, qty }) => (
+            {lines.map(({ item, qty }) => {
+              const href = `${item.kind === "wheel" ? "/wheels" : "/catalog"}/${item.slug}`;
+              return (
               <li
-                key={p.slug}
+                key={item.slug}
                 className="flex flex-wrap items-center gap-3 rounded-card-lg border border-line bg-white p-4 sm:gap-4"
               >
                 <Link
-                  href={`/catalog/${p.slug}`}
+                  href={href}
                   tabIndex={-1}
                   aria-hidden="true"
                   className="relative block size-20 shrink-0 overflow-hidden rounded-field border border-line bg-white"
                 >
                   <img
-                    src={p.image_url || "/images/tire-placeholder.png"}
+                    src={item.image_url || "/images/tire-placeholder.png"}
                     alt=""
                     loading="lazy"
                     className="absolute inset-0 size-full object-contain p-1.5"
                   />
                 </Link>
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
-                  <Link href={`/catalog/${p.slug}`} className="text-card-title text-dark hover:text-blue">
-                    {p.brand} {p.model}
+                  <Link href={href} className="text-card-title text-dark hover:text-blue">
+                    {item.title}
                   </Link>
-                  <p className="text-caption text-grey">
-                    {p.size_label} · {seasonLabel[p.season]}
-                  </p>
-                  <p className="tnum text-caption text-grey">{formatPrice(p.price)} / шт.</p>
+                  <p className="text-caption text-grey">{item.subtitle}</p>
+                  <p className="tnum text-caption text-grey">{formatPrice(item.price)} / шт.</p>
                 </div>
-                <CartQty slug={p.slug} qty={qty} max={p.stock} />
+                <CartQty slug={item.slug} qty={qty} max={item.stock} />
                 <p className="tnum ml-auto text-right text-price text-black lg:ml-0 lg:w-27">
-                  {formatPrice(p.price * qty)}
+                  {formatPrice(item.price * qty)}
                 </p>
                 <form action={removeFromCart}>
-                  <input type="hidden" name="slug" value={p.slug} />
+                  <input type="hidden" name="slug" value={item.slug} />
                   <button
                     type="submit"
-                    aria-label={`Убрать ${p.name} из корзины`}
+                    aria-label={`Убрать ${item.name} из корзины`}
                     className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-field hover:bg-light"
                   >
                     <img src="/icons/close.svg" alt="" width={20} height={20} className="size-5" />
                   </button>
                 </form>
               </li>
-            ))}
+              );
+            })}
           </ul>
 
           <aside aria-label="Итог заказа" className="w-full shrink-0 lg:w-col">

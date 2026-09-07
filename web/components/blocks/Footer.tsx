@@ -14,6 +14,7 @@ const links: { label: string; href: string }[] = [
   { label: "Доставка", href: "/delivery/" },
   { label: "Гарантия", href: "/warranty/" },
   { label: "Пункты выдачи", href: "/points/" },
+  { label: "Диски", href: "/wheels/" },
   { label: "Контакты", href: "/contacts/" },
   { label: "Новости", href: "/news/" },
   { label: "Партнёрам", href: "/partnership/" },

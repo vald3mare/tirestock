@@ -45,6 +45,7 @@ type config struct {
 	// Синк каталога из SelectTyres (пусто → каталог на моке).
 	Selecttyres    selecttyres.Config
 	PhotoFeedURL   string
+	WheelsFeedURL  string // отдельный фид дисков (пусто → синк дисков выключен)
 	SyncInterval   time.Duration
 	SyncMinHealthy float64 // порог здоровья синка (доля от прошлого размера); 0 → дефолт
 }
@@ -72,6 +73,7 @@ func loadConfig() config {
 		CityStocks: cityStocksFromEnv(),
 	}
 	cfg.PhotoFeedURL = os.Getenv("SELECTYRES_PHOTO_FEED_URL")
+	cfg.WheelsFeedURL = os.Getenv("SELECTYRES_WHEELS_FEED_URL")
 	cfg.SyncInterval = time.Hour
 	if v := os.Getenv("SELECTYRES_SYNC_INTERVAL"); v != "" {
 		if d, err := time.ParseDuration(v); err == nil {
@@ -162,6 +164,26 @@ func main() {
 		log.Info("каталог: мок (SELECTYRES_FEED_URL не задан)")
 	}
 	catalogSvc := catalog.NewService(catSource)
+
+	// Каталог ДИСКОВ — отдельный изолированный контур (свои таблицы/синк/prune).
+	// Читаем из БД всегда; синк — если задан SELECTYRES_WHEELS_FEED_URL. Падение
+	// этого контура не влияет на шины (и наоборот).
+	wheelSvc := catalog.NewWheelService(catalog.NewDBWheelSource(pool))
+	var wheelSyncer *selecttyres.WheelSyncer
+	if cfg.WheelsFeedURL != "" {
+		wheelCfg := cfg.Selecttyres
+		wheelCfg.FeedURL = cfg.WheelsFeedURL // тот же город-фильтр, другой фид
+		wClient, err := selecttyres.NewClient(wheelCfg)
+		if err != nil {
+			log.Error("selecttyres wheels client", "err", err)
+			os.Exit(1)
+		}
+		wheelSyncer = selecttyres.NewWheelSyncer(wClient, catalog.NewWheelSyncStore(pool),
+			cfg.SyncInterval, cfg.SyncMinHealthy, log)
+		log.Info("каталог дисков: SelectTyres (синк в read-модель)")
+	} else {
+		log.Info("каталог дисков: синк выключен (SELECTYRES_WHEELS_FEED_URL не задан)")
+	}
 	// DELIVERY_TEST_MARK — пометка стенда в комментарии заявок и заказов.
 	// Задаётся на локальном/тестовом стенде, который шлёт в БОЕВОЙ tradesk, чтобы
 	// менеджер видел тестовые записи и не тратил звонок. На проде — пусто.
@@ -232,6 +254,9 @@ func main() {
 	if photoSyncer != nil {
 		go photoSyncer.Run(ctx)
 	}
+	if wheelSyncer != nil {
+		go wheelSyncer.Run(ctx)
+	}
 
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
@@ -269,6 +294,7 @@ func main() {
 			httpx.JSON(w, http.StatusOK, map[string]string{"status": "ok"})
 		})
 		catalog.NewHandlers(catalogSvc).Mount(r)
+		catalog.NewWheelHandlers(wheelSvc).Mount(r)
 		orders.NewHandlers(ordersSvc).Mount(r)
 		content.NewPublicHandlers(contentSvc).Mount(r)
 		benefits.NewPublicHandlers(benefitsSvc).Mount(r)

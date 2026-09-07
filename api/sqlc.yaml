@@ -6,6 +6,7 @@ sql:
       - "internal/orders/queries.sql"
       - "internal/admin/queries.sql"
       - "internal/catalog/queries.sql"
+      - "internal/catalog/wheel_queries.sql"
       - "internal/content/queries.sql"
       - "internal/benefits/queries.sql"
       - "internal/seo/queries.sql"
