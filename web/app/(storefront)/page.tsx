@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BenefitsBar } from "@/components/blocks/BenefitsBar";
+import { BrandsBlock } from "@/components/blocks/BrandsBlock";
+import { PopularSizesBlock } from "@/components/blocks/PopularSizesBlock";
 import { ProductCard } from "@/components/blocks/ProductCard";
 import { SearchWidget } from "@/components/blocks/SearchWidget";
 import { ServicesSection } from "@/components/blocks/ServicesSection";
@@ -41,10 +43,12 @@ export default async function Home() {
   // SelectTyres), фолбэк на статику. Всё подтягивается само, без хардкода.
   let searchOptions = staticFilterOptions;
   let popularSizes = staticPopularSizes;
+  let brands: string[] = [];
   try {
     const facets = await getCatalogFacets(city);
     searchOptions = optionsFromFacets(facets);
     popularSizes = popularSizesFromFacets(facets.popular_sizes);
+    brands = facets.brands ?? [];
   } catch {
     // фасеты недоступны — остаётся статика
   }
@@ -90,6 +94,10 @@ export default async function Home() {
           </div>
         </section>
       )}
+
+      <BrandsBlock brands={brands} />
+
+      <PopularSizesBlock />
     </main>
   );
 }
