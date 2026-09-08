@@ -91,7 +91,9 @@ export function catalogSeo(f: ProductFilters, cityLoc: string, city: string): Ca
     .filter(Boolean)
     .join(" ");
 
-  const h1 = subject; // напр. «Шины R15» / «Летние шины R17»
+  // H1 — богатый, как просил сеошник: «Шины R15 — купить в Санкт-Петербурге»
+  // (без «| TireStock» — бренд в H1 не нужен; количество товаров НЕ в H1).
+  const h1 = `${subject} — купить в ${cityLoc}`;
   const title = `${subject} — купить в ${cityLoc} | TireStock`;
   const description = `Каталог ${descCore}: подбор по размеру и сезону, наличие на складе в ${cityLoc}, доставка по России.`;
 

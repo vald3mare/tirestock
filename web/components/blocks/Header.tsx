@@ -17,10 +17,15 @@ const nav: { label: string; href: string; items?: NavItem[] }[] = [
   { label: "Главная", href: "/" },
   {
     label: "Шины",
-    href: "/catalog",
+    href: "/catalog/",
     items: [
-      { label: "Легковые шины", href: "/catalog" },
-      { label: "Мотошины", href: "/catalog?category=moto" },
+      { label: "Все шины", href: "/catalog/" },
+      { label: "Летние шины", href: "/catalog/?season=summer" },
+      { label: "Зимние шины", href: "/catalog/?season=winter" },
+      { label: "Всесезонные шины", href: "/catalog/?season=allseason" },
+      { label: "Шины R15", href: "/catalog/?diameter=15" },
+      { label: "Шины R16", href: "/catalog/?diameter=16" },
+      { label: "Шины R17", href: "/catalog/?diameter=17" },
       { label: "Шинный калькулятор", href: "/tyres-calc/" },
     ],
   },
