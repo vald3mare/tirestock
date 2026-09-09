@@ -18,11 +18,9 @@ services:
       # HTTP → HTTPS редирект всего трафика.
       - --entrypoints.web.http.redirections.entrypoint.to=websecure
       - --entrypoints.web.http.redirections.entrypoint.scheme=https
-      # TLS на entrypoint: сертификат Let's Encrypt для ${DOMAIN} (compose подставит).
-      # Так домен задаётся здесь (в статике), а dynamic-tls.yml остаётся общим.
-      - --entrypoints.websecure.http.tls=true
-      - --entrypoints.websecure.http.tls.certresolver=le
-      - --entrypoints.websecure.http.tls.domains[0].main=${DOMAIN}
+      # TLS + certResolver заданы на РОУТЕРЕ (traefik/dynamic-tls.yml) с конкретным
+      # доменом — иначе ACME не знает, для чего выпускать сертификат. Здесь — только
+      # определение резолвера «le».
       # Let's Encrypt (HTTP-01 challenge через 80-й порт).
       - --certificatesresolvers.le.acme.email=${ACME_EMAIL}
       - --certificatesresolvers.le.acme.storage=/letsencrypt/acme.json
