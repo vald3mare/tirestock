@@ -79,7 +79,7 @@ export function FilterSidebar({
     setPriceMax("");
     setSpikes(false);
     setRunflat(false);
-    router.push("/catalog");
+    router.push("/catalog/");
   };
 
   return (
