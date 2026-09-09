@@ -41,10 +41,11 @@ export function SearchWidget({
   const [profile, setProfile] = useState<string>();
   const [diameter, setDiameter] = useState<string>();
   const [season, setSeason] = useState<string>();
+  const [brand, setBrand] = useState<string>();
   const [query, setQuery] = useState("");
 
   // Живое число «Показать N шин» для таба «По размеру».
-  const live = useLiveCount({ width, profile, diameter, season });
+  const live = useLiveCount({ width, profile, diameter, season, brand });
 
   const submit = () => {
     const params = new URLSearchParams();
@@ -53,6 +54,7 @@ export function SearchWidget({
       if (profile) params.set("profile", profile);
       if (diameter) params.set("diameter", diameter);
       if (season) params.set("season", season);
+      if (brand) params.set("brand", brand);
     } else if (tab === 1 && query.trim()) {
       params.set("q", query.trim());
     }
@@ -94,6 +96,9 @@ export function SearchWidget({
           </div>
           <div className="flex-1">
             <Dropdown placeholder="Сезон" options={seasonOptions} value={season} onChange={setSeason} />
+          </div>
+          <div className="flex-1">
+            <Dropdown placeholder="Производитель" options={options.brands} value={brand} onChange={setBrand} />
           </div>
           <Button onClick={submit} className="tnum sm:col-span-2 lg:w-auto">
             {live !== null ? `Показать ${formatNumber(live)} шин` : "Подобрать"}
