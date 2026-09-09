@@ -100,7 +100,7 @@ export function SearchWidget({
           <div className="flex-1">
             <Dropdown placeholder="Производитель" options={options.brands} value={brand} onChange={setBrand} />
           </div>
-          <Button onClick={submit} className="tnum sm:col-span-2 lg:w-auto">
+          <Button onClick={submit} className="tnum whitespace-nowrap sm:col-span-2 lg:w-auto">
             {live !== null ? `Показать ${formatNumber(live)} шин` : "Подобрать"}
           </Button>
         </div>
