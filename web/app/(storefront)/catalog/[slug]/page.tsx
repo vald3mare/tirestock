@@ -2,16 +2,18 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { cache } from "react";
+import Link from "next/link";
 import { AddToCart } from "@/components/blocks/AddToCart";
 import { Breadcrumbs } from "@/components/blocks/Breadcrumbs";
 import { CallbackModal } from "@/components/blocks/CallbackModal";
+import { PickupMap } from "@/components/blocks/PickupMap";
 import { ProductCard } from "@/components/blocks/ProductCard";
 import { SeasonBadge } from "@/components/ui/SeasonBadge";
-import { ApiError, getProductBySlug, listProducts, type Product } from "@/lib/api/client";
+import { ApiError, getProductBySlug, listProducts, listPickupPoints, type Product } from "@/lib/api/client";
 import { inquiryComment } from "@/lib/inquiry";
 import { CITIES } from "@/lib/city";
 import { getCity } from "@/lib/get-city";
-import { SHOP } from "@/lib/shop";
+import { fallbackPickupPoints } from "@/lib/pickup-points";
 import { formatNumber, formatPrice, seasonLabel } from "@/lib/format";
 import { parseTireIndices } from "@/lib/tire-indices";
 import { productDescription } from "@/lib/product-description";
@@ -50,9 +52,16 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
   const product = await loadProduct((await params).slug, city);
   if (!product) notFound();
 
-  const related = (await listProducts({ season: product.season, per_page: 5, city })).items
-    .filter((p) => p.slug !== product.slug)
-    .slice(0, 4);
+  const [relatedRes, pickupRes] = await Promise.all([
+    listProducts({ season: product.season, per_page: 5, city }),
+    // Пункты выдачи города — для блока «Самовывоз из N пунктов» и карты «Где забрать».
+    listPickupPoints(city)
+      .then((r) => (r.items.length ? r.items : city === "spb" ? fallbackPickupPoints : []))
+      .catch(() => (city === "spb" ? fallbackPickupPoints : [])),
+  ]);
+  const related = relatedRes.items.filter((p) => p.slug !== product.slug).slice(0, 4);
+  const points = pickupRes;
+  const cityLoc = CITIES[city].loc;
 
   const indices = parseTireIndices(product.size_label);
   const specs: [string, string][] = [
@@ -127,7 +136,13 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
           </p>
 
           {product.stock > 0 ? (
-            <AddToCart slug={product.slug} price={product.price} stock={product.stock} />
+            <AddToCart
+              slug={product.slug}
+              price={product.price}
+              stock={product.stock}
+              name={product.name}
+              sizeLabel={product.size_label}
+            />
           ) : (
             <CallbackModal
               variant="button"
@@ -139,16 +154,43 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
             />
           )}
 
-          <div className="flex flex-col gap-2 rounded-card bg-light px-4 py-3.5">
-            <p className="text-caption-lg font-semibold text-dark">Доставка и самовывоз</p>
-            <p className="text-caption text-grey">
-              Доставка по {SHOP.city} — 500 ₽, бесплатно от 30 000 ₽. До пункта выдачи
-              ПЭК — бесплатно.
-            </p>
-            <p className="text-caption text-grey">Самовывоз со склада — сегодня</p>
+          <div className="flex flex-col gap-3 rounded-card bg-light px-4 py-3.5">
+            {points.length > 0 && (
+              <Link href="/points/" className="flex items-start gap-2.5 hover:opacity-80">
+                <img src="/icons/pin.svg" alt="" width={20} height={20} className="mt-0.5 size-5 shrink-0" />
+                <span className="flex flex-col">
+                  <span className="text-caption-lg font-semibold text-blue">
+                    Самовывоз из {points.length} пункт{pluralPoints(points.length)} выдачи
+                  </span>
+                  <span className="text-caption text-grey">Бесплатно · {cityLoc} — см. на карте ниже</span>
+                </span>
+              </Link>
+            )}
+            <div className="flex items-start gap-2.5">
+              <img src="/icons/benefit-delivery.svg" alt="" width={20} height={20} className="mt-0.5 size-5 shrink-0" />
+              <span className="flex flex-col">
+                <span className="text-caption-lg font-semibold text-dark">Доставка курьером</span>
+                <span className="text-caption text-grey">На следующий день — от 400 ₽, по России через ТК</span>
+              </span>
+            </div>
           </div>
         </div>
       </div>
+
+      {points.length > 0 && (
+        <section aria-labelledby="pickup-h" className="mt-12">
+          <h2 id="pickup-h" className="text-h2 text-black">
+            Где забрать заказ
+          </h2>
+          <p className="mt-2 text-body text-grey">
+            Самовывоз из {points.length} пункт{pluralPoints(points.length)} выдачи в {cityLoc} —
+            выберите удобный на карте.
+          </p>
+          <div className="mt-6 overflow-hidden rounded-card-lg border border-line">
+            <PickupMap points={points} heightClass="h-[360px] sm:h-[440px]" />
+          </div>
+        </section>
+      )}
 
       <section aria-labelledby="specs-h" className="mt-16 max-w-180">
         <h2 id="specs-h" className="text-h2 text-black">
@@ -187,4 +229,13 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
       )}
     </main>
   );
+}
+
+// Склонение слова «пункт» по числу: 1 пункт, 2–4 пункта, 5+ пунктов.
+function pluralPoints(n: number): string {
+  const m10 = n % 10;
+  const m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return "";
+  if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return "а";
+  return "ов";
 }
