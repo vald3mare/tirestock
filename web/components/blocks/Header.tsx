@@ -57,10 +57,6 @@ export async function Header() {
         <div className="mx-auto flex max-w-content flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-2">
           <div className="flex items-center gap-3">
             <CitySwitcher city={city} />
-            <p className="hidden items-center gap-2 text-caption-lg text-grey sm:flex">
-              <img src="/icons/pin.svg" alt="" width={16} height={16} className="size-4" />
-              {cityMeta.address}
-            </p>
           </div>
           <div className="flex items-center gap-8">
             <p className="hidden items-center gap-2 text-caption-lg text-grey md:flex">
@@ -87,7 +83,6 @@ export async function Header() {
               phone={cityMeta.phone}
               phoneHref={cityMeta.phoneHref}
               cityLabel={cityMeta.label}
-              address={cityMeta.address}
               hours={SHOP.hours}
             />
             <Link href="/" className="flex min-h-touch items-center" aria-label="TireStock — на главную">

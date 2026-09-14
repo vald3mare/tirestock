@@ -7,25 +7,23 @@ export const CITY_COOKIE = "city";
 export const DEFAULT_CITY: City = "spb";
 
 // Метаданные городов для шапки/футера/страниц. loc — предложный падеж
-// («купить в …»). Адрес/телефон Москвы — плейсхолдер до данных от владельца.
+// («купить в …»). Адрес в шапке убран (правка 14.09.2026 — Петровской косы больше
+// нет как адреса компании); телефон Москвы — плейсхолдер до данных от владельца.
 export const CITIES: Record<City, {
   label: string;
   loc: string;
-  address: string;
   phone: string;
   phoneHref: string;
 }> = {
   spb: {
     label: "Санкт-Петербург",
     loc: "Санкт-Петербурге",
-    address: "Петровская коса",
     phone: "+7 (812) 614-64-42",
     phoneHref: "tel:+78126146442",
   },
   msk: {
     label: "Москва",
     loc: "Москве",
-    address: "уточняется",
     phone: "+7 (812) 614-64-42",
     phoneHref: "tel:+78126146442",
   },

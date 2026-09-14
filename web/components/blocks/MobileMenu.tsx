@@ -11,14 +11,13 @@ type Props = {
   phone: string;
   phoneHref: string;
   cityLabel: string;
-  address: string;
   hours: string;
 };
 
 // Мобильное меню-бургер (Figma «Mobile — Burger menu», 99:764). Полноэкранная
 // панель с аккордеоном по разделам с подпунктами. Виден только < lg (десктоп
 // использует NavDropdown). Данные нава — те же, что в Header.
-export function MobileMenu({ nav, phone, phoneHref, cityLabel, address, hours }: Props) {
+export function MobileMenu({ nav, phone, phoneHref, cityLabel, hours }: Props) {
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState<string | null>("Шины"); // как на макете
   const panelId = useId();
@@ -161,7 +160,7 @@ export function MobileMenu({ nav, phone, phoneHref, cityLabel, address, hours }:
             <div className="flex flex-col gap-1.5 px-2 py-3.5">
               <p className="flex items-center gap-2 text-caption-lg text-grey">
                 <img src="/icons/pin.svg" alt="" width={16} height={16} className="size-4" />
-                {cityLabel}, {address}
+                {cityLabel}
               </p>
               <p className="flex items-center gap-2 text-caption-lg text-grey">
                 <img src="/icons/clock.svg" alt="" width={16} height={16} className="size-4" />

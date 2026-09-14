@@ -52,7 +52,7 @@ export function CitySwitcher({ city }: { city: City }) {
         className="flex min-h-touch items-center gap-2 text-caption-lg text-grey hover:text-dark"
       >
         <img src="/icons/pin.svg" alt="" width={16} height={16} className="size-4" />
-        {CITIES[city].label}, {CITIES[city].address}
+        {CITIES[city].label}
         <img src="/icons/chevron-down-sm.svg" alt="" width={16} height={16} className="size-4" />
       </button>
       {open && (
