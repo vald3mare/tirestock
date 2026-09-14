@@ -1,15 +1,24 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import "leaflet/dist/leaflet.css";
-import type { Map as LMap, Marker as LMarker } from "leaflet";
 import { POINT_COORDS } from "@/lib/pickup-points";
 
-// Интерактивная карта пунктов выдачи в оформлении заказа (правка заказчика B,
-// 14.09.2026) — повторяет старый сайт: все точки пинами, клик по пину открывает
-// балун с адресом и кнопкой «Выбрать», которая отмечает пункт в списке снизу.
-// Движок — Leaflet + OpenStreetMap (без API-ключа). Координаты — POINT_COORDS
-// (сняты с Яндекс-карты старого сайта), поэтому пины стоят точно.
+// Карта пунктов выдачи на ЯНДЕКС.КАРТАХ (ymaps 2.1) — как на старом сайте
+// tirestock.ru/points/: все пункты пинами, клик по пину → балун с адресом и
+// (в оформлении заказа) кнопкой «Выбрать», которая отмечает пункт в списке.
+// Ключ НЕ нужен — старый сайт грузит тот же загрузчик без apikey.
+// Координаты — POINT_COORDS по slug (сняты с Яндекс-карты старого сайта).
+//
+// onSelect задан → режим выбора (корзина): в балуне кнопка «Выбрать».
+// onSelect нет → режим просмотра (страница «Пункты выдачи»): балун только инфо.
+
+declare global {
+  interface Window {
+    // ymaps типизируем как any — официальных типов v2.1 в проекте нет.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ymaps?: any;
+  }
+}
 
 export type MapPoint = {
   slug: string;
@@ -20,116 +29,136 @@ export type MapPoint = {
   note?: string;
 };
 
-// SVG-пин (фирменный синий / серый для невыбранного). anchor снизу по центру.
-function pinIcon(L: typeof import("leaflet"), active: boolean) {
-  const fill = active ? "#2F5FD0" : "#5B6472";
-  return L.divIcon({
-    className: "",
-    html: `<svg width="30" height="40" viewBox="0 0 30 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <path d="M15 0C6.7 0 0 6.7 0 15c0 10.5 13.4 23.7 14 24.3.6.6 1.4.6 2 0 .6-.6 14-13.8 14-24.3C30 6.7 23.3 0 15 0z" fill="${fill}"/>
-      <circle cx="15" cy="15" r="6" fill="#fff"/>
-    </svg>`,
-    iconSize: [30, 40],
-    iconAnchor: [15, 40],
-    popupAnchor: [0, -38],
-  });
+// Одноразовая загрузка ymaps (скрипт добавляется один раз на все карты страницы).
+let ymapsPromise: Promise<unknown> | null = null;
+function loadYmaps(): Promise<unknown> {
+  if (typeof window === "undefined") return Promise.reject(new Error("no window"));
+  const ready = (y: unknown) => new Promise((res) => (y as { ready: (cb: () => void) => void }).ready(() => res(y)));
+  if (window.ymaps?.ready) return ready(window.ymaps);
+  if (!ymapsPromise) {
+    ymapsPromise = new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = "https://api-maps.yandex.ru/2.1/?lang=ru_RU";
+      s.async = true;
+      s.onload = () => resolve(window.ymaps);
+      s.onerror = () => reject(new Error("ymaps load failed"));
+      document.head.appendChild(s);
+    });
+  }
+  return ymapsPromise.then(ready);
+}
+
+function esc(s: string): string {
+  return s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] as string));
 }
 
 export function PickupMap({
   points,
-  selected,
+  selected = "",
   onSelect,
+  heightClass = "h-[70vh]",
 }: {
   points: MapPoint[];
-  selected: string; // адрес выбранного пункта ("" — доставка/ничего)
-  onSelect: (address: string) => void;
+  selected?: string; // адрес выбранного пункта
+  onSelect?: (address: string) => void;
+  heightClass?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<LMap | null>(null);
-  const markersRef = useRef<Map<string, LMarker>>(new Map());
-  // onSelect держим в ref, чтобы не переинициализировать карту при каждом рендере.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mapRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const placemarksRef = useRef<Map<string, any>>(new Map());
   const onSelectRef = useRef(onSelect);
   onSelectRef.current = onSelect;
 
-  // Инициализация карты один раз (динамический импорт — leaflet трогает window).
   useEffect(() => {
-    let cancelled = false;
-    let map: LMap | null = null;
+    let destroyed = false;
+    const container = containerRef.current;
+    if (!container) return;
 
-    (async () => {
-      const L = await import("leaflet");
-      if (cancelled || !containerRef.current || mapRef.current) return;
-
-      const withCoords = points
-        .map((p) => ({ p, ll: POINT_COORDS[p.slug] }))
-        .filter((x): x is { p: MapPoint; ll: [number, number] } => Boolean(x.ll));
-
-      map = L.map(containerRef.current, { scrollWheelZoom: false });
-      mapRef.current = map;
-
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-        maxZoom: 19,
-      }).addTo(map);
-
-      const bounds: [number, number][] = [];
-      for (const { p, ll } of withCoords) {
-        const marker = L.marker(ll, { icon: pinIcon(L, p.address === selected), title: p.address }).addTo(map);
-
-        // Балун: адрес, метро/часы, бейдж и кнопка «Выбрать». Собираем DOM-узлом,
-        // чтобы повесить обработчик прямо на кнопку (Leaflet принимает HTMLElement).
-        const box = document.createElement("div");
-        box.className = "flex flex-col gap-1.5 text-dark";
-        box.innerHTML = `
-          <span class="text-body font-semibold">Самовывоз ${p.address}</span>
-          <span class="text-caption text-grey">${[p.metro, p.hours && `Время работы: ${p.hours}`].filter(Boolean).join(" · ")}</span>
-          ${p.badge ? `<span class="text-caption font-medium text-blue">${p.badge}</span>` : ""}
-          ${p.note ? `<span class="text-caption font-medium text-red">${p.note}</span>` : ""}`;
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.textContent = "Выбрать";
-        btn.className =
-          "mt-1 min-h-touch cursor-pointer rounded-field bg-blue px-4 py-1.5 text-caption-lg font-semibold text-white hover:bg-blue-hover";
-        btn.addEventListener("click", () => {
-          onSelectRef.current(p.address);
-          map?.closePopup();
-        });
-        box.appendChild(btn);
-
-        marker.bindPopup(box, { closeButton: true, minWidth: 200 });
-        markersRef.current.set(p.address, marker);
-        bounds.push(ll);
+    // Делегированный клик по кнопке «Выбрать» в балуне (балун рендерится внутри
+    // контейнера карты) — надёжнее, чем onclick внутри HTML балуна.
+    const onClick = (e: MouseEvent) => {
+      const btn = (e.target as HTMLElement)?.closest<HTMLElement>(".ys-pick");
+      if (btn?.dataset.addr) {
+        onSelectRef.current?.(btn.dataset.addr);
       }
+    };
+    container.addEventListener("click", onClick);
 
-      if (bounds.length > 1) map.fitBounds(bounds, { padding: [40, 40] });
-      else if (bounds.length === 1) map.setView(bounds[0], 14);
-      else map.setView([59.94, 30.31], 10); // фолбэк — центр СПб
-    })();
+    loadYmaps()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .then((ymaps: any) => {
+        if (destroyed || !containerRef.current) return;
+
+        const withCoords = points
+          .map((p) => ({ p, ll: POINT_COORDS[p.slug] }))
+          .filter((x): x is { p: MapPoint; ll: [number, number] } => Boolean(x.ll));
+
+        const map = new ymaps.Map(
+          containerRef.current,
+          { center: [59.94, 30.31], zoom: 10, controls: ["zoomControl", "geolocationControl"] },
+          { suppressMapOpenBlock: true, yandexMapDisablePoiInteractivity: true },
+        );
+        mapRef.current = map;
+
+        const collection = new ymaps.GeoObjectCollection();
+        for (const { p, ll } of withCoords) {
+          const meta = [p.metro, p.hours && `Время работы: ${esc(p.hours)}`].filter(Boolean).join("<br/>");
+          const body =
+            `<div style="max-width:220px">Адрес: <b>${esc(p.address)}</b>` +
+            (meta ? `<br/>${meta}` : "") +
+            (p.badge ? `<br/><span style="color:#2f5fd0;font-weight:600">${esc(p.badge)}</span>` : "") +
+            (p.note ? `<br/><span style="color:#e5484d;font-weight:600">${esc(p.note)}</span>` : "") +
+            (onSelectRef.current
+              ? `<br/><button type="button" class="ys-pick" data-addr="${esc(p.address)}" ` +
+                `style="margin-top:8px;padding:7px 16px;border:0;border-radius:10px;background:#2f5fd0;` +
+                `color:#fff;font-weight:600;cursor:pointer">Выбрать</button>`
+              : "") +
+            `</div>`;
+
+          const pm = new ymaps.Placemark(
+            ll,
+            { balloonContentHeader: "TireStock", balloonContentBody: body, hintContent: p.address },
+            { preset: p.address === selected ? "islands#redDotIcon" : "islands#blueDotIcon" },
+          );
+          collection.add(pm);
+          placemarksRef.current.set(p.address, pm);
+        }
+        map.geoObjects.add(collection);
+
+        // Показать все точки в кадре.
+        if (withCoords.length > 1) {
+          map.setBounds(collection.getBounds(), { checkZoomRange: true, zoomMargin: 40 });
+        } else if (withCoords.length === 1) {
+          map.setCenter(withCoords[0].ll, 14);
+        }
+      })
+      .catch(() => {
+        // ymaps не загрузился (нет сети/блокировка) — контейнер останется пустым;
+        // выбор пунктов доступен списком-радио под картой (в корзине).
+      });
 
     return () => {
-      cancelled = true;
-      map?.remove();
+      destroyed = true;
+      container.removeEventListener("click", onClick);
+      mapRef.current?.destroy?.();
       mapRef.current = null;
-      markersRef.current.clear();
+      placemarksRef.current.clear();
     };
-    // points/selected пересобирают карту редко (только при смене города/списка).
+    // Пересобираем карту при смене списка (город/данные). selected — отдельным эффектом.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [points]);
 
-  // Подсветка выбранного пина без пересоздания карты + открыть его балун.
+  // Подсветить выбранный пин и открыть его балун (без пересоздания карты).
   useEffect(() => {
-    (async () => {
-      const L = await import("leaflet");
-      for (const [address, marker] of markersRef.current) {
-        marker.setIcon(pinIcon(L, address === selected));
-      }
-      const active = selected ? markersRef.current.get(selected) : undefined;
-      if (active && mapRef.current) {
-        mapRef.current.panTo(active.getLatLng());
-        active.openPopup();
-      }
-    })();
+    for (const [address, pm] of placemarksRef.current) {
+      pm.options?.set?.("preset", address === selected ? "islands#redDotIcon" : "islands#blueDotIcon");
+    }
+    if (selected) {
+      placemarksRef.current.get(selected)?.balloon?.open?.();
+    }
   }, [selected]);
 
-  return <div ref={containerRef} className="h-[70vh] w-full" aria-label="Карта пунктов выдачи" />;
+  return <div ref={containerRef} className={`w-full ${heightClass}`} aria-label="Карта пунктов выдачи" />;
 }

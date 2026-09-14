@@ -6,7 +6,8 @@ import { CITIES } from "@/lib/city";
 import { getCity } from "@/lib/get-city";
 import { SHOP } from "@/lib/shop";
 import { metadataFor } from "@/lib/seo";
-import { fallbackPickupPoints, yandexEmbedUrl } from "@/lib/pickup-points";
+import { fallbackPickupPoints } from "@/lib/pickup-points";
+import { PickupMap } from "@/components/blocks/PickupMap";
 
 // Страница «Пункты выдачи». Server Component. Данные — из админки (раздел «Пункты
 // выдачи») по API; фолбэк на статику. Основные адреса (is_main) — крупными
@@ -96,7 +97,6 @@ export default async function PickupPointsPage() {
   const main = points.filter((p) => p.is_main);
   const rest = points.filter((p) => !p.is_main);
   const total = points.length;
-  const mapCenter = main[0]?.address ?? rest[0]?.address ?? CITIES[city].label;
   const cityLoc = CITIES[city].loc;
 
   return (
@@ -126,15 +126,11 @@ export default async function PickupPointsPage() {
             мы привезём их к вашему приезду.
           </p>
 
-          {/* Интерактивная карта Яндекс.Карт (виджет, без API-ключа). */}
+          {/* Интерактивная Яндекс-карта со ВСЕМИ пунктами города (ymaps, без ключа):
+              клик по пину → балун с адресом/часами. Данные — points (координаты
+              по slug из POINT_COORDS). */}
           <div className="mt-8 overflow-hidden rounded-card-lg border border-line">
-            <iframe
-              title="Пункты выдачи TireStock на карте"
-              src={yandexEmbedUrl(mapCenter, CITIES[city].label)}
-              loading="lazy"
-              className="block h-[360px] w-full border-0"
-              referrerPolicy="no-referrer-when-downgrade"
-            />
+            <PickupMap points={points} heightClass="h-[360px] sm:h-[460px]" />
           </div>
         </>
       )}
