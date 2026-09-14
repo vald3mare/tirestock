@@ -90,7 +90,6 @@ export function BenefitForm({
         />
         <datalist id="benefit-hrefs">
           <option value="/mounting/" />
-          <option value="/services/storage" />
           <option value="/delivery/" />
         </datalist>
         <p className="mt-1.5 text-legal text-grey">

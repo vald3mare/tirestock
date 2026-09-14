@@ -39,14 +39,9 @@ const nav: { label: string; href: string; items?: NavItem[] }[] = [
       { label: "Штампованные", href: "/wheels/?type=Штампованный" },
     ],
   },
-  {
-    label: "Сервис",
-    href: "/mounting/",
-    items: [
-      { label: "Хранение шин и колёс", href: "/services/storage" },
-      { label: "Шиномонтаж", href: "/mounting/" },
-    ],
-  },
+  // «Хранение» временно убрано (вернём, когда владелец запустит свой шиномонтаж —
+  // правка заказчика 14.09.2026). Осталась одна услуга → прямая ссылка без подменю.
+  { label: "Шиномонтаж", href: "/mounting/" },
   { label: "Пункты выдачи", href: "/points/" },
   { label: "Контакты", href: "/contacts/" },
 ];

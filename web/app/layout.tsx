@@ -7,7 +7,7 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: "TireStock — шины и диски в Санкт-Петербурге",
-  description: "Интернет-магазин шин и дисков: подбор по размеру, шиномонтаж, хранение колёс.",
+  description: "Интернет-магазин шин и дисков: подбор по размеру, доставка по России, шиномонтаж.",
 };
 
 const preloadFonts = [

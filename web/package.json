@@ -9,12 +9,14 @@
     "gen:api": "openapi-typescript ../api/openapi.yaml -o lib/api/schema.d.ts"
   },
   "dependencies": {
+    "leaflet": "^1.9.4",
     "next": "^15.5.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.0",
+    "@types/leaflet": "^1.9.22",
     "@types/node": "^24.0.0",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",

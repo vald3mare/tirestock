@@ -18,8 +18,14 @@ if [ ! -f infra/.env.prod ]; then
   exit 1
 fi
 
-echo "▶ Обновляю код (git pull)…"
-git pull --ff-only || echo "  (git pull пропущен — не git-репо или нет upstream)"
+echo "▶ Обновляю код (жёсткая синхронизация с origin)…"
+# Ненадёжный `git pull` (иногда «Already up to date» и не тянет) заменён на
+# fetch + reset --hard на ТЕКУЩУЮ ветку — гарантированно = origin. Безопасно на VM:
+# reset --hard не трогает untracked/gitignored (infra/.env.prod остаётся на месте).
+BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+git fetch origin "$BRANCH"
+git reset --hard "origin/$BRANCH"
+echo "  ✓ на $(git rev-parse --short HEAD) ($BRANCH)"
 
 echo "▶ Сборка и запуск прод-стека…"
 $COMPOSE up -d --build

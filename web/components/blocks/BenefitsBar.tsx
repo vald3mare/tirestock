@@ -8,7 +8,6 @@ import { listBenefits, type Benefit } from "@/lib/api/client";
 
 const fallbackBenefits: Pick<Benefit, "icon" | "title" | "note" | "href">[] = [
   { icon: "/icons/benefit-mount.svg", title: "−15% на шиномонтаж", note: "при покупке шин", href: "/mounting/" },
-  { icon: "/icons/benefit-storage.svg", title: "−30% на хранение", note: "при покупке от 4 шин", href: "/services/storage" },
   { icon: "/icons/benefit-delivery.svg", title: "Доставка в регионы РФ", note: "расчёт на странице товара", href: "/delivery/" },
 ];
 

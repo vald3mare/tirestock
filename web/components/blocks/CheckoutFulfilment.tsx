@@ -3,11 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import type { PickupPoint } from "@/lib/api/client";
 import { Field } from "@/components/ui/Field";
-import { yandexEmbedUrl } from "@/lib/pickup-points";
+import { PickupMap } from "@/components/blocks/PickupMap";
 
 // Способ получения (Figma старого сайта): радио «Доставка курьером» + самовывоз
 // из каждого пункта. При доставке — поле адреса (обязательное). Ссылка «на карте»
-// открывает модалку с картой Яндекс и всеми пунктами города.
+// открывает модалку с интерактивной картой всех пунктов: клик по пину → «Выбрать»
+// → пункт отмечается в списке ниже (как на старом сайте, правка заказчика B).
 // Выбор кладётся в скрытые поля fulfilment_kind / fulfilment_point / address,
 // которые submitOrder складывает в комментарий заказа (tradesk).
 
@@ -15,10 +16,8 @@ const DELIVERY = "delivery";
 
 export function CheckoutFulfilment({
   points,
-  cityLabel,
 }: {
-  points: Pick<PickupPoint, "id" | "address" | "metro" | "hours">[];
-  cityLabel: string;
+  points: Pick<PickupPoint, "id" | "slug" | "address" | "metro" | "hours" | "badge" | "note">[];
 }) {
   // Значение: "delivery" | адрес пункта. По умолчанию — доставка (как на старом).
   const [choice, setChoice] = useState<string>(DELIVERY);
@@ -42,10 +41,6 @@ export function CheckoutFulfilment({
   }, [mapOpen]);
 
   const isDelivery = choice === DELIVERY;
-  // Центр карты — адрес выбранного пункта (или первого), НЕ текстовый поиск
-  // «пункты выдачи шин»: тот показывал бы все точки города, включая конкурентов.
-  // Точный адрес нашего пункта = единственная метка на карте.
-  const mapAddress = isDelivery ? (points[0]?.address ?? "") : choice;
 
   return (
     <div className="flex flex-col gap-3">
@@ -114,6 +109,8 @@ export function CheckoutFulfilment({
                 <span className="text-caption text-grey">
                   {[p.metro, p.hours && `Время работы: ${p.hours}`].filter(Boolean).join(" · ")}
                 </span>
+                {/* note — напр. у Москвы «доставка из СПб ~2 дня, не в наличии». */}
+                {p.note && <span className="text-caption font-medium text-red">{p.note}</span>}
               </span>
             </label>
           ))}
@@ -137,12 +134,13 @@ export function CheckoutFulfilment({
             >
               ×
             </button>
-            <iframe
-              title="Пункт выдачи на карте"
-              src={yandexEmbedUrl(mapAddress, cityLabel)}
-              loading="lazy"
-              className="block h-[70vh] w-full border-0"
-              referrerPolicy="no-referrer-when-downgrade"
+            <PickupMap
+              points={points}
+              selected={isDelivery ? "" : choice}
+              onSelect={(address) => {
+                setChoice(address);
+                setMapOpen(false);
+              }}
             />
           </div>
         </div>

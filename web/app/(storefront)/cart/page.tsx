@@ -207,7 +207,7 @@ export default async function CartPage({
               <Field name="email" type="email" autoComplete="email" placeholder="E-mail (необязательно)…" aria-label="E-mail" />
             </div>
 
-            <CheckoutFulfilment points={points} cityLabel={CITIES[city].label} />
+            <CheckoutFulfilment points={points} />
 
             <Field name="comment" placeholder="Комментарий: удобное время, детали…" aria-label="Комментарий" />
             {error && (
