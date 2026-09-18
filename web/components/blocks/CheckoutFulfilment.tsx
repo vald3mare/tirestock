@@ -16,11 +16,17 @@ const DELIVERY = "delivery";
 
 export function CheckoutFulfilment({
   points,
+  courier = true,
 }: {
   points: Pick<PickupPoint, "id" | "slug" | "address" | "metro" | "hours" | "badge" | "note">[];
+  // Курьерская доставка есть только в СПб (склад тут). В других городах товар едет
+  // из СПб через ТК — курьера нет, доступен только самовывоз из пунктов (правка
+  // владельца 14.09.2026). courier=false → скрываем «Доставку курьером».
+  courier?: boolean;
 }) {
-  // Значение: "delivery" | адрес пункта. По умолчанию — доставка (как на старом).
-  const [choice, setChoice] = useState<string>(DELIVERY);
+  // Значение: "delivery" | адрес пункта. По умолчанию — доставка (СПб), а без
+  // курьера (др. города) — первый пункт выдачи.
+  const [choice, setChoice] = useState<string>(courier ? DELIVERY : (points[0]?.address ?? DELIVERY));
   const [mapOpen, setMapOpen] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
 
@@ -65,34 +71,45 @@ export function CheckoutFulfilment({
       <fieldset className="flex flex-col gap-2.5 rounded-container border border-line p-4">
         <legend className="sr-only">Способ получения</legend>
 
-        <label className="flex cursor-pointer items-start gap-2.5">
-          <input
-            type="radio"
-            name="fulfilment"
-            checked={isDelivery}
-            onChange={() => setChoice(DELIVERY)}
-            className="mt-1 size-4.5 accent-blue"
-          />
-          <span className="flex flex-col">
-            <span className="text-body font-semibold text-dark">Доставка курьером</span>
-            <span className="text-caption text-grey">Доставка на следующий день</span>
-          </span>
-        </label>
+        {/* Курьер — только в СПб. В других городах товар едет из СПб через ТК,
+            поэтому доступен лишь самовывоз из пунктов (у московских — пометка «2 дня»). */}
+        {courier ? (
+          <>
+            <label className="flex cursor-pointer items-start gap-2.5">
+              <input
+                type="radio"
+                name="fulfilment"
+                checked={isDelivery}
+                onChange={() => setChoice(DELIVERY)}
+                className="mt-1 size-4.5 accent-blue"
+              />
+              <span className="flex flex-col">
+                <span className="text-body font-semibold text-dark">Доставка курьером</span>
+                <span className="text-caption text-grey">Доставка на следующий день</span>
+              </span>
+            </label>
 
-        {isDelivery && (
-          // Отступ через padding контейнера, а не ml на самом поле: у Field ширина
-          // w-full, и внешний margin-left выталкивал его за правую границу fieldset.
-          <div className="pl-7">
-            <Field
-              name="address"
-              required
-              placeholder="Адрес доставки: улица, дом, квартира…"
-              aria-label="Адрес доставки"
-            />
-          </div>
+            {isDelivery && (
+              // Отступ через padding контейнера, а не ml на самом поле: у Field ширина
+              // w-full, и внешний margin-left выталкивал его за правую границу fieldset.
+              <div className="pl-7">
+                <Field
+                  name="address"
+                  required
+                  placeholder="Адрес доставки: улица, дом, квартира…"
+                  aria-label="Адрес доставки"
+                />
+              </div>
+            )}
+
+            <div className="my-1 h-px w-full bg-line" role="presentation" />
+          </>
+        ) : (
+          <p className="text-caption text-grey">
+            Товар едет со склада в Санкт-Петербурге через транспортную компанию (2–3 дня).
+            Заберите его в удобном пункте выдачи:
+          </p>
         )}
-
-        <div className="my-1 h-px w-full bg-line" role="presentation" />
 
         <div className="flex max-h-80 flex-col gap-2.5 overflow-y-auto">
           {points.map((p) => (

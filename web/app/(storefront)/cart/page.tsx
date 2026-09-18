@@ -11,6 +11,7 @@ import { resolveCartItem, type CartItem } from "@/lib/cart-resolve";
 import { formatNumber, formatPrice, seasonLabel } from "@/lib/format";
 import { readCart } from "@/lib/cart";
 import { CITIES } from "@/lib/city";
+import { cityHasCourier } from "@/lib/delivery";
 import { getCity } from "@/lib/get-city";
 import { fallbackPickupPoints } from "@/lib/pickup-points";
 import { removeFromCart, submitOrder, undoRemove } from "./actions";
@@ -207,7 +208,7 @@ export default async function CartPage({
               <Field name="email" type="email" autoComplete="email" placeholder="E-mail (необязательно)…" aria-label="E-mail" />
             </div>
 
-            <CheckoutFulfilment points={points} />
+            <CheckoutFulfilment points={points} courier={cityHasCourier(city)} />
 
             <Field name="comment" placeholder="Комментарий: удобное время, детали…" aria-label="Комментарий" />
             {error && (

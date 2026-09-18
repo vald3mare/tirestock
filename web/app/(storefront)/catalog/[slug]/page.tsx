@@ -14,6 +14,7 @@ import { inquiryComment } from "@/lib/inquiry";
 import { CITIES } from "@/lib/city";
 import { getCity } from "@/lib/get-city";
 import { fallbackPickupPoints } from "@/lib/pickup-points";
+import { deliveryLine } from "@/lib/delivery";
 import { formatNumber, formatPrice, seasonLabel } from "@/lib/format";
 import { parseTireIndices } from "@/lib/tire-indices";
 import { productDescription } from "@/lib/product-description";
@@ -62,6 +63,7 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
   const related = relatedRes.items.filter((p) => p.slug !== product.slug).slice(0, 4);
   const points = pickupRes;
   const cityLoc = CITIES[city].loc;
+  const delivery = deliveryLine(city);
 
   const indices = parseTireIndices(product.size_label);
   const specs: [string, string][] = [
@@ -169,8 +171,8 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
             <div className="flex items-start gap-2.5">
               <img src="/icons/benefit-delivery.svg" alt="" width={20} height={20} className="mt-0.5 size-5 shrink-0" />
               <span className="flex flex-col">
-                <span className="text-caption-lg font-semibold text-dark">Доставка курьером</span>
-                <span className="text-caption text-grey">На следующий день — от 400 ₽, по России через ТК</span>
+                <span className="text-caption-lg font-semibold text-dark">{delivery.title}</span>
+                <span className="text-caption text-grey">{delivery.note}</span>
               </span>
             </div>
           </div>

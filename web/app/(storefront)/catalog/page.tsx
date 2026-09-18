@@ -8,6 +8,7 @@ import { SortSelect } from "@/components/blocks/SortSelect";
 import { getCatalogFacets, listProducts, type ProductFilters, type Season } from "@/lib/api/client";
 import { optionsFromFacets, staticFilterOptions } from "@/lib/catalog-options";
 import { catalogSeo } from "@/lib/catalog-seo";
+import { catalogSeoText } from "@/lib/catalog-seo-text";
 import { CITIES } from "@/lib/city";
 import { formatNumber } from "@/lib/format";
 import { getCity } from "@/lib/get-city";
@@ -109,6 +110,9 @@ export default async function CatalogPage({
     ? `Поиск: ${filters.q}`
     : catalogSeo(filters, CITIES[city].loc, city).h1;
 
+  // SEO-текст сезонной посадочной (лето/зима) — перенесён со старого сайта.
+  const filterSeo = catalogSeoText(filters);
+
   return (
     <main id="main" className="mx-auto max-w-content px-4 pb-20">
       <Breadcrumbs items={[{ label: "Главная", href: "/" }, { label: "Шины" }]} />
@@ -206,6 +210,29 @@ export default async function CatalogPage({
               товар с доставкой или заберите на самовывозе и в пунктах выдачи наших партнёров.
               Быстрый сервис и внимательное отношение к каждому заказчику — наши преимущества.
             </p>
+          </div>
+        </section>
+      )}
+
+      {/* SEO-текст сезонной посадочной (?season=summer|winter) — перенесён дословно
+          со старого сайта (правка сеошника). Показываем только на «чистой» странице
+          сезона; на прочих фильтрах не выводим (не плодим дубли). */}
+      {filterSeo && (
+        <section className="mt-16 max-w-content text-body text-grey">
+          <h2 className="text-h2 text-black">{filterSeo.heading}</h2>
+          <div className="mt-4 flex flex-col gap-3">
+            <p className="text-dark">{filterSeo.intro}</p>
+            <ul className="ml-5 flex list-disc flex-col gap-1.5">
+              {filterSeo.bullets.map((b, i) => (
+                <li key={i}>{b}</li>
+              ))}
+            </ul>
+            {filterSeo.sections.map((s, i) => (
+              <div key={i} className="flex flex-col gap-2">
+                <h3 className="mt-4 text-service text-dark">{s.h}</h3>
+                <p>{s.body}</p>
+              </div>
+            ))}
           </div>
         </section>
       )}
