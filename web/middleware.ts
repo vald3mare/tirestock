@@ -12,13 +12,15 @@ import { isIndexable } from "@/lib/site-env";
 export function middleware(req: NextRequest) {
   // 0) 301-редиректы старых SEO-URL старого сайта (структура URL наследуется 1:1
   //    или 301 — правило проекта). Проверяем ДО остального.
+  // Хост запроса — индексируем только боевой домен (SITE_PRIMARY_HOST), тест — noindex.
+  const host = req.headers.get("host");
   const legacy = legacyRedirect(req);
   if (legacy) {
-    if (!isIndexable()) legacy.headers.set("X-Robots-Tag", "noindex, nofollow");
+    if (!isIndexable(host)) legacy.headers.set("X-Robots-Tag", "noindex, nofollow");
     return legacy;
   }
   const res = adminGate(req);
-  if (!isIndexable()) {
+  if (!isIndexable(host)) {
     res.headers.set("X-Robots-Tag", "noindex, nofollow");
   }
   return res;

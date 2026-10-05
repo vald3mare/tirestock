@@ -1,12 +1,27 @@
 # Динамический конфиг Traefik для ПРОДА с доменом (HTTPS), файловый провайдер
 # (docker-провайдер несовместим с Docker v29 → 404).
 # ВАЖНО: домен указан КОНКРЕТНО в rule — иначе ACME не знает, для чего выпускать
-# сертификат (HostRegexp без домена → Traefik отдаёт self-signed). certResolver на
-# самом роутере обязателен, чтобы Let's Encrypt выпустил сертификат для этих хостов.
-# Смена домена — поменять хосты ниже (одна строка) и пересоздать traefik.
+# сертификат (HostRegexp без домена → self-signed). certResolver на самом роутере
+# обязателен, чтобы Let's Encrypt выпустил сертификат для этих хостов.
+#
+# ДВА роутера на один сервис — намеренно РАЗДЕЛЬНЫЕ сертификаты:
+#   web     — боевой tirestock.ru (+www). Пока A-запись домена смотрит на старый
+#             сервер, ACME-проверка не пройдёт — Traefik будет ретраить; сертификат
+#             выпустится САМ, как только переключишь A-запись на нашу ВМ.
+#   web-test — тестовый tirestock.website (+www). Его сертификат уже выпущен и
+#             работает; отдельный роутер = отдельный cert, поэтому неудачная выдача
+#             для tirestock.ru его НЕ ломает.
+# Оба ведут на web:3000. Индексация — по хосту (SITE_PRIMARY_HOST), см. lib/site-env.
 http:
   routers:
     web:
+      rule: "Host(`tirestock.ru`) || Host(`www.tirestock.ru`)"
+      entryPoints:
+        - websecure
+      service: web
+      tls:
+        certResolver: le
+    web-test:
       rule: "Host(`tirestock.website`) || Host(`www.tirestock.website`)"
       entryPoints:
         - websecure

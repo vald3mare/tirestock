@@ -52,6 +52,18 @@ if [ -n "$SLUG" ]; then
   check "product bad slug"  "$BASE/products/nope-does-not-exist-xyz" 404 error
 fi
 
+echo "-- диски --"
+check "wheels list"         "$BASE/wheels?per_page=2" 200 items total page per_page
+check "wheels фильтр"       "$BASE/wheels?diameter=16&per_page=1" 200 items total
+check "wheels город msk"    "$BASE/wheels?city=msk&per_page=1" 200 total
+check "wheels facets spb"   "$BASE/wheels/facets?city=spb" 200 brands diameters widths pcds types
+
+WSLUG=$(curl -s -m 15 "$BASE/wheels?per_page=1" | python3 -c 'import sys,json;print(json.load(sys.stdin)["items"][0]["slug"])' 2>/dev/null)
+if [ -n "$WSLUG" ]; then
+  check "wheel by slug"     "$BASE/wheels/$WSLUG" 200 slug code name brand price stock
+  check "wheel bad slug"    "$BASE/wheels/nope-does-not-exist-xyz" 404 error
+fi
+
 echo "-- контент/сервисы --"
 check "benefits"            "$BASE/benefits" 200 items
 check "pickup-points spb"   "$BASE/pickup-points?city=spb" 200 items
@@ -60,6 +72,7 @@ check "pickup bad slug"     "$BASE/pickup-points/nope-xyz" 404 error
 check "seo /"               "$BASE/seo?path=/" 200 title description
 check "content /about/"     "$BASE/content?path=/about/" 200 slug title body
 check "content bad path"    "$BASE/content?path=/nope-xyz/" 404 error
+check "content-list новости" "$BASE/content-list?prefix=/news/" 200 items
 
 echo "-- обратная интеграция --"
 check "order-status пусто"  "$BASE/order-status?code=NOPE123" 200 found code status_text step products

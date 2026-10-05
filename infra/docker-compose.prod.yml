@@ -77,8 +77,11 @@ services:
     environment:
       API_URL: http://api:8080
       HOSTNAME: "0.0.0.0"
-      # Боевой домен — открываем индексацию (иначе сайт закрыт от поисковиков).
+      # Индексация: включаем глобально, но реально индексируется ТОЛЬКО боевой хост
+      # SITE_PRIMARY_HOST (tirestock.ru). Тестовый tirestock.website остаётся noindex —
+      # оба домена на одном контейнере, гейт по хосту (см. web/lib/site-env.ts).
       SITE_INDEXABLE: ${SITE_INDEXABLE:-true}
+      SITE_PRIMARY_HOST: ${SITE_PRIMARY_HOST:-}
     expose:
       - "3000"
     depends_on:

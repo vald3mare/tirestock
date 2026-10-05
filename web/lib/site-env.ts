@@ -1,10 +1,18 @@
-// Гейт индексации. SEO — священная корова: новый сайт запускается на ТЕСТОВОМ
-// домене рядом со старым (CLAUDE.md), и его нельзя дать проиндексировать —
-// иначе дубли утянут выдачу живого tirestock.ru.
+// Гейт индексации. SEO — священная корова: новый сайт крутится на ДВУХ доменах —
+// боевом (tirestock.ru) и тестовом (tirestock.website). Индексировать можно ТОЛЬКО
+// боевой; тест обязан быть noindex, иначе дубли утянут выдачу.
 //
-// Fail-safe: индексация РАЗРЕШЕНА только при явном SITE_INDEXABLE=true (боевой
-// домен). Любое другое значение / отсутствие переменной (тест, дев, забытый env)
-// → сайт закрыт от поисковиков. Ошибка конфигурации прячет сайт, а не светит его.
-export function isIndexable(): boolean {
-  return process.env.SITE_INDEXABLE === "true";
+// Правила:
+//   1) Глобальный fail-safe: индексация разрешена только при SITE_INDEXABLE=true.
+//      Любое другое значение / отсутствие → сайт закрыт (ошибка конфига прячет сайт).
+//   2) Если задан SITE_PRIMARY_HOST (боевой домен) — индексируем лишь запросы на
+//      этот хост (и www.<host>). Прочие хосты (tirestock.website, IP, preview) —
+//      noindex, даже когда SITE_INDEXABLE=true. Хост берём из запроса.
+//   3) SITE_PRIMARY_HOST не задан → индексируем на всех хостах (обратная совместимость).
+export function isIndexable(host?: string | null): boolean {
+  if (process.env.SITE_INDEXABLE !== "true") return false;
+  const primary = process.env.SITE_PRIMARY_HOST?.trim().toLowerCase();
+  if (!primary) return true;
+  const h = (host ?? "").toLowerCase().replace(/:\d+$/, "");
+  return h === primary || h === `www.${primary}`;
 }
