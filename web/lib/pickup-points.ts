@@ -9,7 +9,7 @@ export const fallbackPickupPoints: Pick<
   PickupPoint,
   "id" | "slug" | "address" | "metro" | "hours" | "badge" | "note" | "is_central" | "is_main" | "city" | "sort_order" | "published"
 >[] = [
-  { id: 1, slug: "novoselov-49", address: "ул. Новосёлов, 49", metro: "м. Ломоносовская", hours: "09:00–21:00", badge: "−15% на шиномонтаж", note: "", is_central: false, is_main: true, city: "spb", sort_order: 10, published: true },
+  { id: 1, slug: "novoselov-49", address: "ул. Новосёлов, 47", metro: "м. Ломоносовская", hours: "09:00–21:00", badge: "−15% на шиномонтаж", note: "", is_central: false, is_main: true, city: "spb", sort_order: 10, published: true },
   { id: 2, slug: "torfyanaya-21", address: "Торфяная дорога, 21", metro: "м. Комендантский проспект", hours: "09:00–21:00", badge: "−15% на шиномонтаж", note: "", is_central: false, is_main: true, city: "spb", sort_order: 20, published: true },
   { id: 3, slug: "polyustrovskiy-73", address: "Полюстровский пр., 73", metro: "м. Лесная", hours: "09:00–21:00", badge: "−15% на шиномонтаж", note: "", is_central: false, is_main: true, city: "spb", sort_order: 30, published: true },
 ];
@@ -52,6 +52,9 @@ export const POINT_COORDS: Record<string, [number, number]> = {
   "mihaylovskaya-30": [60.071677, 30.255123],
   "msk-vyazovskiy-4": [55.718901, 37.759264],
   "msk-melitopolskaya-12a": [55.534247, 37.578166],
+  // Новый основной пункт (правка 18.09.2026). Координата примерная — у дома 4 по
+  // Кубинской (Московский р-н, м. Электросила); уточним, если владелец даст пин.
+  "kubinskaya-4k2": [59.878320, 30.299513],
 };
 
 // Ссылка на пункт в Яндекс.Картах по адресу. region — город для точного поиска.
