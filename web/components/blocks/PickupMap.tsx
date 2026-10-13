@@ -3,18 +3,18 @@
 import { useEffect, useRef } from "react";
 import { POINT_COORDS } from "@/lib/pickup-points";
 
-// Карта пунктов выдачи на ЯНДЕКС.КАРТАХ (ymaps 2.1) — как на старом сайте
+// Карта пунктов выдачи на ЯНДЕКС.КАРТАХ (ymaps 2.1) - как на старом сайте
 // tirestock.ru/points/: все пункты пинами, клик по пину → балун с адресом и
 // (в оформлении заказа) кнопкой «Выбрать», которая отмечает пункт в списке.
-// Ключ НЕ нужен — старый сайт грузит тот же загрузчик без apikey.
-// Координаты — POINT_COORDS по slug (сняты с Яндекс-карты старого сайта).
+// Ключ НЕ нужен - старый сайт грузит тот же загрузчик без apikey.
+// Координаты - POINT_COORDS по slug (сняты с Яндекс-карты старого сайта).
 //
 // onSelect задан → режим выбора (корзина): в балуне кнопка «Выбрать».
 // onSelect нет → режим просмотра (страница «Пункты выдачи»): балун только инфо.
 
 declare global {
   interface Window {
-    // ymaps типизируем как any — официальных типов v2.1 в проекте нет.
+    // ymaps типизируем как any - официальных типов v2.1 в проекте нет.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ymaps?: any;
   }
@@ -77,7 +77,7 @@ export function PickupMap({
     if (!container) return;
 
     // Делегированный клик по кнопке «Выбрать» в балуне (балун рендерится внутри
-    // контейнера карты) — надёжнее, чем onclick внутри HTML балуна.
+    // контейнера карты) - надёжнее, чем onclick внутри HTML балуна.
     const onClick = (e: MouseEvent) => {
       const btn = (e.target as HTMLElement)?.closest<HTMLElement>(".ys-pick");
       if (btn?.dataset.addr) {
@@ -135,7 +135,7 @@ export function PickupMap({
         }
       })
       .catch(() => {
-        // ymaps не загрузился (нет сети/блокировка) — контейнер останется пустым;
+        // ymaps не загрузился (нет сети/блокировка) - контейнер останется пустым;
         // выбор пунктов доступен списком-радио под картой (в корзине).
       });
 
@@ -146,7 +146,7 @@ export function PickupMap({
       mapRef.current = null;
       placemarksRef.current.clear();
     };
-    // Пересобираем карту при смене списка (город/данные). selected — отдельным эффектом.
+    // Пересобираем карту при смене списка (город/данные). selected - отдельным эффектом.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [points]);
 

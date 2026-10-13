@@ -1,4 +1,4 @@
-# Прод-развёртывание TireStock БЕЗ домена — по публичному IP, HTTP (:80), с Traefik.
+# Прод-развёртывание TireStock БЕЗ домена - по публичному IP, HTTP (:80), с Traefik.
 # Для старта, пока не куплен домен. TLS нет (Let's Encrypt требует домен).
 # Traefik работает через ФАЙЛОВЫЙ провайдер (traefik/dynamic.yml), а НЕ docker-провайдер:
 # на очень свежем Docker v29 docker-провайдер Traefik v3.1 несовместим (API 1.24

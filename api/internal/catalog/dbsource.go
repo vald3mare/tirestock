@@ -12,7 +12,7 @@ import (
 	"tirestock/api/internal/db"
 )
 
-// DBSource — источник каталога на read-модели products (наполняется синком
+// DBSource - источник каталога на read-модели products (наполняется синком
 // SelectTyres). Реализует CatalogSource. Скрытые оверрайдом товары не отдаёт,
 // бейдж «Хит» подмешивает из product_overrides.
 type DBSource struct {
@@ -24,7 +24,7 @@ func NewDBSource(pool *pgxpool.Pool) *DBSource {
 	return &DBSource{pool: pool, q: db.New(pool)}
 }
 
-// DefaultCity — базовый город каталога (мультигород: СПб + Москва).
+// DefaultCity - базовый город каталога (мультигород: СПб + Москва).
 const DefaultCity = "spb"
 
 func cityOrDefault(c string) string {
@@ -34,13 +34,13 @@ func cityOrDefault(c string) string {
 	return DefaultCity
 }
 
-// Цена/остаток — из оффера города (po.*), не из снапшота products.
+// Цена/остаток - из оффера города (po.*), не из снапшота products.
 const listCols = `p.id, p.slug, p.brand, p.model, p.name, p.size_label,
 	p.width, p.profile, p.diameter, p.season, p.spikes, p.runflat,
 	po.price, po.stock, COALESCE(NULLIF(p.image_clean_url, ''), p.image_url), COALESCE(o.badge_hit, false)`
 
 func (s *DBSource) List(ctx context.Context, f Filters, page, perPage int) ([]Product, int, error) {
-	// $1 — город (INNER JOIN оффера); фильтры нумеруются с $2.
+	// $1 - город (INNER JOIN оффера); фильтры нумеруются с $2.
 	city := cityOrDefault(f.City)
 	where, filterArgs := f.WhereSQL(2)
 	allArgs := append([]any{city}, filterArgs...)
@@ -62,7 +62,7 @@ func (s *DBSource) List(ctx context.Context, f Filters, page, perPage int) ([]Pr
 		return []Product{}, 0, nil
 	}
 
-	// ORDER BY берётся из белого списка SortOrders (не из ввода) — SQL-инъекция исключена.
+	// ORDER BY берётся из белого списка SortOrders (не из ввода) - SQL-инъекция исключена.
 	orderBy := SortOrders[f.Sort]
 	listSQL := fmt.Sprintf(
 		"SELECT %s %s ORDER BY %s LIMIT $%d OFFSET $%d",
@@ -124,7 +124,7 @@ func scanProduct(rows pgx.Rows) (Product, error) {
 
 // Facets возвращает реальные значения фильтров, присутствующие в каталоге
 // (не скрытые товары). array_agg с FILTER отсекает пустые бренды; NULL-массивы
-// (пустой каталог) сканируются в nil-срезы — витрина отдаст пустые списки.
+// (пустой каталог) сканируются в nil-срезы - витрина отдаст пустые списки.
 func (s *DBSource) Facets(ctx context.Context, city string) (Facets, error) {
 	city = cityOrDefault(city)
 	// City-aware: только товары с оффером в городе. FILTER по санитарным диапазонам
@@ -155,7 +155,7 @@ WHERE p.code <> '' AND COALESCE(o.hidden, false) = false`,
 	}
 	f.PopularSizes = sizes
 	// Инвариант контракта: все required-массивы НЕ nil (JSON [], не null), даже при
-	// пустом каталоге города — иначе клиент падает на .length. array_agg возвращает
+	// пустом каталоге города - иначе клиент падает на .length. array_agg возвращает
 	// NULL при отсутствии строк, поэтому Brands/PopularSizes страхуем явно.
 	if f.Brands == nil {
 		f.Brands = []string{}
@@ -166,7 +166,7 @@ WHERE p.code <> '' AND COALESCE(o.hidden, false) = false`,
 	return f, nil
 }
 
-// popularSizes — топ типоразмеров по числу товаров в наличии в городе (чипы «Популярно»).
+// popularSizes - топ типоразмеров по числу товаров в наличии в городе (чипы «Популярно»).
 func (s *DBSource) popularSizes(ctx context.Context, city string) ([]Size, error) {
 	q := fmt.Sprintf(`
 SELECT p.width, p.profile, p.diameter

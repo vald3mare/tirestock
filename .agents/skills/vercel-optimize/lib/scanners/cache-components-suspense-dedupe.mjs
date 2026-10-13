@@ -1,5 +1,5 @@
 // Detects the Cache Components anti-pattern where `'use cache'` doesn't dedupe across
-// separate `<Suspense>` boundaries — each boundary triggers a separate evaluation of the
+// separate `<Suspense>` boundaries - each boundary triggers a separate evaluation of the
 // "shared" cached function, multiplying invocations and ISR write pressure.
 //
 // Simplified single-file heuristic (cross-file segment analysis is out of scope):

@@ -1,7 +1,7 @@
 import { Footer } from "@/components/blocks/Footer";
 import { Header } from "@/components/blocks/Header";
 
-// Каркас витрины: скип-ссылка + шапка + футер. Админка (/admin) сюда не входит —
+// Каркас витрины: скип-ссылка + шапка + футер. Админка (/admin) сюда не входит -
 // у неё свой каркас с тёмным сайдбаром (см. app/admin).
 export default function StorefrontLayout({ children }: { children: React.ReactNode }) {
   return (

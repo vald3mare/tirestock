@@ -21,7 +21,7 @@ export function extractClaims(rec, ctx = {}) {
   }
 
   for (const cite of asArray(rec.citations)) {
-    // Skill-rule refs are filtered upstream — skip version check.
+    // Skill-rule refs are filtered upstream - skip version check.
     if (/^[\w-]+:[\w-]+$/.test(cite)) {
       claims.push({ type: 'citation_in_library', url: cite, sourceField: 'citations' });
       continue;

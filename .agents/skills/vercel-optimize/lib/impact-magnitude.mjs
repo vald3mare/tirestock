@@ -19,7 +19,7 @@ export function impactMagnitude({ currentCost, impactTier }) {
   return { magnitude: 'very-large', phrase: 'thousands+ of dollars per month at current traffic' };
 }
 
-// Preserves Postgres placeholders ($1, $2, …) — digits with no comma/period/k/m suffix.
+// Preserves Postgres placeholders ($1, $2, …) - digits with no comma/period/k/m suffix.
 export function stripDollarLiterals(text) {
   if (!text || typeof text !== 'string') return { text, stripped: 0 };
 

@@ -12,7 +12,7 @@ import (
 	"tirestock/api/internal/pickups"
 )
 
-// HTTP-слой раздела «Пункты выдачи». Домен — internal/pickups; здесь парсинг,
+// HTTP-слой раздела «Пункты выдачи». Домен - internal/pickups; здесь парсинг,
 // маппинг ошибок и подстановка автора правки.
 
 func pickupID(w http.ResponseWriter, r *http.Request) (int64, bool) {

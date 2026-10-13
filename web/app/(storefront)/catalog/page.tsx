@@ -16,12 +16,12 @@ import { metadataFor } from "@/lib/seo";
 
 // Каталог шин (Figma → «Каталог», 20:417). Server Component:
 // фильтры и пагинация живут в URL query params (searchParams), имена = API 1:1.
-// SEO-мета из админки (раздел «SEO-мета»), фолбэк — значения ниже.
-// TODO: сверить URL со старым сайтом (SEO — священная корова).
+// SEO-мета из админки (раздел «SEO-мета»), фолбэк - значения ниже.
+// TODO: сверить URL со старым сайтом (SEO - священная корова).
 
 type SearchParams = { [key: string]: string | string[] | undefined };
 
-// Есть ли активный фильтр (кроме города/страницы) — тогда это SEO-посадочная.
+// Есть ли активный фильтр (кроме города/страницы) - тогда это SEO-посадочная.
 function hasActiveFilter(f: ProductFilters): boolean {
   return Boolean(
     f.q || f.width || f.profile || f.diameter || f.season || f.brand ||
@@ -38,7 +38,7 @@ export async function generateMetadata({
   const f = parseFilters(sp);
   const city = await getCity();
 
-  // Базовый каталог (без фильтров) — мета из админки (раздел «SEO-мета»).
+  // Базовый каталог (без фильтров) - мета из админки (раздел «SEO-мета»).
   // Фолбэк перенесён со старого сайта tirestock.ru/tyres/ (правка сеошника #2).
   if (!hasActiveFilter(f)) {
     return metadataFor("/catalog", {
@@ -46,13 +46,13 @@ export async function generateMetadata({
       description: `Шины по низким ценам в ${CITIES[city].loc}. Большой ассортимент резины, доставка по России.`,
     });
   }
-  // Фильтрованная страница — генерим уникальные мета + canonical/robots.
+  // Фильтрованная страница - генерим уникальные мета + canonical/robots.
   const seo = catalogSeo(f, CITIES[city].loc, city);
   return {
     title: seo.title,
     description: seo.description,
     alternates: { canonical: seo.canonicalPath },
-    // Индексируем только чистые востребованные комбинации; остальное — noindex,follow.
+    // Индексируем только чистые востребованные комбинации; остальное - noindex,follow.
     robots: seo.indexable ? undefined : { index: false, follow: true },
   };
 }
@@ -103,14 +103,14 @@ export default async function CatalogPage({
   nextPageParams.set("page", String(page + 1));
   const hasMore = page * per_page < total;
 
-  // Заголовок H1: для фильтрованной страницы — сгенерированный («Шины R15»),
-  // для текстового поиска — «Поиск: …», иначе «Шины». Количество товаров — НЕ в H1
+  // Заголовок H1: для фильтрованной страницы - сгенерированный («Шины R15»),
+  // для текстового поиска - «Поиск: …», иначе «Шины». Количество товаров - НЕ в H1
   // (рекомендация сеошника), а отдельным элементом ниже.
   const pageH1 = filters.q
     ? `Поиск: ${filters.q}`
     : catalogSeo(filters, CITIES[city].loc, city).h1;
 
-  // SEO-текст сезонной посадочной (лето/зима) — перенесён со старого сайта.
+  // SEO-текст сезонной посадочной (лето/зима) - перенесён со старого сайта.
   const filterSeo = catalogSeoText(filters);
 
   return (
@@ -120,7 +120,7 @@ export default async function CatalogPage({
       <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
           <h1 className="text-h2 text-black lg:text-h1">{pageH1}</h1>
-          {/* Количество — отдельно от H1 (SEO): не часть заголовка. */}
+          {/* Количество - отдельно от H1 (SEO): не часть заголовка. */}
           <p className="tnum text-body font-medium text-grey">{formatNumber(total)} товаров</p>
         </div>
         <SortSelect value={filters.sort ?? ""} />
@@ -129,7 +129,7 @@ export default async function CatalogPage({
       <div className="mt-8 flex flex-col-reverse items-stretch gap-6 lg:flex-row lg:items-start lg:gap-4">
         <div className="flex-1">
           {items.length === 0 ? (
-            // TODO: полноценный empty state поиска — дизайн в работе (см. TODO дизайна)
+            // TODO: полноценный empty state поиска - дизайн в работе (см. TODO дизайна)
             <div className="flex flex-col items-start gap-4 rounded-container bg-light p-10">
               <p className="text-h2 text-black">Ничего не найдено</p>
               <p className="text-body text-grey">
@@ -163,7 +163,7 @@ export default async function CatalogPage({
         <FilterSidebar total={total} options={filterOptions} />
       </div>
 
-      {/* SEO-текст внизу каталога — перенесён со старого сайта tirestock.ru/tyres/
+      {/* SEO-текст внизу каталога - перенесён со старого сайта tirestock.ru/tyres/
           (правка сеошника #5). На фильтрованных страницах не выводим (не плодим дубли). */}
       {!hasActiveFilter(filters) && (
         <section className="mt-16 max-w-content text-body text-grey">
@@ -172,7 +172,7 @@ export default async function CatalogPage({
             <p>
               Предлагаем купить автомобильные шины в СПб для российских авто и иномарок без
               переплаты и риска приобрести контрафактную продукцию. Интернет-магазин
-              TireStock.ru — это розница по оптовым ценам, широкий ассортимент авторезины
+              TireStock.ru - это розница по оптовым ценам, широкий ассортимент авторезины
               известных брендов и 12 месяцев гарантии на все представленные товары (со дня
               покупки). Наша компания более 10 лет специализируется на поставках автомобильных
               покрышек для корпоративных клиентов Санкт-Петербурга. У нас постоянные поставщики
@@ -183,14 +183,14 @@ export default async function CatalogPage({
             <p className="text-dark">Простые рекомендации по покупке резины для автовладельцев:</p>
             <ul className="ml-5 flex list-disc flex-col gap-1.5">
               <li>Соблюдайте рекомендации производителя автомобиля относительно типоразмера шин.</li>
-              <li>Рисунок протектора влияет на поведение машины на дороге — выбирайте его тщательно.</li>
-              <li>Не стоит экономить на сезонной резине: летом нужно ездить на летних шинах, зимой — на зимних.</li>
-              <li>Лучше менять весь комплект шин — это важно для безопасности езды.</li>
+              <li>Рисунок протектора влияет на поведение машины на дороге - выбирайте его тщательно.</li>
+              <li>Не стоит экономить на сезонной резине: летом нужно ездить на летних шинах, зимой - на зимних.</li>
+              <li>Лучше менять весь комплект шин - это важно для безопасности езды.</li>
             </ul>
             <p>
               Чтобы выбрать нужную модель шин в СПб, не обязательно разбираться в цифрах и
               обозначениях. В нашем магазине вы можете просто настроить фильтр и сортировку
-              товаров по нужным параметрам — сразу увидите, какая резина подходит по цене и
+              товаров по нужным параметрам - сразу увидите, какая резина подходит по цене и
               характеристикам, и потратите меньше времени на поиск.
             </p>
 
@@ -208,13 +208,13 @@ export default async function CatalogPage({
               Обратите внимание: в магазине можно купить и покрышки, и диски. Поэтому если вам
               нужно полностью сменить колёса, у нас вы приобретёте всё необходимое. Закажите
               товар с доставкой или заберите на самовывозе и в пунктах выдачи наших партнёров.
-              Быстрый сервис и внимательное отношение к каждому заказчику — наши преимущества.
+              Быстрый сервис и внимательное отношение к каждому заказчику - наши преимущества.
             </p>
           </div>
         </section>
       )}
 
-      {/* SEO-текст сезонной посадочной (?season=summer|winter) — перенесён дословно
+      {/* SEO-текст сезонной посадочной (?season=summer|winter) - перенесён дословно
           со старого сайта (правка сеошника). Показываем только на «чистой» странице
           сезона; на прочих фильтрах не выводим (не плодим дубли). */}
       {filterSeo && (

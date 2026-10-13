@@ -3,10 +3,10 @@
 import { useState } from "react";
 
 type Props = {
-  defaultValue?: number; // шины покупают комплектами — дефолт 4
+  defaultValue?: number; // шины покупают комплектами - дефолт 4
   min?: number;
   max?: number;
-  value?: number; // если передан — компонент контролируемый
+  value?: number; // если передан - компонент контролируемый
   onChange?: (value: number) => void;
   disabled?: boolean;
 };

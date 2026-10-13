@@ -42,12 +42,12 @@ function ProgressBar({ step }: { step: number }) {
 
 function TradeskStatusCard({ order }: { order: AdminOrderDetail }) {
   const st = order.status;
-  // Номера ещё нет — заказ не доставлен в tradesk.
+  // Номера ещё нет - заказ не доставлен в tradesk.
   if (!order.tradesk_number) {
     return (
       <div className="rounded-card-lg border border-line bg-light p-5">
         <p className="text-caption-lg text-grey">
-          Заказ ещё не отправлен в tradesk — статус появится после доставки.
+          Заказ ещё не отправлен в tradesk - статус появится после доставки.
         </p>
       </div>
     );
@@ -176,7 +176,7 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ id:
                       it.name
                     )}
                   </td>
-                  <td className="tnum px-4 py-3 text-grey">{it.code || "—"}</td>
+                  <td className="tnum px-4 py-3 text-grey">{it.code || "-"}</td>
                   <td className="tnum px-4 py-3">{it.qty} шт.</td>
                   <td className="tnum px-4 py-3">{formatPrice(it.price)}</td>
                   <td className="tnum px-4 py-3">{formatPrice(it.price * it.qty)}</td>

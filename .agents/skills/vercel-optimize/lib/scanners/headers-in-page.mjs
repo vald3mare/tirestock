@@ -7,7 +7,7 @@ export const metadata = {
   billingDimension: 'function-duration',
   trafficIndependent: false,
   description:
-    'headers(), cookies(), and draftMode() are dynamic APIs. Reading them in a page/layout makes the entire segment dynamic — no ISR, no static generation, and a function invocation on every request.',
+    'headers(), cookies(), and draftMode() are dynamic APIs. Reading them in a page/layout makes the entire segment dynamic - no ISR, no static generation, and a function invocation on every request.',
   fix:
     'Move the dynamic API call into a child Server Component that lives inside a Suspense boundary. The parent can stay static; only the leaf re-renders dynamically.',
   citations: [

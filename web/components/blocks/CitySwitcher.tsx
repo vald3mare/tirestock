@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { CITIES, type City } from "@/lib/city";
 
 // Переключатель города в топбаре (DNS-стиль): один домен, город в куке.
-// Enter/Escape, aria-expanded; при выборе — POST /api/city + router.refresh().
+// Enter/Escape, aria-expanded; при выборе - POST /api/city + router.refresh().
 export function CitySwitcher({ city }: { city: City }) {
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();

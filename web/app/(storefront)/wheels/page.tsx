@@ -11,7 +11,7 @@ import { getCity } from "@/lib/get-city";
 import { metadataFor } from "@/lib/seo";
 
 // Каталог дисков (/wheels/ 1:1 со старым сайтом, SEO). Отдельный от шин тип товара.
-// Фильтры и пагинация — в URL query. Данные — из синка фида дисков SelectTyres.
+// Фильтры и пагинация - в URL query. Данные - из синка фида дисков SelectTyres.
 
 type SearchParams = { [key: string]: string | string[] | undefined };
 
@@ -37,7 +37,7 @@ function parseFilters(sp: SearchParams): WheelFilters {
 export async function generateMetadata(): Promise<Metadata> {
   const city = await getCity();
   return metadataFor("/wheels", {
-    title: `Диски — купить в ${CITIES[city].loc} | TireStock`,
+    title: `Диски - купить в ${CITIES[city].loc} | TireStock`,
     description: `Каталог литых, кованых и штампованных дисков: подбор по диаметру, сверловке и вылету, наличие в ${CITIES[city].loc}, доставка по России.`,
   });
 }

@@ -3,16 +3,16 @@ import { SESSION_COOKIE } from "@/lib/admin-cookie";
 import { isIndexable } from "@/lib/site-env";
 
 // Два дела на каждый запрос:
-// 1) Гейт индексации: пока сайт не на боевом домене (SITE_INDEXABLE≠true) —
+// 1) Гейт индексации: пока сайт не на боевом домене (SITE_INDEXABLE≠true) -
 //    вешаем X-Robots-Tag: noindex на ВСЕ ответы. Это сильнее robots.txt: Google
 //    убирает из индекса уже обойдённые страницы даже без чтения robots.txt.
-// 2) Дешёвый гард /admin/*: проверяет лишь наличие куки сессии (валидность — на
+// 2) Дешёвый гард /admin/*: проверяет лишь наличие куки сессии (валидность - на
 //    серверных страницах через requireUser). Без куки → на логин; с кукой на
 //    логине → в админку.
 export function middleware(req: NextRequest) {
   // 0) 301-редиректы старых SEO-URL старого сайта (структура URL наследуется 1:1
-  //    или 301 — правило проекта). Проверяем ДО остального.
-  // Хост запроса — индексируем только боевой домен (SITE_PRIMARY_HOST), тест — noindex.
+  //    или 301 - правило проекта). Проверяем ДО остального.
+  // Хост запроса - индексируем только боевой домен (SITE_PRIMARY_HOST), тест - noindex.
   const host = req.headers.get("host");
   const legacy = legacyRedirect(req);
   if (legacy) {
@@ -28,7 +28,7 @@ export function middleware(req: NextRequest) {
 
 // legacyRedirect: 301 со старых индексированных URL (tirestock.ru) на новые.
 // Старый сайт: каталог /tyres/, диски /wheels/, SEO-поиски /tyres/search-*.
-// null — не легаси-URL (идём дальше).
+// null - не легаси-URL (идём дальше).
 function legacyRedirect(req: NextRequest): NextResponse | null {
   const p = req.nextUrl.pathname.replace(/\/+$/, "") || "/";
   const to = (dest: string) => {
@@ -66,7 +66,7 @@ function legacyRedirect(req: NextRequest): NextResponse | null {
   // Бренд: /tyres/search-bridgestone/.
   m = p.match(/^\/tyres\/search-(.+)$/);
   if (m) return to(`/catalog/?brand=${brand(m[1])}`);
-  // Прочие старые товарные URL /tyres/<slug>/ — в каталог (не отдаём 404).
+  // Прочие старые товарные URL /tyres/<slug>/ - в каталог (не отдаём 404).
   if (p.startsWith("/tyres/")) return to("/catalog/");
 
   return null;

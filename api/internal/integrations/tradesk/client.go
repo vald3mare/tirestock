@@ -1,12 +1,12 @@
-// Package tradesk — адаптер доставки заказов/заявок в учётную систему tradesk.ru
+// Package tradesk - адаптер доставки заказов/заявок в учётную систему tradesk.ru
 // (Yii2, самопись). Реализует orders.OrderDelivery. Заменяет мост oldsite, когда
 // выключается Битрикс.
 //
 // Приём заявок (вскрыто из /ajax/call.php старого сайта, 11.08.2026): публичное
-// пространство `/data/<сущность>` — простой GET с query-параметрами, БЕЗ входа,
+// пространство `/data/<сущность>` - простой GET с query-параметрами, БЕЗ входа,
 // сессии и CSRF. Именно так заявки со старого сайта попадают в учётку. См. delivery.go.
 //
-// Админ-контур (вход по логину/паролю) остаётся здесь на будущее — он нужен для
+// Админ-контур (вход по логину/паролю) остаётся здесь на будущее - он нужен для
 // чтения/служебных действий, но НЕ для доставки заявок. Поэтому Username/Password
 // необязательны: клиент без кредов умеет доставлять обратные звонки.
 //   - Вход: GET /site/login → CSRF-токен из <meta name="csrf-token"> и куки _csrf →
@@ -29,7 +29,7 @@ import (
 	"time"
 )
 
-// Config — параметры подключения к tradesk (из env, задаются в main).
+// Config - параметры подключения к tradesk (из env, задаются в main).
 type Config struct {
 	BaseURL  string // напр. https://tradesk.ru
 	Username string
@@ -38,7 +38,7 @@ type Config struct {
 	Log      *slog.Logger  // 0 → slog.Default(); пишем номера принятых заказов
 }
 
-// Client — HTTP-клиент к tradesk с ленивой авторизацией и переиспользованием сессии.
+// Client - HTTP-клиент к tradesk с ленивой авторизацией и переиспользованием сессии.
 // Потокобезопасен: воркер доставки может дёргать Deliver из нескольких горутин.
 type Client struct {
 	cfg  Config
@@ -57,7 +57,7 @@ func NewClient(cfg Config) (*Client, error) {
 		return nil, fmt.Errorf("tradesk: BaseURL обязателен")
 	}
 	// Креды не обязательны: доставка заявок идёт в публичное /data/* без входа.
-	// Они нужны только админ-контуру (postForm) — там отсутствие проверяется явно.
+	// Они нужны только админ-контуру (postForm) - там отсутствие проверяется явно.
 	cfg.BaseURL = strings.TrimRight(cfg.BaseURL, "/")
 	if cfg.Timeout == 0 {
 		cfg.Timeout = 15 * time.Second
@@ -75,9 +75,9 @@ func NewClient(cfg Config) (*Client, error) {
 	}, nil
 }
 
-// getData дёргает публичный приёмник /data/<сущность> — GET с query-параметрами,
+// getData дёргает публичный приёмник /data/<сущность> - GET с query-параметрами,
 // без входа и CSRF (ровно так делает мост старого сайта через file_get_contents).
-// Успех — любой 2xx; приёмник отвечает пустым телом.
+// Успех - любой 2xx; приёмник отвечает пустым телом.
 func (c *Client) getData(ctx context.Context, path string, params url.Values) error {
 	u := c.cfg.BaseURL + path
 	if len(params) > 0 {
@@ -98,9 +98,9 @@ func (c *Client) getData(ctx context.Context, path string, params url.Values) er
 	return nil
 }
 
-// getDataString — как getData, но возвращает тело ответа. Приёмник заказа отдаёт
-// номер заказа в кавычках (`"12345"`) либо строку `error`; кавычки снимаем — ровно
-// это делал мост старого сайта (`str_replace('"', '', $data)`).
+// getDataString - как getData, но возвращает тело ответа. Приёмник заказа отдаёт
+// номер заказа в кавычках (`"12345"`) либо строку `error`; кавычки снимаем - ровно
+// это делал мост старого сайта (`str_replace('"', ”, $data)`).
 func (c *Client) getDataString(ctx context.Context, path string, params url.Values) (string, error) {
 	u := c.cfg.BaseURL + path
 	if len(params) > 0 {
@@ -125,8 +125,8 @@ func (c *Client) getDataString(ctx context.Context, path string, params url.Valu
 	return strings.Trim(strings.TrimSpace(string(body)), `"`), nil
 }
 
-// postPlainForm — POST формой БЕЗ авторизации и CSRF (так шлёт мост старого сайта
-// через curl в /api/request и /api/record). Не путать с postForm — тот для
+// postPlainForm - POST формой БЕЗ авторизации и CSRF (так шлёт мост старого сайта
+// через curl в /api/request и /api/record). Не путать с postForm - тот для
 // админ-контура Yii2 с сессией и токеном.
 func (c *Client) postPlainForm(ctx context.Context, path string, fields url.Values) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.cfg.BaseURL+path, strings.NewReader(fields.Encode()))
@@ -145,7 +145,7 @@ func (c *Client) postPlainForm(ctx context.Context, path string, fields url.Valu
 	return nil
 }
 
-// ensureLogin гарантирует активную сессию: если ещё не входили — выполняет вход.
+// ensureLogin гарантирует активную сессию: если ещё не входили - выполняет вход.
 // Переавторизация по протухшей сессии обрабатывается в postForm (retry once).
 func (c *Client) ensureLogin(ctx context.Context) error {
 	c.mu.Lock()
@@ -161,13 +161,13 @@ func (c *Client) ensureLogin(ctx context.Context) error {
 
 // loginLocked выполняет двухшаговый вход Yii2. Вызывается под c.mu.
 func (c *Client) loginLocked(ctx context.Context) error {
-	// Шаг 1: GET страницы логина — получить CSRF-токен и стартовые куки.
+	// Шаг 1: GET страницы логина - получить CSRF-токен и стартовые куки.
 	token, err := c.fetchCSRF(ctx, "/site/login")
 	if err != nil {
 		return fmt.Errorf("tradesk login: получить csrf: %w", err)
 	}
 
-	// Шаг 2: POST логина. Имена полей — стандартные для Yii2 LoginForm.
+	// Шаг 2: POST логина. Имена полей - стандартные для Yii2 LoginForm.
 	form := url.Values{
 		"_csrf-frontend":        {token},
 		"LoginForm[username]":   {c.cfg.Username},
@@ -187,11 +187,11 @@ func (c *Client) loginLocked(ctx context.Context) error {
 	}
 	defer drain(resp)
 
-	// Успех Yii2 — редирект на защищённую страницу; повторно показанная /site/login
+	// Успех Yii2 - редирект на защищённую страницу; повторно показанная /site/login
 	// с формой означает неверные креды.
 	body := readSnippet(resp)
 	if resp.StatusCode >= 400 || strings.Contains(body, `name="LoginForm[password]"`) {
-		return fmt.Errorf("tradesk login: отказ (status %d) — проверьте логин/пароль", resp.StatusCode)
+		return fmt.Errorf("tradesk login: отказ (status %d) - проверьте логин/пароль", resp.StatusCode)
 	}
 	c.loggedIn = true
 	return nil
@@ -221,7 +221,7 @@ func (c *Client) fetchCSRF(ctx context.Context, path string) (string, error) {
 
 // postForm отправляет form-urlencoded POST на path контура. Перед отправкой берёт
 // свежий CSRF-токен со страницы формы (Yii2 валидирует _csrf по кукам+полю).
-// При признаке протухшей сессии (редирект на /site/login) — один повторный вход.
+// При признаке протухшей сессии (редирект на /site/login) - один повторный вход.
 func (c *Client) postForm(ctx context.Context, formPath, actionPath string, fields url.Values) error {
 	if err := c.ensureLogin(ctx); err != nil {
 		return err

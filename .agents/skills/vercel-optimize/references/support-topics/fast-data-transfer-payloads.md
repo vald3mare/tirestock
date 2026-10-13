@@ -19,4 +19,4 @@ Use `bandwidthByCache`, response size, and source serialization. Look for unboun
 Do not shrink payloads without identifying fields or assets that are unnecessary for the route’s response.
 
 ## Verification
-Tie the finding to observed bytes, cache result mix, and the exact response line. A "large payload" claim must reflect post-compression bytes — the unit FDT meters.
+Tie the finding to observed bytes, cache result mix, and the exact response line. A "large payload" claim must reflect post-compression bytes - the unit FDT meters.

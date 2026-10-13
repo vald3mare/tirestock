@@ -1,4 +1,4 @@
-// Checkpoint between gate and deep-dive. Asks only when budget was default AND >=1 candidate got skipped — every question is a tax on the user.
+// Checkpoint between gate and deep-dive. Asks only when budget was default AND >=1 candidate got skipped - every question is a tax on the user.
 
 import { createHash } from 'node:crypto';
 import { formatCandidateLine } from './display-labels.mjs';
@@ -70,7 +70,7 @@ export function buildBudgetSummary(gate) {
 }
 
 function buildChatPreview({ shouldAsk, totalPassed, currentBudget, skipped, topInvestigating, topSkipped, reason }) {
-  if (!shouldAsk) return `Audit scope: no question needed — ${reason}.`;
+  if (!shouldAsk) return `Audit scope: no question needed - ${reason}.`;
   const lines = [];
   lines.push(`Found ${totalPassed} potential issue${totalPassed === 1 ? '' : 's'} worth checking. By default I'll inspect the ${currentBudget} strongest now; ${skipped} will stay in the report for a larger run.`);
   lines.push(`Choose a larger scope if you want broader coverage. More checks take longer.`);
@@ -106,7 +106,7 @@ function buildPrintCheck({ exactChatMessage, skipped }) {
     forbiddenSummaryPatterns: [
       '\\btop skipped\\b',
       '\\bmore (?:candidate|candidates|routes|entries|items|in gated list)\\b',
-      '\\b\\d+\\s*[-–—]\\s*\\d+\\.\\s+\\d+\\s+more\\b',
+      '\\b\\d+\\s*[-–-]\\s*\\d+\\.\\s+\\d+\\s+more\\b',
       '\\betc\\.\\b',
     ],
     instruction: 'The budget message is valid only when every line from exactChatMessage.body is preserved exactly. If you cannot verify that, print exactChatMessage.body again before asking the question.',
@@ -165,7 +165,7 @@ export function renderBudgetSummaryMarkdown(s) {
   lines.push(`## Audit scope`);
   lines.push('');
   if (!s.shouldAsk) {
-    lines.push(`_No question needed — ${s.reason}._`);
+    lines.push(`_No question needed - ${s.reason}._`);
     return lines.join('\n');
   }
   for (const ln of s.chatPreview.split('\n')) lines.push(ln);
@@ -174,7 +174,7 @@ export function renderBudgetSummaryMarkdown(s) {
   lines.push('');
   for (const o of s.options) {
     const tag = o.recommended ? ' (recommended)' : '';
-    lines.push(`- **${o.label}${tag}** — ${o.rationale}`);
+    lines.push(`- **${o.label}${tag}** - ${o.rationale}`);
   }
   lines.push('');
   lines.push(`**Question:** ${s.questionText}`);

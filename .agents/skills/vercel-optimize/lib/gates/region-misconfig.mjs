@@ -1,4 +1,4 @@
-// Region-misconfig gate. Branch 2 (scanner-only) — per-region TTFB data gap.
+// Region-misconfig gate. Branch 2 (scanner-only) - per-region TTFB data gap.
 //
 // The intended Branch 1 (region-grouped TTFB metric) was preflight-tested but the
 // CLI returned INTERNAL_ERROR for the `--group-by route --group-by function_region`
@@ -15,7 +15,7 @@ export const metadata = {
   scope: 'account',
   sourceCitation: 'vercel-optimize gate threshold',
   description:
-    "A single function region is pinned in `vercel.json` or per-route `preferredRegion`. Without per-region TTFB data (data gap), the gate can't quantify the geographic latency cost — but a single-region pin on a project with 20+ routes is worth auditing against Speed Insights traffic geo.",
+    "A single function region is pinned in `vercel.json` or per-route `preferredRegion`. Without per-region TTFB data (data gap), the gate can't quantify the geographic latency cost - but a single-region pin on a project with 20+ routes is worth auditing against Speed Insights traffic geo.",
 };
 
 const ROUTE_FLOOR = 20;
@@ -46,7 +46,7 @@ export function gate(signals) {
     scope: 'account',
     files: singleRegionFindings.map((f) => f.file).slice(0, 6),
     priority: homogeneous ? 42 : 38,
-    confidence: 0.6, // low — no per-region TTFB data
+    confidence: 0.6, // low - no per-region TTFB data
     o11ySignal: `pinned_regions=${regionList.join(',')} routes=${routes.length}`,
     reason: homogeneous
       ? `all functions pinned to a single region (${regionList[0]}) on a project with ${routes.length} routes`

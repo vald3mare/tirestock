@@ -1,4 +1,4 @@
-# Локальная разработка и тестовый домен — один и тот же compose с разными env.
+# Локальная разработка и тестовый домен - один и тот же compose с разными env.
 # Запуск: docker compose -f deploy/docker-compose.yml --env-file deploy/.env up --build
 services:
   postgres:
@@ -23,14 +23,14 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER:-tirestock}:${POSTGRES_PASSWORD:-tirestock}@postgres:5432/${POSTGRES_DB:-tirestock}?sslmode=disable
       API_ADDR: ":8080"
       # Доставка заявок и заказов. Приоритет: прямой tradesk → мост Битрикса → мок.
-      # TRADESK_BASE_URL — основной путь (http://tradesk.ru). ⚠️ БОЕВАЯ учётка.
-      # OLDSITE_BASE_URL — аварийный мост через /ajax Битрикса, задавать только
+      # TRADESK_BASE_URL - основной путь (http://tradesk.ru). ⚠️ БОЕВАЯ учётка.
+      # OLDSITE_BASE_URL - аварийный мост через /ajax Битрикса, задавать только
       # если прямой контур недоступен (см. docs/OLDSITE_AJAX.md).
       OLDSITE_BASE_URL: ${OLDSITE_BASE_URL:-}
       TRADESK_BASE_URL: ${TRADESK_BASE_URL:-}
       TRADESK_USERNAME: ${TRADESK_USERNAME:-}
       TRADESK_PASSWORD: ${TRADESK_PASSWORD:-}
-      # Пометка тестового стенда в комментарии заявок (на проде — пусто).
+      # Пометка тестового стенда в комментарии заявок (на проде - пусто).
       DELIVERY_TEST_MARK: ${DELIVERY_TEST_MARK:-}
       # Сид первого пользователя админки (создаётся, только если таблица пуста).
       ADMIN_BOOTSTRAP_USER: ${ADMIN_BOOTSTRAP_USER:-}
@@ -59,13 +59,13 @@ services:
     environment:
       API_URL: http://api:8080
       # Индексация. По умолчанию сайт ЗАКРЫТ от поисковиков (robots Disallow +
-      # X-Robots-Tag noindex) — тестовый домен не должен попасть в индекс рядом
+      # X-Robots-Tag noindex) - тестовый домен не должен попасть в индекс рядом
       # со старым tirestock.ru. На боевом домене выставить SITE_INDEXABLE=true.
       SITE_INDEXABLE: "${SITE_INDEXABLE:-false}"
     ports:
       - "${WEB_PORT:-3000}:3000"
     volumes:
-      # Кэш оптимизированных фото — вне контейнера, переживает пересборку образа.
+      # Кэш оптимизированных фото - вне контейнера, переживает пересборку образа.
       - web-image-cache:/app/.next/cache/images
     depends_on:
       api:

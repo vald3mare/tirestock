@@ -4,7 +4,7 @@ type Props = InputHTMLAttributes<HTMLInputElement> & {
   label: string;
 };
 
-// Checkbox: 20×20, radius 5, бордер line 1.5. Всё подписано — label обязателен.
+// Checkbox: 20×20, radius 5, бордер line 1.5. Всё подписано - label обязателен.
 // Строка-label даёт тач-таргет ≥44px.
 export function Checkbox({ label, className = "", ...props }: Props) {
   return (

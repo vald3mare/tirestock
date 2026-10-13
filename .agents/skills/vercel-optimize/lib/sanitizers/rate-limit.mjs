@@ -1,4 +1,4 @@
-// Prepend a caveat (don't drop — customer may be on a higher tier) when a
+// Prepend a caveat (don't drop - customer may be on a higher tier) when a
 // rec prescribes concurrency above a known provider rate limit.
 
 const PROVIDER_LIMITS = {

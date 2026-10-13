@@ -2,9 +2,9 @@
 // driving Build Minutes to dominate the bill on monorepos.
 //
 // Three signal subtypes:
-//   force-flag      — `TURBO_FORCE=true` env var or `turbo run ... --force` in build script
-//   cache-disabled  — `turbo.json` declares `"cache": false` for the build pipeline
-//   no-ignore-step  — repo has turbo.json and no repo-declared ignoreCommand;
+//   force-flag      - `TURBO_FORCE=true` env var or `turbo run ... --force` in build script
+//   cache-disabled  - `turbo.json` declares `"cache": false` for the build pipeline
+//   no-ignore-step  - repo has turbo.json and no repo-declared ignoreCommand;
 //                     verify Vercel's skip-unaffected project setting before recommending one
 //
 // This pattern has caused full-monorepo rebuilds on every commit. Build-skip
@@ -99,7 +99,7 @@ export function scan({ files }) {
 }
 
 function detectBuildCacheDisabled(content) {
-  // Tolerate JSONC comments and trailing commas — light scan, not full parse.
+  // Tolerate JSONC comments and trailing commas - light scan, not full parse.
   // Match `"build": { ... "cache": false ... }` within reasonable lookahead.
   const buildTask = /"build"\s*:\s*\{([\s\S]{0,400}?)\}/.exec(content);
   if (!buildTask) return null;

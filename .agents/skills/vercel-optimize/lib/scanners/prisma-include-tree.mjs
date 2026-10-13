@@ -34,7 +34,7 @@ export function scan({ files }) {
         evidence: '3+ levels of nested Prisma .include()',
         trafficIndependent: metadata.trafficIndependent,
       });
-      // One finding per file is enough — agent investigates holistically.
+      // One finding per file is enough - agent investigates holistically.
       break;
     }
   }

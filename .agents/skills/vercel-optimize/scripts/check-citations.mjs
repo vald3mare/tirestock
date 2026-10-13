@@ -50,7 +50,7 @@ async function main() {
     process.exit(1);
   }
 
-  console.error(`[check-citations] OK — ${lib.urls.length} URLs, ${lib.ruleSkillRefs.length} skill-rule refs`);
+  console.error(`[check-citations] OK - ${lib.urls.length} URLs, ${lib.ruleSkillRefs.length} skill-rule refs`);
 }
 
 function validateFrameworks(patterns, label, errors) {

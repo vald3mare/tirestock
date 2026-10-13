@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-// Хеш пароля — pbkdf2-sha256, строка формата
+// Хеш пароля - pbkdf2-sha256, строка формата
 // pbkdf2_sha256$<iter>$<salt_b64>$<hash_b64>. Без внешних зависимостей (stdlib).
 const (
 	pbkdf2Iter   = 120_000
@@ -73,7 +73,7 @@ func newSessionToken() (token, tokenHash string, err error) {
 	return token, hashToken(token), nil
 }
 
-// hashToken — sha256(token) в hex; детерминированно для поиска сессии по куке.
+// hashToken - sha256(token) в hex; детерминированно для поиска сессии по куке.
 func hashToken(token string) string {
 	sum := sha256.Sum256([]byte(token))
 	return hex.EncodeToString(sum[:])

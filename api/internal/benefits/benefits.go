@@ -1,5 +1,5 @@
-// Package benefits — фича «Преимущества»: строка офферов над каталогом на главной
-// (компонент витрины BenefitsBar). Истина контента витрины — наша админка (CLAUDE.md),
+// Package benefits - фича «Преимущества»: строка офферов над каталогом на главной
+// (компонент витрины BenefitsBar). Истина контента витрины - наша админка (CLAUDE.md),
 // поэтому офферы редактируемы, а не захардкожены.
 package benefits
 
@@ -23,13 +23,13 @@ var (
 	ErrTitleMissing = errors.New("benefits: заголовок обязателен")
 )
 
-// Benefit — оффер строки преимуществ.
+// Benefit - оффер строки преимуществ.
 type Benefit struct {
 	ID        int64     `json:"id"`
 	Icon      string    `json:"icon"`
 	Title     string    `json:"title"`
 	Note      string    `json:"note"`
-	Href      string    `json:"href"` // ссылка на страницу сервиса (пусто — не кликабелен)
+	Href      string    `json:"href"` // ссылка на страницу сервиса (пусто - не кликабелен)
 	SortOrder int       `json:"sort_order"`
 	Published bool      `json:"published"`
 	UpdatedBy string    `json:"updated_by"`
@@ -43,7 +43,7 @@ func mk(id int64, icon, title, note, href string, sort int32, pub bool, by strin
 	}
 }
 
-// Input — редактируемые поля оффера.
+// Input - редактируемые поля оффера.
 type Input struct {
 	Icon      string
 	Title     string
@@ -53,7 +53,7 @@ type Input struct {
 	Published bool
 }
 
-// Service — бизнес-логика преимуществ поверх sqlc.
+// Service - бизнес-логика преимуществ поверх sqlc.
 type Service struct {
 	q *db.Queries
 }
@@ -62,7 +62,7 @@ func NewService(pool *pgxpool.Pool) *Service {
 	return &Service{q: db.New(pool)}
 }
 
-// List — все офферы для админки (любой статус).
+// List - все офферы для админки (любой статус).
 func (s *Service) List(ctx context.Context) ([]Benefit, error) {
 	rows, err := s.q.ListBenefits(ctx)
 	if err != nil {
@@ -75,7 +75,7 @@ func (s *Service) List(ctx context.Context) ([]Benefit, error) {
 	return out, nil
 }
 
-// ListPublished — опубликованные офферы для витрины.
+// ListPublished - опубликованные офферы для витрины.
 func (s *Service) ListPublished(ctx context.Context) ([]Benefit, error) {
 	rows, err := s.q.ListPublishedBenefits(ctx)
 	if err != nil {

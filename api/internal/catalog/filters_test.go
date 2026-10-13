@@ -105,7 +105,7 @@ func TestQueryFilterSQLAndMatch(t *testing.T) {
 	if !reflect.DeepEqual(args, []any{"%nokian%", 16}) {
 		t.Errorf("args: got %#v", args)
 	}
-	// Match — та же семантика (для мока): регистронезависимая подстрока.
+	// Match - та же семантика (для мока): регистронезависимая подстрока.
 	p := Product{Name: "Nokian Hakkapeliitta 10", Brand: "Nokian", Model: "Hakkapeliitta", Diameter: 16}
 	if !f.Match(p) {
 		t.Error("ожидалось совпадение по q=nokian + diameter=16")

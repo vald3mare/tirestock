@@ -16,7 +16,7 @@ For Next 16 candidates, check whether shared origin data or reusable route-handl
 Hostname p75, caller routes, call count, bytes. Verify data is shared and tolerates the freshness window. Confirm `'use cache: remote'`.
 
 ## Do Not Recommend When
-Skip per-user, mutation, secret, or freshness-critical data. Skip when upstream is fast or rarely called. Avoid sub-ms reads (Edge Config) — overhead exceeds source latency.
+Skip per-user, mutation, secret, or freshness-critical data. Skip when upstream is fast or rarely called. Avoid sub-ms reads (Edge Config) - overhead exceeds source latency.
 
 ## Verification
 Name hostname, shared data, freshness window, and exact boundary. State `'use cache: remote'`.

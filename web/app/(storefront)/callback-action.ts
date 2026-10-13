@@ -16,7 +16,7 @@ export async function submitCallback(
   const comment = String(formData.get("comment") ?? "").trim();
 
   if (!phone) {
-    return { status: "error", message: "Укажите телефон — без него не сможем перезвонить." };
+    return { status: "error", message: "Укажите телефон - без него не сможем перезвонить." };
   }
   try {
     await createCallback({ name, phone, comment });

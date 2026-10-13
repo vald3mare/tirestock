@@ -9,7 +9,7 @@ import (
 	"tirestock/api/internal/httpx"
 )
 
-// PublicHandlers — публичный HTTP-слой контентных страниц (без авторизации).
+// PublicHandlers - публичный HTTP-слой контентных страниц (без авторизации).
 // Отдаёт только опубликованные страницы для рендера на витрине.
 type PublicHandlers struct {
 	svc *Service

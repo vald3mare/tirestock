@@ -3,7 +3,7 @@ import { UiDemo } from "./ui-demo";
 
 // Служебная страница для сверки UI-кита с Figma. Не индексируется.
 export const metadata: Metadata = {
-  title: "UI-кит — TireStock (dev)",
+  title: "UI-кит - TireStock (dev)",
   robots: { index: false, follow: false },
 };
 

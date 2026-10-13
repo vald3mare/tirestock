@@ -9,7 +9,7 @@ import { TIME_WINDOW } from './queries.mjs';
 
 export { TIME_WINDOW };
 
-// Per-query is scoped to one route/hostname, so cardinality stays small — higher than broad-pass caps.
+// Per-query is scoped to one route/hostname, so cardinality stays small - higher than broad-pass caps.
 const DEPLOYMENT_LIMIT = 10;
 const ERROR_DEPLOYMENT_LIMIT = 30;
 const ERROR_CODE_LIMIT = 50;
@@ -49,7 +49,7 @@ export const SPEC_GENERATORS = {
         filter: f,
         broadPassEquivalent: { key: 'fnStartTypeByRoute', routeFilter: route, projectDims: ['function_start_type'] },
       },
-      // function-invocation status (5xx from function) — distinct from request-level status, can't reuse broad-pass.
+      // function-invocation status (5xx from function) - distinct from request-level status, can't reuse broad-pass.
       {
         id: 'statusDistribution',
         metricId: 'vercel.function_invocation.count',
@@ -287,12 +287,12 @@ export const SPEC_GENERATORS = {
   },
 
   region_misconfig(_c) {
-    // Branch 2 (scanner-only) — per-region TTFB metric unavailable today, so no deep-dive query.
+    // Branch 2 (scanner-only) - per-region TTFB metric unavailable today, so no deep-dive query.
     return [];
   },
 };
 
-// Scanner-driven kinds skip deep-dive — evidence already in scanner findings (file + line).
+// Scanner-driven kinds skip deep-dive - evidence already in scanner findings (file + line).
 export const SCANNER_KINDS = new Set([
   'image_optimization',
   'cache_header_gap',
@@ -310,7 +310,7 @@ export function specsForCandidate(candidate) {
   return gen(candidate).map((s) => ({ since: TIME_WINDOW, ...s }));
 }
 
-// One spec per percentile — CLI does not support `-a p50 -a p95` multi-aggregation.
+// One spec per percentile - CLI does not support `-a p50 -a p95` multi-aggregation.
 function latencyPercentiles(idPrefix, metricId, filter, percentiles = ['p50', 'p75', 'p95', 'p99']) {
   return percentiles.map((p) => ({
     id: `${idPrefix}.${p}`,
@@ -340,7 +340,7 @@ export function mergeIntoEvidence(results) {
   return out;
 }
 
-// Avoid leaking raw CLI payload / candidate+spec wrapper into evidence — keep summary-only.
+// Avoid leaking raw CLI payload / candidate+spec wrapper into evidence - keep summary-only.
 function simplify(r) {
   if (!r || r.ok === false) return { error: r?.error ?? 'unknown' };
   // Check rows before value so tabular results with both stay tabular.

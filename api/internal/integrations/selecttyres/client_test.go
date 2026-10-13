@@ -62,7 +62,7 @@ func TestMapTire_NoSpbStock_Skip(t *testing.T) {
 		{StockName: "other-1", Quantity: 5, RRP: rrp("3000")},
 	}}
 	if _, ok := testClient(t).mapTire(tire); ok {
-		t.Error("ожидался ok=false — нет складов СПб")
+		t.Error("ожидался ok=false - нет складов СПб")
 	}
 }
 
@@ -88,7 +88,7 @@ func TestFetchStreamsFeed(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Fetch: %v", err)
 	}
-	// t2 лежит только на московском складе — в каталог СПб он не попадает.
+	// t2 лежит только на московском складе - в каталог СПб он не попадает.
 	if parsed != 2 || kept != 1 {
 		t.Errorf("parsed=%d kept=%d, want 2/1 (московский товар отброшен)", parsed, kept)
 	}
@@ -122,7 +122,7 @@ func TestFetchReportsUnrecognizedStocks(t *testing.T) {
 		t.Errorf("depot_yaroslavl должен быть нераспознан (1 оффер), got %+v", u)
 	}
 	if _, ok := u["depot_spb"]; ok {
-		t.Error("depot_spb распознан по СПб — не должен попасть в нераспознанные")
+		t.Error("depot_spb распознан по СПб - не должен попасть в нераспознанные")
 	}
 	if _, ok := u["depot_kazan"]; ok {
 		t.Error("depot_kazan с quantity=0 не должен учитываться")

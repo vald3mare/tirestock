@@ -1,13 +1,13 @@
 import type { ComponentPropsWithRef } from "react";
 
-// ComponentPropsWithRef, а не InputHTMLAttributes: в React 19 ref — обычный проп,
+// ComponentPropsWithRef, а не InputHTMLAttributes: в React 19 ref - обычный проп,
 // и модалке обратного звонка нужно ставить фокус в первое поле при открытии.
 type Props = ComponentPropsWithRef<"input"> & {
   label?: string;
 };
 
 // Field: white, бордер line, radius 10, px20 py14 (высота 52), плейсхолдер grey.
-// Плейсхолдеры — с примером и многоточием «…», не инструкция.
+// Плейсхолдеры - с примером и многоточием «…», не инструкция.
 export function Field({ label, id, className = "", ...props }: Props) {
   const input = (
     <input

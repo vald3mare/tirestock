@@ -1,4 +1,4 @@
-// Опции фильтров каталога — единый источник для SearchWidget (hero)
+// Опции фильтров каталога - единый источник для SearchWidget (hero)
 // и FilterSidebar (каталог). Значения соответствуют параметрам API 1:1.
 import type { Season } from "@/lib/api/client";
 
@@ -22,7 +22,7 @@ export const seasonOptions: { value: Season; label: string }[] = [
   { value: "allseason", label: "Всесезонные" },
 ];
 
-// Бренды — из DESIGN_SYSTEM.md «Контентные данные»
+// Бренды - из DESIGN_SYSTEM.md «Контентные данные»
 export const brandOptions: Option[] = toOptions([
   "BFGoodrich", "Bridgestone", "Continental", "Cooper", "Dunlop", "Gislaved",
   "GoodYear", "Hankook", "Kumho", "Maxxis", "Michelin", "Nokian", "Pirelli",
@@ -74,7 +74,7 @@ export function optionsFromFacets(f: {
   profiles: number[] | null;
   diameters: number[] | null;
 }): FilterOptions {
-  // Null-safe: даже если контракт нарушен и массив пришёл null, не падаем — фолбэк
+  // Null-safe: даже если контракт нарушен и массив пришёл null, не падаем - фолбэк
   // на статику (бэкенд гарантирует [], это второй рубеж обороны).
   const nums = (xs: number[] | null, fb: Option[]) =>
     xs && xs.length ? toOptions(xs.map(String)) : fb;

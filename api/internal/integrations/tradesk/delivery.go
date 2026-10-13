@@ -12,7 +12,7 @@ import (
 
 // Deliver реализует orders.OrderDelivery: маршрутизирует payload outbox по виду
 // (order/callback) в соответствующий приёмник tradesk. Идемпотентность гарантирует
-// вызывающая сторона (outbox: одна строка — одна доставка).
+// вызывающая сторона (outbox: одна строка - одна доставка).
 func (c *Client) Deliver(ctx context.Context, kind string, payload []byte) (string, error) {
 	switch kind {
 	case orders.KindCallback:
@@ -36,9 +36,9 @@ func (c *Client) Deliver(ctx context.Context, kind string, payload []byte) (stri
 //
 //	file_get_contents('http://tradesk.ru/data/backcall?phone=…&comment=…')
 //
-// То есть GET с query-параметрами, без авторизации, сессии и CSRF — приёмник
+// То есть GET с query-параметрами, без авторизации, сессии и CSRF - приёмник
 // публичный. Поля ровно два: phone и comment; имени в контракте НЕТ, поэтому имя
-// подмешиваем в начало комментария (так же делает мост oldsite — менеджер видит
+// подмешиваем в начало комментария (так же делает мост oldsite - менеджер видит
 // одинаковый текст независимо от того, какой контур доставки включён).
 func (c *Client) deliverCallback(ctx context.Context, payload []byte) error {
 	var in orders.CallbackInput
@@ -54,7 +54,7 @@ func (c *Client) deliverCallback(ctx context.Context, payload []byte) error {
 	})
 }
 
-// unmarshalOrder разбирает payload outbox в структуру заказа (доставка — order.go).
+// unmarshalOrder разбирает payload outbox в структуру заказа (доставка - order.go).
 func unmarshalOrder(payload []byte) (orderPayload, error) {
 	var in orderPayload
 	if err := json.Unmarshal(payload, &in); err != nil {
@@ -92,8 +92,8 @@ type orderPayload struct {
 // Вскрыт из исходников мостов старого сайта (Битрикс, папка /ajax):
 //   - call.php → GET /data/backcall?phone=&comment=      (ПОДТВЕРЖДЕНО)
 //   - auth.php → GET /api/login?phone=                   (есть и namespace /api/;
-//     сам файл нерабочий — синтаксическая ошибка в switch, никогда не исполнялся)
-//   - order.php, request.php, record.php — ЕЩЁ НЕ ПРОЧИТАНЫ (см. TODO.md).
+//     сам файл нерабочий - синтаксическая ошибка в switch, никогда не исполнялся)
+//   - order.php, request.php, record.php - ЕЩЁ НЕ ПРОЧИТАНЫ (см. TODO.md).
 const (
 	pathBackcall = "/data/backcall"
 )

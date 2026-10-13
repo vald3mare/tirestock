@@ -1,9 +1,9 @@
 import { cookies } from "next/headers";
 
 // Корзина живёт в куке: сервер читает её при рендере, клиентского стейта нет
-// (конвенция проекта — server-first). В куке храним ТОЛЬКО slug и количество:
+// (конвенция проекта - server-first). В куке храним ТОЛЬКО slug и количество:
 // цена и наличие берутся из каталога при каждом рендере, иначе корзина покажет
-// вчерашнюю цену. Кука httpOnly не нужна — данные не секретные, но и клиентский
+// вчерашнюю цену. Кука httpOnly не нужна - данные не секретные, но и клиентский
 // JS её не читает: все изменения идут через server actions.
 
 export const CART_COOKIE = "cart";
@@ -13,7 +13,7 @@ export type CartLine = { slug: string; qty: number };
 
 const COOKIE_OPTS = {
   path: "/",
-  maxAge: 60 * 60 * 24 * 30, // 30 дней — сезонный подбор шин растягивается на недели
+  maxAge: 60 * 60 * 24 * 30, // 30 дней - сезонный подбор шин растягивается на недели
   sameSite: "lax" as const,
 };
 
@@ -42,7 +42,7 @@ export async function readCart(): Promise<CartLine[]> {
   return parse((await cookies()).get(CART_COOKIE)?.value);
 }
 
-/** Пишет корзину в куку. Пустая корзина — кука удаляется. */
+/** Пишет корзину в куку. Пустая корзина - кука удаляется. */
 export async function writeCart(lines: CartLine[]): Promise<void> {
   const store = await cookies();
   if (lines.length === 0) {
@@ -52,7 +52,7 @@ export async function writeCart(lines: CartLine[]): Promise<void> {
   store.set(CART_COOKIE, JSON.stringify(lines.slice(0, CART_MAX_ITEMS)), COOKIE_OPTS);
 }
 
-/** Суммарное количество штук — для счётчика на кнопке «Корзина». */
+/** Суммарное количество штук - для счётчика на кнопке «Корзина». */
 export function cartCount(lines: CartLine[]): number {
   return lines.reduce((n, l) => n + l.qty, 0);
 }

@@ -40,7 +40,7 @@ export function gate(signals) {
     reason: critical
       ? 'observability events exceed 30% of total billed cost'
       : 'observability events exceed 20% of total billed cost',
-    question: `Observability Events are ${(share * 100).toFixed(0)}% of the bill. Which routes drive event volume — low-cache-hit traffic, broad middleware invocation, or high custom-span cardinality — and can event volume be reduced upstream of the meter?`,
+    question: `Observability Events are ${(share * 100).toFixed(0)}% of the bill. Which routes drive event volume - low-cache-hit traffic, broad middleware invocation, or high custom-span cardinality - and can event volume be reduced upstream of the meter?`,
     evidence: {
       metric: 'usage.services',
       eventsBilled,

@@ -29,7 +29,7 @@ Vercel image service Next.js uses).
    Cite `https://kit.svelte.dev/docs/page-options`.
 3. **Parallel `load` fetches.** A `load` function with multiple
    sequential `await fetch(...)` calls leaves wall-clock time on the
-   table — wrap them in `Promise.all` (or return promises directly
+   table - wrap them in `Promise.all` (or return promises directly
    from `load`, which SvelteKit streams). Cite
    `https://kit.svelte.dev/docs/load`.
 4. **Move per-request work to `+server.ts` action handlers and run
@@ -50,7 +50,7 @@ Vercel image service Next.js uses).
   `prerender = true`. The scanner flags these.
 - **`+layout.server.ts` data fetches blocking every child route.**
   Auth-check + user-load in a layout makes EVERY function invocation
-  wait on those queries — even routes that don't read user. Push
+  wait on those queries - even routes that don't read user. Push
   user-load into the routes that need it.
 - **Adapter version drift.** `adapter-vercel@5` adds new options (ISR,
   split). `adapter-vercel@3` doesn't. The recommender must check the
@@ -59,17 +59,17 @@ Vercel image service Next.js uses).
   optimizes these into direct module calls during SSR, but only if
   the URL is relative. A hardcoded `https://your-domain.tld/api/...`
   defeats this optimization.
-- **No connection pooling on serverless.** Same as Next.js — Postgres
+- **No connection pooling on serverless.** Same as Next.js - Postgres
   without a pooler exhausts the database under load.
 
 ## Cross-references
 
-- `https://kit.svelte.dev/docs/adapter-vercel` — adapter config (ISR, regions, runtime)
-- `https://kit.svelte.dev/docs/page-options` — prerender, ssr, csr
-- `https://kit.svelte.dev/docs/load` — parallel fetches in load
-- `https://kit.svelte.dev/docs/routing` — file conventions
-- `https://kit.svelte.dev/docs/hooks` — handle / handleFetch
-- `https://kit.svelte.dev/docs/form-actions` — server-side form handling
-- `https://kit.svelte.dev/docs/state-management` — request-scoped state
-- `https://vercel.com/docs/incremental-static-regeneration` — ISR on Vercel
-- `https://vercel.com/docs/fluid-compute` — Fluid Compute (framework-agnostic)
+- `https://kit.svelte.dev/docs/adapter-vercel` - adapter config (ISR, regions, runtime)
+- `https://kit.svelte.dev/docs/page-options` - prerender, ssr, csr
+- `https://kit.svelte.dev/docs/load` - parallel fetches in load
+- `https://kit.svelte.dev/docs/routing` - file conventions
+- `https://kit.svelte.dev/docs/hooks` - handle / handleFetch
+- `https://kit.svelte.dev/docs/form-actions` - server-side form handling
+- `https://kit.svelte.dev/docs/state-management` - request-scoped state
+- `https://vercel.com/docs/incremental-static-regeneration` - ISR on Vercel
+- `https://vercel.com/docs/fluid-compute` - Fluid Compute (framework-agnostic)

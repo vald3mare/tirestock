@@ -8,7 +8,7 @@ type Props = ComponentProps<typeof Link> & {
 };
 
 // Ссылка в виде кнопки (навигация: «Корзина», «Показать ещё», tel:).
-// Стили общие с Button — см. buttonStyles.ts.
+// Стили общие с Button - см. buttonStyles.ts.
 export function ButtonLink({ variant = "primary", size = "md", className = "", ...props }: Props) {
   return <Link className={buttonClasses(variant, size, className)} {...props} />;
 }

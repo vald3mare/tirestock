@@ -1,4 +1,4 @@
-// Flag SvelteKit pages that haven't declared prerender/ssr/config — they
+// Flag SvelteKit pages that haven't declared prerender/ssr/config - they
 // default to per-request function execution. Pages that have already opted
 // in or out are skipped; the investigator agent decides actual staticness.
 
@@ -9,7 +9,7 @@ export const metadata = {
   billingDimension: 'function-duration',
   trafficIndependent: false,
   description:
-    'SvelteKit page or +page.server.ts is missing an explicit `prerender`, `ssr`, or adapter `config.isr` declaration. Default is per-request function execution — investigate whether the route could be prerendered or ISR-cached.',
+    'SvelteKit page or +page.server.ts is missing an explicit `prerender`, `ssr`, or adapter `config.isr` declaration. Default is per-request function execution - investigate whether the route could be prerendered or ISR-cached.',
   fix:
     'If the page is static (no per-user / per-request data), add `export const prerender = true` in +page.ts or +page.server.ts. If the data refreshes on a schedule, prefer adapter-vercel\'s ISR option via `export const config = { isr: { expiration: 60 } }`.',
   citations: [
@@ -33,7 +33,7 @@ export function scan({ files }) {
     out.push({
       pattern: metadata.id,
       file: path,
-      // Absence-finding — no specific line, placeholder 1.
+      // Absence-finding - no specific line, placeholder 1.
       line: 1,
       evidence: 'No `prerender`, `ssr`, or `config = { isr | runtime | ... }` export found',
       trafficIndependent: metadata.trafficIndependent,

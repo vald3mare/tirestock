@@ -1,4 +1,4 @@
--- Контентные страницы админки. Правила блокировки — в сервисе internal/content.
+-- Контентные страницы админки. Правила блокировки - в сервисе internal/content.
 
 -- name: ListContentPages :many
 SELECT id, slug, title, body, meta_title, meta_description,
@@ -7,7 +7,7 @@ FROM content_pages
 ORDER BY published DESC, id;
 
 -- name: ListPublishedByPrefix :many
--- Опубликованные страницы под префиксом URL (напр. '/news/') — для раздела-листинга.
+-- Опубликованные страницы под префиксом URL (напр. '/news/') - для раздела-листинга.
 -- Сам префикс-индекс (slug = префикс) исключаем. Свежие сверху.
 SELECT id, slug, title, body, meta_title, meta_description,
        published, indexed, system, updated_by, updated_at
@@ -38,7 +38,7 @@ UPDATE content_pages SET
 WHERE id = $1;
 
 -- name: RenameContentPage :exec
--- Смена URL — только для черновиков (проверяется в сервисе).
+-- Смена URL - только для черновиков (проверяется в сервисе).
 UPDATE content_pages SET slug = $2, updated_by = $3, updated_at = now()
 WHERE id = $1;
 

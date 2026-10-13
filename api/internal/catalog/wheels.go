@@ -2,31 +2,31 @@ package catalog
 
 import "context"
 
-// Диски (колёсные) — отдельный тип товара, изолированный от шин (products).
+// Диски (колёсные) - отдельный тип товара, изолированный от шин (products).
 // Модель зеркалит шинную (Source-интерфейс, мультигород через офферы), но со
 // своими атрибутами: ширина в дюймах, сверловка PCD, вылет ET, ЦО DIA, цвет, тип.
 
-// Wheel — диск на витрине.
+// Wheel - диск на витрине.
 type Wheel struct {
-	ID         int64   `json:"id"`
-	Slug       string  `json:"slug"`
-	Code       string  `json:"code"`
-	Brand      string  `json:"brand"`
-	Model      string  `json:"model"`
-	Name       string  `json:"name"`
-	Width      float64 `json:"width"`    // ширина обода, дюймы
-	Diameter   int     `json:"diameter"` // посадочный диаметр, R
-	PCD        string  `json:"pcd"`      // сверловка «5x112»
-	ET         float64 `json:"et"`       // вылет
-	DIA        float64 `json:"dia"`      // центральное отверстие
-	Color      string  `json:"color"`    // человекочитаемый цвет
-	WheelType  string  `json:"wheel_type"`
-	Price      int     `json:"price"`
-	Stock      int     `json:"stock"`
-	ImageURL   string  `json:"image_url"`
+	ID        int64   `json:"id"`
+	Slug      string  `json:"slug"`
+	Code      string  `json:"code"`
+	Brand     string  `json:"brand"`
+	Model     string  `json:"model"`
+	Name      string  `json:"name"`
+	Width     float64 `json:"width"`    // ширина обода, дюймы
+	Diameter  int     `json:"diameter"` // посадочный диаметр, R
+	PCD       string  `json:"pcd"`      // сверловка «5x112»
+	ET        float64 `json:"et"`       // вылет
+	DIA       float64 `json:"dia"`      // центральное отверстие
+	Color     string  `json:"color"`    // человекочитаемый цвет
+	WheelType string  `json:"wheel_type"`
+	Price     int     `json:"price"`
+	Stock     int     `json:"stock"`
+	ImageURL  string  `json:"image_url"`
 }
 
-// SyncWheel — строка для upsert синком дисков. Price/Stock — снапшот базового города.
+// SyncWheel - строка для upsert синком дисков. Price/Stock - снапшот базового города.
 type SyncWheel struct {
 	Code       string
 	Slug       string
@@ -50,7 +50,7 @@ type SyncWheel struct {
 	Offers     []CityOffer
 }
 
-// WheelFilters — фильтры каталога дисков (URL query). City — мультигород.
+// WheelFilters - фильтры каталога дисков (URL query). City - мультигород.
 type WheelFilters struct {
 	Diameter *int
 	Width    *float64
@@ -63,7 +63,7 @@ type WheelFilters struct {
 	City     string
 }
 
-// WheelFacets — реальные значения фильтров дисков в наличии (для сайдбара).
+// WheelFacets - реальные значения фильтров дисков в наличии (для сайдбара).
 type WheelFacets struct {
 	Brands    []string  `json:"brands"`
 	Diameters []int     `json:"diameters"`
@@ -72,14 +72,14 @@ type WheelFacets struct {
 	Types     []string  `json:"types"`
 }
 
-// WheelSource — источник каталога дисков. Реализация: DBWheelSource.
+// WheelSource - источник каталога дисков. Реализация: DBWheelSource.
 type WheelSource interface {
 	List(ctx context.Context, f WheelFilters, page, perPage int) (items []Wheel, total int, err error)
 	BySlug(ctx context.Context, slug, city string) (Wheel, error)
 	Facets(ctx context.Context, city string) (WheelFacets, error)
 }
 
-// WheelService — бизнес-логика каталога дисков поверх источника.
+// WheelService - бизнес-логика каталога дисков поверх источника.
 type WheelService struct {
 	src WheelSource
 }

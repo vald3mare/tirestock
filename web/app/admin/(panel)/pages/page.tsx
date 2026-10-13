@@ -8,7 +8,7 @@ import { deletePageAction } from "@/app/admin/actions";
 
 function fmtDate(iso: string): string {
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("ru-RU");
+  return Number.isNaN(d.getTime()) ? "-" : d.toLocaleDateString("ru-RU");
 }
 
 function StatusBadge({ published }: { published: boolean }) {
@@ -111,7 +111,7 @@ export default async function AdminPagesPage() {
       </div>
 
       <p className="mt-4 max-w-180 text-caption text-grey">
-        Замок у URL: страница проиндексирована поисковиками — адрес заблокирован, удаление недоступно
+        Замок у URL: страница проиндексирована поисковиками - адрес заблокирован, удаление недоступно
         (можно снять с публикации). Новые страницы (без индекса) можно свободно переименовывать и
         удалять до публикации.
       </p>

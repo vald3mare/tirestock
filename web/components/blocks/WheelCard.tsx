@@ -6,7 +6,7 @@ import { CallbackModal } from "@/components/blocks/CallbackModal";
 import { addToCart } from "@/app/(storefront)/cart/actions";
 import { formatPrice } from "@/lib/format";
 
-// WheelCard — карточка диска (зеркалит ProductCard, но со своими атрибутами:
+// WheelCard - карточка диска (зеркалит ProductCard, но со своими атрибутами:
 // размер обода, сверловка PCD, вылет ET). Диски покупают комплектами → дефолт 4 шт.
 
 const PLACEHOLDER = "/images/tire-placeholder.png";
@@ -85,7 +85,7 @@ export function WheelCard({ wheel }: { wheel: Wheel }) {
           variant="button"
           triggerLabel="Уточнить при наличии"
           title="Уточнить наличие"
-          description={`Оставьте телефон — сообщим, когда диск «${wheel.brand} ${wheel.model}» появится.`}
+          description={`Оставьте телефон - сообщим, когда диск «${wheel.brand} ${wheel.model}» появится.`}
           defaultComment={`Диск ${wheel.name} (${wheel.code})`}
           submitLabel="Уточнить"
         />

@@ -6,7 +6,7 @@ import { retryOrderAction } from "../../actions";
 
 // Монитор заказов: проекция outbox. Статус доставки в tradesk = статус строки outbox
 // (delivered/pending/failed). «Повторить» возвращает недоставленный заказ в очередь.
-// Табы фильтруют по статусу (в URL, ?status=). Счётчики — из stats.
+// Табы фильтруют по статусу (в URL, ?status=). Счётчики - из stats.
 
 const tabs: { key: string; label: string }[] = [
   { key: "", label: "Все" },
@@ -97,9 +97,9 @@ export default async function AdminOrdersPage({
                     <td className="px-4 py-4">{o.customer_name}</td>
                     <td className="tnum px-4 py-4">{o.phone}</td>
                     <td className="tnum px-4 py-4">{formatPrice(o.total)}</td>
-                    {/* Данные заказа живут в tradesk — у себя держим только его номер,
+                    {/* Данные заказа живут в tradesk - у себя держим только его номер,
                         чтобы менеджер знал, где смотреть, без дублирования учётки. */}
-                    <td className="tnum px-4 py-4 text-grey">{o.tradesk_number || "—"}</td>
+                    <td className="tnum px-4 py-4 text-grey">{o.tradesk_number || "-"}</td>
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-3">
                         <span className={"inline-flex rounded-badge px-2.5 py-1 text-caption font-semibold " + m.cls}>
@@ -134,7 +134,7 @@ export default async function AdminOrdersPage({
 
       <p className="mt-4 text-caption text-grey">
         Заказ создаётся на сайте и сохраняется у нас, затем воркер доставляет его в tradesk.
-        «Ошибка» = все ретраи исчерпаны — жми «Повторить» или проверь tradesk.
+        «Ошибка» = все ретраи исчерпаны - жми «Повторить» или проверь tradesk.
       </p>
     </main>
   );

@@ -1,4 +1,4 @@
-// Shared scanner + sanitizer helpers. Keep tiny — add only when duplicated 3+ times.
+// Shared scanner + sanitizer helpers. Keep tiny - add only when duplicated 3+ times.
 
 // 1-based line number of `idx` in a multi-line string.
 export function lineOf(text, idx) {

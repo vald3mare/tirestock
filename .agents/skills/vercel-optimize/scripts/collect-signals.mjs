@@ -180,7 +180,7 @@ async function main() {
           aggregation: 'sum',
         },
       };
-      log(`metrics access check failed: ${canary?.code ?? 'unknown'} — skipping full metrics fan-out`);
+      log(`metrics access check failed: ${canary?.code ?? 'unknown'} - skipping full metrics fan-out`);
     } else {
       log(`metrics access check passed in ${Date.now() - t0}ms`);
     }
@@ -253,7 +253,7 @@ async function main() {
     const contractContext = contract?.context;
     if (usage?.context && contractContext && usage.context !== contractContext) {
       usageContextMismatch = true;
-      log(`usage: WARNING context mismatch — returned context=${usage.context} but project team=${contractContext}; treating usage as unavailable for this project`);
+      log(`usage: WARNING context mismatch - returned context=${usage.context} but project team=${contractContext}; treating usage as unavailable for this project`);
       usage = null;
     } else {
       // Capture team total pre-filter so the report can label "this project vs team-wide" honestly.
@@ -263,21 +263,21 @@ async function main() {
         usage = filterResult.filtered;
         usageScope = 'project';
         usageTotalCost = sumUsageCosts(usage);
-        log(`usage: filtered to project — ~$${usageTotalCost.toFixed(2)} (team-wide ~$${usageTeamTotal.toFixed(2)}; unattributed ~$${filterResult.unattributedTotal.toFixed(2)})`);
+        log(`usage: filtered to project - ~$${usageTotalCost.toFixed(2)} (team-wide ~$${usageTeamTotal.toFixed(2)}; unattributed ~$${filterResult.unattributedTotal.toFixed(2)})`);
       } else {
         usageTotalCost = usageTeamTotal;
-        log(`usage: ~$${usageTotalCost.toFixed(2)} billed across services (team-wide — no per-project usage rows matched the linked project; report will label this team-wide)`);
+        log(`usage: ~$${usageTotalCost.toFixed(2)} billed across services (team-wide - no per-project usage rows matched the linked project; report will label this team-wide)`);
       }
     }
   } else {
-    log(`usage: unavailable (${usageResult?.code ?? 'unknown'}) — degrading to scanner+metrics-only mode`);
+    log(`usage: unavailable (${usageResult?.code ?? 'unknown'}) - degrading to scanner+metrics-only mode`);
   }
 
   const planInfo = inferPlan(contract, { accountPlan, usageTotalCost });
   log(`plan=${planInfo.plan} (${planInfo.reason})`);
 
   if (projectCfg?.error) {
-    log(`project config: failed (${projectCfg.error}) — gates that need it will skip`);
+    log(`project config: failed (${projectCfg.error}) - gates that need it will skip`);
   }
 
   log(`stack: ${stack.framework}@${stack.frameworkVersion ?? '?'} ${stack.hasAppRouter ? 'app-router' : ''}${stack.hasPagesRouter ? ' pages-router' : ''}${stack.orm !== 'none' ? ` orm=${stack.orm}` : ''}`);
@@ -527,7 +527,7 @@ export function diagnoseObservabilityPlus(metrics, oplusProbe) {
       return {
         usable: false,
         blocker: 'forbidden',
-        detail: `${top[1]}/${entries.length} metric queries returned FORBIDDEN. Auth-scope mismatch — likely logged in to the wrong team (run \`vercel switch\`).`,
+        detail: `${top[1]}/${entries.length} metric queries returned FORBIDDEN. Auth-scope mismatch - likely logged in to the wrong team (run \`vercel switch\`).`,
       };
     }
     if (/project_not_found/.test(topCode)) {

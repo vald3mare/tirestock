@@ -4,9 +4,9 @@ import { adminProducts } from "@/lib/api/admin";
 import { formatNumber, formatPrice } from "@/lib/format";
 import { OverrideToggles } from "@/components/admin/OverrideToggles";
 
-// Товары: read-модель из SelectTyres (цена/остаток менять НЕЛЬЗЯ — истина там).
+// Товары: read-модель из SelectTyres (цена/остаток менять НЕЛЬЗЯ - истина там).
 // Здесь только наши оверрайды: скрыть товар и бейдж «Хит». Поиск + фильтр
-// наличия — в URL (?q=, ?stock=in|out). Распроданные синк не удаляет (обнуляет
+// наличия - в URL (?q=, ?stock=in|out). Распроданные синк не удаляет (обнуляет
 // остаток), поэтому вкладка «Нет в наличии» позволяет их найти.
 
 const stockTabs = [
@@ -32,7 +32,7 @@ export default async function AdminProductsPage({
         <div className="mt-3 flex items-start gap-2.5 rounded-card border border-line bg-light px-4 py-3">
           <span aria-hidden="true" className="mt-0.5 text-body">ℹ️</span>
           <p className="max-w-180 text-caption-lg text-grey">
-            Данные товаров — название, цена, остаток — приходят из SelectTyres и обновляются
+            Данные товаров - название, цена, остаток - приходят из SelectTyres и обновляются
             автоматически, <span className="font-semibold text-dark">редактировать их здесь нельзя</span>.
             Управлять можно только показом на витрине: скрыть товар из каталога или отметить «Хит».
           </p>

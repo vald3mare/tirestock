@@ -8,7 +8,7 @@ import (
 	"tirestock/api/internal/httpx"
 )
 
-// PublicHandlers — публичный HTTP-слой (без авторизации): опубликованные офферы
+// PublicHandlers - публичный HTTP-слой (без авторизации): опубликованные офферы
 // для строки BenefitsBar на витрине.
 type PublicHandlers struct {
 	svc *Service

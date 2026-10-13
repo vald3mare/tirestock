@@ -1,5 +1,5 @@
--- Поля для синка каталога из SelectTyres. code — стабильный идентификатор товара
--- в фиде (ключ upsert и связка ассортимент↔остатки). image_url — фото из фида.
+-- Поля для синка каталога из SelectTyres. code - стабильный идентификатор товара
+-- в фиде (ключ upsert и связка ассортимент↔остатки). image_url - фото из фида.
 ALTER TABLE products ADD COLUMN code       TEXT NOT NULL DEFAULT '';
 ALTER TABLE products ADD COLUMN image_url  TEXT NOT NULL DEFAULT '';
 

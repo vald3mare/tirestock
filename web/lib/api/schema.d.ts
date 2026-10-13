@@ -70,7 +70,7 @@ export interface paths {
         };
         /**
          * Статус заказа по номеру (обратная интеграция tradesk)
-         * @description Читает статус заказа ИЗ tradesk (GET /data/status?order_code=). Страница /status/ витрины. found=false — заказ не найден или tradesk-приём выключен.
+         * @description Читает статус заказа ИЗ tradesk (GET /data/status?order_code=). Страница /status/ витрины. found=false - заказ не найден или tradesk-приём выключен.
          */
         get: operations["getOrderStatus"];
         put?: never;
@@ -90,7 +90,7 @@ export interface paths {
         };
         /**
          * Опубликованные пункты выдачи (страница /points)
-         * @description Пункты выдачи заказов витрины города (city, по умолчанию spb). Контент редактируется в админке: адрес, метро, часы, бейдж-акция у каждого — свои. is_main — «основной адрес» (крупная карточка, первым).
+         * @description Пункты выдачи заказов витрины города (city, по умолчанию spb). Контент редактируется в админке: адрес, метро, часы, бейдж-акция у каждого - свои. is_main - «основной адрес» (крупная карточка, первым).
          */
         get: operations["listPickupPoints"];
         put?: never;
@@ -186,7 +186,7 @@ export interface paths {
         put?: never;
         /**
          * Оформление заказа
-         * @description Заказ пишется в БД транзакционно со строкой outbox; воркер доставляет его в tradesk с ретраями — заказ никогда не теряется. Idempotency-key (заголовок или поле тела) защищает от даблклика «Оформить заказ».
+         * @description Заказ пишется в БД транзакционно со строкой outbox; воркер доставляет его в tradesk с ретраями - заказ никогда не теряется. Idempotency-key (заголовок или поле тела) защищает от даблклика «Оформить заказ».
          */
         post: operations["createOrder"];
         delete?: never;
@@ -206,7 +206,7 @@ export interface paths {
         put?: never;
         /**
          * Заявка с формы услуги
-         * @description Формы сервисных страниц (шиномонтаж, хранение, ремонт и покраска дисков). Уходит в tradesk `POST /api/request` через outbox — с типом услуги, в отличие от обратного звонка.
+         * @description Формы сервисных страниц (шиномонтаж, хранение, ремонт и покраска дисков). Уходит в tradesk `POST /api/request` через outbox - с типом услуги, в отличие от обратного звонка.
          */
         post: operations["createRequest"];
         delete?: never;
@@ -247,7 +247,7 @@ export interface components {
             /** @example nokian-hakkapeliitta-10p-205-55-r16 */
             slug: string;
             /**
-             * @description Код товара в SelectTyres — уходит в заказ tradesk
+             * @description Код товара в SelectTyres - уходит в заказ tradesk
              * @example t668559
              */
             code?: string;
@@ -289,7 +289,7 @@ export interface components {
         OrderItem: {
             slug: string;
             /**
-             * @description Код товара в SelectTyres — уходит в приёмник заказа tradesk
+             * @description Код товара в SelectTyres - уходит в приёмник заказа tradesk
              * @example t668559
              */
             code?: string;
@@ -297,7 +297,7 @@ export interface components {
             /** @description Рубли за штуку */
             price: number;
             /**
-             * @description Шины покупают комплектами — дефолт 4
+             * @description Шины покупают комплектами - дефолт 4
              * @default 4
              */
             qty: number;
@@ -336,7 +336,7 @@ export interface components {
             status: string;
             /** @example Готов к выдаче */
             status_text: string;
-            /** @description Этап прогресса 0..4 (0 — без полосы) */
+            /** @description Этап прогресса 0..4 (0 - без полосы) */
             step: number;
             /** @description Дата исполнения dd-mm-yyyy или пусто */
             date: string;
@@ -395,7 +395,7 @@ export interface components {
             /** @example при покупке шин */
             note: string;
             /**
-             * @description Ссылка на страницу сервиса (пусто — не кликабелен)
+             * @description Ссылка на страницу сервиса (пусто - не кликабелен)
              * @example /mounting/
              */
             href: string;
@@ -403,7 +403,7 @@ export interface components {
             published: boolean;
         };
         SeoResolved: {
-            /** @example Шины — купить в Санкт-Петербурге | TireStock */
+            /** @example Шины - купить в Санкт-Петербурге | TireStock */
             title: string;
             description: string;
         };
@@ -413,7 +413,7 @@ export interface components {
             /** @example +7 (921) 123-45-67 */
             phone: string;
             /**
-             * @description Тип заявки — уходит в tradesk отдельным полем
+             * @description Тип заявки - уходит в tradesk отдельным полем
              * @example Шиномонтаж
              */
             type: string;
@@ -498,7 +498,7 @@ export interface operations {
                 spikes?: boolean;
                 /** @description RunFlat */
                 runflat?: boolean;
-                /** @description Сортировка (по умолчанию — наличие + релевантность) */
+                /** @description Сортировка (по умолчанию - наличие + релевантность) */
                 sort?: "price_asc" | "price_desc" | "name";
                 /** @description Город (мультигород): цена/остаток и ассортимент по городу */
                 city?: "spb" | "msk";

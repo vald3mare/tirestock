@@ -21,10 +21,10 @@ import { metadataFor } from "@/lib/seo";
 // ISR: «Популярные» берут свежий каталог (иначе статика заморозит выдачу на билде).
 export const revalidate = 300;
 
-// SEO-мета из админки (раздел «SEO-мета»), фолбэк — значения корневого layout.
+// SEO-мета из админки (раздел «SEO-мета»), фолбэк - значения корневого layout.
 export function generateMetadata(): Promise<Metadata> {
   return metadataFor("/", {
-    title: "TireStock — шины и диски в Санкт-Петербурге",
+    title: "TireStock - шины и диски в Санкт-Петербурге",
     description:
       "Интернет-магазин шин и дисков: подбор по размеру, доставка по России, шиномонтаж.",
   });
@@ -36,10 +36,10 @@ export default async function Home() {
   try {
     products = (await listProducts({ per_page: 8, city })).items;
   } catch {
-    // api недоступен — секция «Популярные товары» просто скрывается
+    // api недоступен - секция «Популярные товары» просто скрывается
   }
 
-  // Опции hero-поиска и чипы «Популярно» — из фасетов каталога города (выгрузка
+  // Опции hero-поиска и чипы «Популярно» - из фасетов каталога города (выгрузка
   // SelectTyres), фолбэк на статику. Всё подтягивается само, без хардкода.
   let searchOptions = staticFilterOptions;
   let popularSizes = staticPopularSizes;
@@ -50,7 +50,7 @@ export default async function Home() {
     popularSizes = popularSizesFromFacets(facets.popular_sizes);
     brands = facets.brands ?? [];
   } catch {
-    // фасеты недоступны — остаётся статика
+    // фасеты недоступны - остаётся статика
   }
 
   return (

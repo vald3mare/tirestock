@@ -4,8 +4,8 @@ type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
   active?: boolean;
 };
 
-// Tab: active — blue bg / white text; inactive — white bg / grey text; px20 py10, radius 10.
-// Табы поиска/каталога; состояние живёт в URL, компонент — тупой.
+// Tab: active - blue bg / white text; inactive - white bg / grey text; px20 py10, radius 10.
+// Табы поиска/каталога; состояние живёт в URL, компонент - тупой.
 export function Tab({ active = false, className = "", type = "button", ...props }: Props) {
   return (
     <button

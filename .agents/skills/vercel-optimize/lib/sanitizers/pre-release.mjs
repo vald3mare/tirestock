@@ -1,4 +1,4 @@
-// Append a caveat (don't drop — customer may opt in to canary) when a
+// Append a caveat (don't drop - customer may opt in to canary) when a
 // fix needs a canary/rc/beta dep version.
 
 import { matchesFrameworkVersion } from '../citations.mjs';
@@ -7,7 +7,7 @@ const PRE_RELEASE_FEATURES = [
   {
     match: /\bppr\b|partial[- ]?prerendering/i,
     requires: 'next@canary',
-    message: 'PPR is experimental — verify your Next.js version supports it as stable',
+    message: 'PPR is experimental - verify your Next.js version supports it as stable',
   },
   {
     match: /\buse cache['"]?\s*directive\b|"use cache"|'use cache'/i,

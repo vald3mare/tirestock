@@ -16,7 +16,7 @@ Observability Events is the metered SKU under Observability Plus. When the curre
 Verify the share from `usage.services`. Cross-reference `requestsByRouteCache`, `middlewareCount`, external API span counts, and third-party tracing (`tracesSampleRate=1`).
 
 ## Do Not Recommend When
-Skip below 15% share. Skip when cache hit rate is already >90% across hot routes — the lever is elsewhere. Do not propose sampling unless the specific metered signal has a documented sampling control.
+Skip below 15% share. Skip when cache hit rate is already >90% across hot routes - the lever is elsewhere. Do not propose sampling unless the specific metered signal has a documented sampling control.
 
 ## Verification
 Name the share, upstream drivers, and concrete remediation per driver, not generic "reduce events".

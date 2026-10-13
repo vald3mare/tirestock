@@ -1,5 +1,5 @@
 // Second branch (slow p95 + traffic floor) keeps the gate useful on teams where
-// cold-start isn't directly observable — common on CLI v53 — trading specificity for coverage.
+// cold-start isn't directly observable - common on CLI v53 - trading specificity for coverage.
 export const metadata = {
   id: 'platform_fluid_compute',
   threshold: 'fluid=false AND (any cold_start signal OR any route with p95>1000ms AND inv>1000)',
@@ -7,7 +7,7 @@ export const metadata = {
   scope: 'account',
   sourceCitation: 'vercel-optimize gate threshold',
   description:
-    'When Fluid Compute is disabled on a project that shows cold-start pressure (high cold-start rate) or sustained slow function p95 on hot routes. Fluid Compute reduces cold starts via instance reuse — recommend turning it on at the project level rather than per-route.',
+    'When Fluid Compute is disabled on a project that shows cold-start pressure (high cold-start rate) or sustained slow function p95 on hot routes. Fluid Compute reduces cold starts via instance reuse - recommend turning it on at the project level rather than per-route.',
 };
 
 export function gate(signals) {

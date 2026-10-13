@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-// Блок «Бренды шин» на главной (перелинковка на /catalog/?brand=). Бренды —
+// Блок «Бренды шин» на главной (перелинковка на /catalog/?brand=). Бренды -
 // реальные из фасетов каталога (в наличии). Пусто → блок не выводится.
 export function BrandsBlock({ brands }: { brands: string[] }) {
   if (!brands.length) return null;

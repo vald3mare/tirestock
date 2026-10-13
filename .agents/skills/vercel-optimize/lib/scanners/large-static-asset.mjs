@@ -1,4 +1,4 @@
-// Flag oversized assets under public/. Pure fs.stat — no parsing, no LLM.
+// Flag oversized assets under public/. Pure fs.stat - no parsing, no LLM.
 // 500 KB threshold is where bandwidth/first-paint start to bite (Vercel
 // Doctor's 4 KB triggers on favicons).
 
@@ -18,7 +18,7 @@ export const metadata = {
   billingDimension: 'bandwidth',
   trafficIndependent: true,
   description:
-    'Static assets in `public/` over 500 KB ship as-is from the CDN. Whether the cost is meaningful depends on traffic, but the candidate is binary — the file is either needed at that size or it can be optimized (compressed image, video transcode, or moved off the critical path).',
+    'Static assets in `public/` over 500 KB ship as-is from the CDN. Whether the cost is meaningful depends on traffic, but the candidate is binary - the file is either needed at that size or it can be optimized (compressed image, video transcode, or moved off the critical path).',
   fix:
     'Verify the asset is reachable on the customer-facing hot path. Then choose: (a) compress (convert PNG → AVIF/WebP; transcode MP4 to lower bitrate); (b) host externally (Vercel Blob, S3, or a media CDN with per-asset signed URLs); (c) lazy-load (defer to client-side fetch instead of bundling into initial HTML).',
   citations: [
@@ -30,7 +30,7 @@ export const metadata = {
 };
 
 // Walks public/ directly because collectFiles only emits text-readable
-// extensions — binary assets never reach the shared `files` array.
+// extensions - binary assets never reach the shared `files` array.
 export async function scan({ rootDir }) {
   if (!rootDir) return [];
   const root = join(rootDir, 'public');

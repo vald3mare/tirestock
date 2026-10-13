@@ -5,18 +5,18 @@ import { getOrderStatus, type OrderStatus } from "@/lib/api/client";
 import { formatPrice } from "@/lib/format";
 import { metadataFor } from "@/lib/seo";
 
-// Страница «Статус заказа» (/status/, URL 1:1 со старым сайтом — SEO). Обратная
+// Страница «Статус заказа» (/status/, URL 1:1 со старым сайтом - SEO). Обратная
 // интеграция tradesk: по номеру заказа тянем статус из tradesk (GET /data/status).
 // Server Component: форма GET ?code=, результат рендерится на сервере (как старый).
 
 export function generateMetadata(): Promise<Metadata> {
   return metadataFor("/status", {
-    title: "Проверить статус заказа — TireStock",
+    title: "Проверить статус заказа - TireStock",
     description: "Узнайте текущий статус и дату исполнения вашего заказа TireStock по номеру.",
   });
 }
 
-// Полоса прогресса по этапу (step 1..4). 0 — без полосы (Новый/Отменён).
+// Полоса прогресса по этапу (step 1..4). 0 - без полосы (Новый/Отменён).
 function ProgressBar({ step }: { step: number }) {
   const steps = ["В работе", "Сборка / погрузка", "Водитель в пути", "Готов к выдаче"];
   return (
@@ -42,7 +42,7 @@ function StatusResult({ st }: { st: OrderStatus }) {
     return (
       <div className="mt-8 rounded-container bg-light p-6">
         <p className="text-body text-dark">
-          Заказ №{st.code} не найден. Проверьте номер — он указан в СМС или назван менеджером.
+          Заказ №{st.code} не найден. Проверьте номер - он указан в СМС или назван менеджером.
         </p>
       </div>
     );

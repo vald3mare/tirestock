@@ -1,4 +1,4 @@
-// Sub-agent investigation brief — the entire prompt the sub-agent sees.
+// Sub-agent investigation brief - the entire prompt the sub-agent sees.
 // Constraints: target ≤ 12 KB per brief; deterministic (same input → byte-identical output, modulo generatedAt).
 
 import { isAbsolute, join, normalize, relative } from 'node:path';
@@ -23,7 +23,7 @@ export function inferPlaybook(signals) {
   const usageHas = (re, minBilled = 0) =>
     services.some((s) => re.test(String(s?.name ?? '')) && Number(s?.billedCost ?? s?.cost ?? 0) > minBilled);
 
-  // AI app first — billing shape (AI Gateway > Sandbox > Function Duration) overrides
+  // AI app first - billing shape (AI Gateway > Sandbox > Function Duration) overrides
   // the ecommerce/saas tilt when both apply (an "AI shopping assistant" lives in ai-application's
   // priority patterns, not the cart-checkout ones).
   const aiDep =
@@ -55,7 +55,7 @@ export function inferPlaybook(signals) {
   return null;
 }
 
-// SvelteKit/Nuxt/Astro have framework-shaped advice that doesn't fit the Next.js-flavored profile playbooks — both can ship together.
+// SvelteKit/Nuxt/Astro have framework-shaped advice that doesn't fit the Next.js-flavored profile playbooks - both can ship together.
 export function inferFrameworkPlaybook(signals) {
   const stack = signals?.stack ?? signals?.codebase?.stack ?? {};
   switch (stack.framework) {
@@ -65,7 +65,7 @@ export function inferFrameworkPlaybook(signals) {
 }
 
 // Empty result = no source files; investigate via evidence only (legitimate for platform_* candidates).
-// Workspace imports expand one level deep — keeps brief small. A thin shell page.tsx delegates work; bottleneck usually lives in workspace files.
+// Workspace imports expand one level deep - keeps brief small. A thin shell page.tsx delegates work; bottleneck usually lives in workspace files.
 export function resolveFiles(candidate, signals) {
   const route = candidate.route;
   const routes = signals?.codebase?.routes ?? [];
@@ -241,7 +241,7 @@ export function summarizeDeepDiveFailures(deepDive) {
   if (failures.length / entries.length < 0.5 && failures.length < 3) return null;
   const failedIds = failures.map(([k]) => k).slice(0, 6).join(', ');
   const codes = uniq(failures.map(([, v]) => v?.code ?? v?.error ?? 'unknown')).slice(0, 3).join(' / ');
-  return `${failures.length} of ${entries.length} deep-dive signals failed (${failedIds}${failures.length > 6 ? ', …' : ''}) — error: ${codes}.`;
+  return `${failures.length} of ${entries.length} deep-dive signals failed (${failedIds}${failures.length > 6 ? ', …' : ''}) - error: ${codes}.`;
 }
 
 function isFailureEntry(v) {
@@ -270,13 +270,13 @@ export async function citationSubset(candidateKind, framework, version) {
 // Per-kind hints tell the investigator which comparison to draw first.
 export const KIND_INTERPRETATION_HINTS = {
   slow_route: [
-    'Compare `cpu.p95` vs `latency.p95`. If cpu << latency, the bottleneck is wall-clock / external IO / awaits — look for sequential awaits, slow DB queries, slow external APIs. If cpu ≈ latency, look for in-process compute (rendering, JSON serialization, crypto).',
-    'Compare `ttfb.p95` vs `latency.p95`. If ttfb ≈ latency, response generation finishes near the end — streaming or `after()` may shift perceived latency.',
+    'Compare `cpu.p95` vs `latency.p95`. If cpu << latency, the bottleneck is wall-clock / external IO / awaits - look for sequential awaits, slow DB queries, slow external APIs. If cpu ≈ latency, look for in-process compute (rendering, JSON serialization, crypto).',
+    'Compare `ttfb.p95` vs `latency.p95`. If ttfb ≈ latency, response generation finishes near the end - streaming or `after()` may shift perceived latency.',
     'For streaming, SSE, resumable chat, or other intentionally long-lived routes, do not treat high wall-clock duration alone as a bug. Recommend a change only when evidence shows avoidable pre-first-byte work, high active CPU, duplicate invocations, or post-response work that can move out of the user-visible path.',
     'Inspect `perDeployment`: a 2x step between deployments points to a regression introduced in the newer deployment. Frame the rec as "regression introduced in <deployment_id>" rather than a generic perf claim.',
-    'Inspect `startTypeSplit.cold` share. >5% cold means cold starts contribute meaningfully — Fluid Compute or warmer keep-alive is on the table.',
+    'Inspect `startTypeSplit.cold` share. >5% cold means cold starts contribute meaningfully - Fluid Compute or warmer keep-alive is on the table.',
     'Inspect `statusDistribution`. A non-trivial 3xx/4xx slice may be inflating p95 because redirects/auth bounces still count as invocations.',
-    'Inspect `cacheBreakdown`. If the route uses Next.js `dynamic = \'error\'` (or otherwise static) but the breakdown shows substantial MISS/BYPASS counts, the latency lives on the cache-miss path — investigate the origin fetch / ISR revalidation cost, NOT in-handler compute. `bandwidthByCache` tells you the byte cost of those misses.',
+    'Inspect `cacheBreakdown`. If the route uses Next.js `dynamic = \'error\'` (or otherwise static) but the breakdown shows substantial MISS/BYPASS counts, the latency lives on the cache-miss path - investigate the origin fetch / ISR revalidation cost, NOT in-handler compute. `bandwidthByCache` tells you the byte cost of those misses.',
   ],
   uncached_route: [
     '`cacheBreakdown` tells you what fraction is BYPASS vs HIT vs MISS. BYPASS without explicit `Cache-Control` directives in the response is the canonical fix.',
@@ -288,7 +288,7 @@ export const KIND_INTERPRETATION_HINTS = {
   cold_start: [
     '`startTypeSplit`: cold vs hot vs prewarmed. Fluid Compute meaningfully helps when cold > 5%.',
     '`coldVsWarmLatencyP95`: how much SLOWER is cold than warm. If 5x+, cold starts are amplifying tail latency, not just adding fixed overhead.',
-    '`coldByDeployment`: if cold-start cluster around the newest deployment, the slowdown is a regression — check imports, init code, framework upgrade.',
+    '`coldByDeployment`: if cold-start cluster around the newest deployment, the slowdown is a regression - check imports, init code, framework upgrade.',
   ],
   route_errors: [
     '`errorStatusPattern`: distinguishes 500 (app crash) vs 502/503 (gateway/upstream timeout) vs 504 (downstream timeout).',
@@ -297,12 +297,12 @@ export const KIND_INTERPRETATION_HINTS = {
   ],
   external_api_slow: [
     '`latency.p95` vs `latency.p99`: spreads point to flaky upstream; narrow gap points to slow-by-design.',
-    '`callersByRoute` (`origin_route` dim): which of OUR routes call this upstream — that\'s where the rec should land.',
+    '`callersByRoute` (`origin_route` dim): which of OUR routes call this upstream - that\'s where the rec should land.',
     '`transferBytes`: large payloads suggest caching or partial-response opportunities at our edge.',
   ],
   isr_overrevalidation: [
-    '`writePattern` (write_units by cache_result) — STALE writes vs HIT writes. STALE-write means the revalidate ran on every stale request.',
-    '`readPattern` (read_units by cache_result) — HIT vs MISS. Low MISS means cache fills are not the issue.',
+    '`writePattern` (write_units by cache_result) - STALE writes vs HIT writes. STALE-write means the revalidate ran on every stale request.',
+    '`readPattern` (read_units by cache_result) - HIT vs MISS. Low MISS means cache fills are not the issue.',
     'If writes / reads > 0.5, the revalidate cadence is too aggressive; lengthen `revalidate` or switch to on-demand `revalidateTag`.',
   ],
   cwv_poor: [
@@ -310,7 +310,7 @@ export const KIND_INTERPRETATION_HINTS = {
     'LCP > 2500ms → server response or critical image. INP > 200ms → long tasks / heavy JS on interaction. CLS > 0.1 → layout shift, usually images/ads/fonts.',
   ],
   middleware_heavy: [
-    '`topMiddlewarePaths`: paths that hit middleware most. If non-asset paths dominate, the matcher is too broad — narrow to the request shapes that actually need middleware.',
+    '`topMiddlewarePaths`: paths that hit middleware most. If non-asset paths dominate, the matcher is too broad - narrow to the request shapes that actually need middleware.',
   ],
   platform_fluid_compute: [
     'Cross-check the broad-pass `fnStartTypeByRoute` for cold-rate concentration. If a few routes carry most cold starts, frame the rec around those routes rather than fleet-wide.',
@@ -344,7 +344,7 @@ export function buildBrief({
   const roots = briefRoots(signals);
 
   const lines = [];
-  lines.push(`# Investigation brief — ${kind}${routeOrHost ? ` — ${routeOrHost}` : ''}`);
+  lines.push(`# Investigation brief - ${kind}${routeOrHost ? ` - ${routeOrHost}` : ''}`);
   lines.push('');
   lines.push('You are a Vercel-optimize investigation sub-agent. Your job is to investigate ONE evidence-backed candidate and emit ONE recommendation JSON. Stay narrow. Stay grounded. Do NOT widen the search.');
   lines.push('');
@@ -369,9 +369,9 @@ export function buildBrief({
   lines.push(`**Gate question (the hypothesis you're verifying):** ${candidate.question ?? '(no question)'}`);
   lines.push('');
   if (Array.isArray(files) && files.length > 0) {
-    lines.push('**Files you may read (read ONLY these — open each one directly, NOT a repo-wide grep):**');
+    lines.push('**Files you may read (read ONLY these - open each one directly, NOT a repo-wide grep):**');
     lines.push(`_Capped at ${NON_LAYOUT_FILE_CAP} non-layout files + up to ${LAYOUT_FILE_CAP} layouts._`);
-    // Tag route vs workspace-import — workspace files are usually where the bottleneck lives.
+    // Tag route vs workspace-import - workspace files are usually where the bottleneck lives.
     const routes = signals?.codebase?.routes ?? [];
     const routeScores = routes.filter((r) => r.type !== 'layout').map((r) => ({
       r,
@@ -391,12 +391,12 @@ export function buildBrief({
       const repoRel = repoRelativeBriefPath(f, roots) ?? f;
       const abs = absoluteBriefPath(f, roots);
       const sourceSuffix = repoRel !== f ? ` (scan path: \`${f}\`)` : '';
-      const absSuffix = abs && abs !== repoRel ? ` — open \`${abs}\`` : '';
+      const absSuffix = abs && abs !== repoRel ? ` - open \`${abs}\`` : '';
       lines.push(`- \`${repoRel}\` ${tag}${sourceSuffix}${absSuffix}`);
     }
     if ([...routeFiles].length > 0 && workspaceImportFiles.length > 0) {
       lines.push('');
-      lines.push('_The route file is often a thin shell that re-exports from a workspace package. If the route file has no awaits / heavy imports / data fetching of its own, the bottleneck almost certainly lives in one of the (workspace import) files above — read those._');
+      lines.push('_The route file is often a thin shell that re-exports from a workspace package. If the route file has no awaits / heavy imports / data fetching of its own, the bottleneck almost certainly lives in one of the (workspace import) files above - read those._');
     }
   } else {
     lines.push('**Files:** none mapped to this candidate. Either the gate is account-scope (platform_*) or the scanner could not resolve a route→file mapping (legitimate data gap). Work from the deep-dive evidence alone.');
@@ -415,7 +415,7 @@ export function buildBrief({
   // Negative-space filter: sub-agent must not recommend toggling on something already on.
   const projectFacts = deriveProjectFacts(signals);
   if (projectFacts.length > 0) {
-    lines.push('## Project config (already on — do NOT recommend toggling)');
+    lines.push('## Project config (already on - do NOT recommend toggling)');
     lines.push('');
     lines.push('These settings are already enabled on the project. A recommendation that says "enable X" or "turn on X" for any of these is wrong and will be rejected by the verifier. Treat them as the starting state for your investigation.');
     lines.push('');
@@ -423,19 +423,19 @@ export function buildBrief({
     lines.push('');
   }
 
-  lines.push('## Deep-dive evidence (already collected — do NOT re-query)');
+  lines.push('## Deep-dive evidence (already collected - do NOT re-query)');
   lines.push('');
   const deepDive = candidate?.evidence?.deepDive ?? {};
   const failureNotice = summarizeDeepDiveFailures(deepDive);
   if (failureNotice) {
     lines.push(`> ⚠ **Deep-dive partly incomplete.** ${failureNotice}`);
     lines.push('>');
-    lines.push(`> The base evidence below is still valid — \`o11ySignal=${candidate.o11ySignal ?? '(unset)'}\` came directly from the gate's broad-pass query and is unaffected. Investigate against that signal and any deep-dive keys that DID populate. Do not conflate "missing data" with "no bottleneck": if the data didn't come back, abstain on the missing dimensions, not on the candidate as a whole.`);
+    lines.push(`> The base evidence below is still valid - \`o11ySignal=${candidate.o11ySignal ?? '(unset)'}\` came directly from the gate's broad-pass query and is unaffected. Investigate against that signal and any deep-dive keys that DID populate. Do not conflate "missing data" with "no bottleneck": if the data didn't come back, abstain on the missing dimensions, not on the candidate as a whole.`);
     lines.push('');
   }
   lines.push('Treat these as ground truth. Cite the specific paths and values verbatim in `why` and `verify`. Numeric values are rounded to 4 decimal places.');
   lines.push('');
-  lines.push('**Units legend** — all duration/timing fields below are in **milliseconds** (`latency.*`, `ttfb.*`, `cpu.p95`, `memory.*`). All `value` fields under `startTypeSplit` / `statusDistribution` / `methodDistribution` / `cacheBreakdown` are **invocation counts**. `botShare` / `bandwidthByCache` values are **bytes**. `perDeployment.value` is **p95 latency in ms** for that deployment.');
+  lines.push('**Units legend** - all duration/timing fields below are in **milliseconds** (`latency.*`, `ttfb.*`, `cpu.p95`, `memory.*`). All `value` fields under `startTypeSplit` / `statusDistribution` / `methodDistribution` / `cacheBreakdown` are **invocation counts**. `botShare` / `bandwidthByCache` values are **bytes**. `perDeployment.value` is **p95 latency in ms** for that deployment.');
   lines.push('');
   lines.push('```json');
   lines.push(JSON.stringify(deepDive, null, 2));
@@ -467,10 +467,10 @@ export function buildBrief({
   lines.push('');
   lines.push('### URLs');
   if (citations.urls.length === 0) {
-    lines.push('_(no URLs match this kind + version — investigate, but the rec may fail `missing-citation`; consider abstaining)_');
+    lines.push('_(no URLs match this kind + version - investigate, but the rec may fail `missing-citation`; consider abstaining)_');
   } else {
     for (const e of citations.urls) {
-      lines.push(`- \`${e.url}\` — ${e.topic}`);
+      lines.push(`- \`${e.url}\` - ${e.topic}`);
     }
   }
   lines.push('');
@@ -479,7 +479,7 @@ export function buildBrief({
     lines.push('_(none applicable)_');
   } else {
     for (const r of citations.ruleSkillRefs) {
-      lines.push(`- \`${r.skill}:${r.rule}\` — ${r.topic}`);
+      lines.push(`- \`${r.skill}:${r.rule}\` - ${r.topic}`);
     }
   }
   lines.push('');
@@ -489,7 +489,7 @@ export function buildBrief({
     lines.push('');
     lines.push(playbookBody.trim());
     lines.push('');
-    lines.push('_Use the playbook to tilt phrasing and pattern priority. NEVER invent a claim because the playbook mentions a pattern — only emit it if the evidence supports it._');
+    lines.push('_Use the playbook to tilt phrasing and pattern priority. NEVER invent a claim because the playbook mentions a pattern - only emit it if the evidence supports it._');
     lines.push('');
   }
   if (frameworkPlaybookId && frameworkPlaybookBody) {
@@ -505,22 +505,22 @@ export function buildBrief({
   lines.push('');
   lines.push('Your job is to answer the gate question above. There are exactly two valid outcomes:');
   lines.push('');
-  lines.push('**A. Emit a recommendation** (schema below) — ONLY when you found a verifiable file:line cause that the deep-dive evidence supports.');
+  lines.push('**A. Emit a recommendation** (schema below) - ONLY when you found a verifiable file:line cause that the deep-dive evidence supports.');
   lines.push('');
-  lines.push('**B. Abstain** — when the gate\'s hypothesis does not survive contact with the source. Emit:');
+  lines.push('**B. Abstain** - when the gate\'s hypothesis does not survive contact with the source. Emit:');
   lines.push('```json');
   lines.push(`{"abstain": true, "candidateRef": "${candidateRef}", "reason": "<one-sentence explanation grounded in what you found vs what the gate assumed>"}`);
   lines.push('```');
   lines.push('Abstaining is the RIGHT call when evidence is ambiguous, when the bottleneck isn\'t in the resolved files, or when the gate\'s hypothesis was wrong (e.g. an "uncached_route" candidate where the route is mostly POST traffic and uncacheable by protocol). Abstention is preferred over a speculative rec. The orchestrator surfaces abstentions in the trust section of the final report.');
   lines.push('');
-  lines.push('**B1. Abstain with an observation** — when you find something real while abstaining (e.g., perDeployment regression, error-rate spike, infrastructure config gap) that the customer should know about but isn\'t a perf rec in the gate\'s framing. Emit:');
+  lines.push('**B1. Abstain with an observation** - when you find something real while abstaining (e.g., perDeployment regression, error-rate spike, infrastructure config gap) that the customer should know about but isn\'t a perf rec in the gate\'s framing. Emit:');
   lines.push('```json');
   lines.push(`{
   "abstain": true,
   "candidateRef": "${candidateRef}",
   "reason": "<why you abstained from a perf rec>",
   "observation": {
-    "summary": "<one-line headline — what you noticed>",
+    "summary": "<one-line headline - what you noticed>",
     "evidence": "<the deep-dive datum or file:line that backs it>",
     "suggestedAction": "<what the customer should do next>",
     "kind": "regression | error_storm | config_gap | upstream_dependency | other"
@@ -577,11 +577,11 @@ export function buildBrief({
 
   lines.push('## Critical rules');
   lines.push('');
-  lines.push('Ordered by priority — top is most important.');
+  lines.push('Ordered by priority - top is most important.');
   lines.push('');
-  lines.push('1. **`why` must cite a specific `file:line` AND a specific deep-dive datum.** Both. Not one or the other. This is THE quality gate — recs without both will be dropped by the verifier.');
+  lines.push('1. **`why` must cite a specific `file:line` AND a specific deep-dive datum.** Both. Not one or the other. This is THE quality gate - recs without both will be dropped by the verifier.');
   lines.push(`2. **No invented citations.** Only URLs and refs from the library above. The \`unknown-citation\` sanitizer strips anything else.`);
-  lines.push(`3. **No version-mismatched features.** This project is \`${framework}@${version}\` — do not recommend APIs unavailable in that version. The version-aware library above is your filter.`);
+  lines.push(`3. **No version-mismatched features.** This project is \`${framework}@${version}\` - do not recommend APIs unavailable in that version. The version-aware library above is your filter.`);
   lines.push(`4. **No \`$N\` dollar literals** in customer-facing fields. Use magnitude phrases ("hundreds of dollars per month at current traffic"). The \`$-strip\` sanitizer strips them, but emitting them is wasted output.`);
   lines.push('5. **Stay within scope.** Do not investigate other routes or fleet-wide patterns; that is the orchestrator\'s job. If this candidate doesn\'t yield a finding, abstain (Outcome B above).');
   lines.push('6. **Vercel voice.** Sharp teammate, clear, competent, no fluff. Lead with observed metrics and the user action. Avoid marketing language (`leverage`, `streamline`, `powerful`), filler adverbs (`just`, `simply`, `actually`), hedged starts (`Consider`, `You may want to`), rhetorical reframes, and arrows in prose. Do not expose internal terms like `sub-agent`, `abstention`, `passRate`, or `quality score`. Product names: `Observability Plus`, `Vercel Functions`, `fluid compute` mid-sentence, `BotID`, `AI Gateway`, `AI SDK`, `Edge Config`, `Routing Middleware`, `Web Analytics`. Explain `function invocations` and `95th percentile`; do not use `inv` or `p95` in customer output. See `references/voice.md`.');

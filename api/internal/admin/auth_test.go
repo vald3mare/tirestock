@@ -13,10 +13,10 @@ func TestPasswordHashVerify(t *testing.T) {
 	if verifyPassword("wrong", hash) {
 		t.Error("неверный пароль прошёл проверку")
 	}
-	// Соль случайна — два хеша одного пароля различаются.
+	// Соль случайна - два хеша одного пароля различаются.
 	hash2, _ := hashPassword("s3cret-пароль")
 	if hash == hash2 {
-		t.Error("хеши одинаковы — соль не работает")
+		t.Error("хеши одинаковы - соль не работает")
 	}
 }
 
@@ -39,7 +39,7 @@ func TestSessionTokenHashDeterministic(t *testing.T) {
 	if hashToken(token) != hash {
 		t.Error("hashToken недетерминирован")
 	}
-	// Токен не хранится в открытом виде — хеш от него отличается.
+	// Токен не хранится в открытом виде - хеш от него отличается.
 	if hash == token {
 		t.Error("хеш совпадает с токеном")
 	}

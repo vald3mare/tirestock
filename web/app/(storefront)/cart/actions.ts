@@ -8,7 +8,7 @@ import { createOrder } from "@/lib/api/client";
 import { resolveCartItem } from "@/lib/cart-resolve";
 import { getCity } from "@/lib/get-city";
 
-// Все изменения корзины — server actions поверх куки. Клиентского стейта нет,
+// Все изменения корзины - server actions поверх куки. Клиентского стейта нет,
 // после каждого действия страница перерисовывается сервером.
 
 export async function addToCart(formData: FormData) {
@@ -19,7 +19,7 @@ export async function addToCart(formData: FormData) {
   const lines = await readCart();
   const existing = lines.find((l) => l.slug === slug);
   if (existing) {
-    existing.qty += qty; // добавили тот же товар ещё раз — суммируем, а не затираем
+    existing.qty += qty; // добавили тот же товар ещё раз - суммируем, а не затираем
   } else {
     if (lines.length >= CART_MAX_ITEMS) return;
     lines.push({ slug, qty });
@@ -42,7 +42,7 @@ export async function setCartQty(formData: FormData) {
 }
 
 // Удаление не мгновенное «навсегда»: убираем позицию, но возвращаем её состав
-// в query — страница показывает снекбар «Вернуть» (правило: undo вместо confirm).
+// в query - страница показывает снекбар «Вернуть» (правило: undo вместо confirm).
 export async function removeFromCart(formData: FormData) {
   const slug = String(formData.get("slug") ?? "").trim();
   const lines = await readCart();
@@ -69,7 +69,7 @@ export async function undoRemove(formData: FormData) {
   redirect("/cart");
 }
 
-// Оформление: собираем позиции из каталога (цена и код — с сервера, не с клиента),
+// Оформление: собираем позиции из каталога (цена и код - с сервера, не с клиента),
 // пишем заказ через API. Дальше он живёт в outbox и уезжает в tradesk воркером,
 // поэтому заказ не теряется, даже если учётка недоступна.
 export async function submitOrder(formData: FormData) {
@@ -105,7 +105,7 @@ export async function submitOrder(formData: FormData) {
   const city = await getCity();
   const items = [];
   for (const line of lines) {
-    // Позиция — шина ИЛИ диск (резолвится по slug). Снятый/закончившийся товар
+    // Позиция - шина ИЛИ диск (резолвится по slug). Снятый/закончившийся товар
     // пропускаем, остальной заказ уходит.
     const it = await resolveCartItem(line.slug, city).catch(() => null);
     if (it) {
@@ -117,7 +117,7 @@ export async function submitOrder(formData: FormData) {
   // Ключ идемпотентности защищает от ДАБЛКЛИКА: он рождается вместе с формой
   // (скрытое поле, см. cart/page.tsx), поэтому две отправки одной и той же
   // отрисованной формы дадут один заказ, а новый заказ теми же шинами на тот же
-  // телефон — уже другой ключ и, значит, отдельный заказ.
+  // телефон - уже другой ключ и, значит, отдельный заказ.
   // НЕ выводить ключ из телефона и состава: клиент вправе повторить покупку.
   const idempotencyKey = String(formData.get("idempotency_key") ?? "").trim() || randomUUID();
 

@@ -19,7 +19,7 @@ func TestRateLimiterBlocksAfterBurst(t *testing.T) {
 		return rec.Code
 	}
 
-	// Первые 3 (burst) проходят, 4-й — 429.
+	// Первые 3 (burst) проходят, 4-й - 429.
 	for i := 0; i < 3; i++ {
 		if code := call(); code != 200 {
 			t.Fatalf("запрос %d: got %d, want 200", i+1, code)
@@ -45,7 +45,7 @@ func TestRateLimiterPerIP(t *testing.T) {
 	if do("1.1.1.1") != 200 || do("2.2.2.2") != 200 {
 		t.Fatal("разные IP должны обслуживаться независимо")
 	}
-	// Повтор того же IP — 429.
+	// Повтор того же IP - 429.
 	if do("1.1.1.1") != http.StatusTooManyRequests {
 		t.Fatal("повтор с того же IP должен дать 429")
 	}

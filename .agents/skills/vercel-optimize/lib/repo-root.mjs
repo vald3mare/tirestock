@@ -4,7 +4,7 @@
 import { access } from 'node:fs/promises';
 import { join, dirname, resolve, normalize } from 'node:path';
 
-// Prefer affectedFiles[0] over findingRefs — findingRefs often share the same file.
+// Prefer affectedFiles[0] over findingRefs - findingRefs often share the same file.
 export function pickProbeFile(recs) {
   for (const r of (recs ?? [])) {
     if (r?.abstain) continue;
@@ -46,7 +46,7 @@ export function deriveRootFromSignals(signals, cwd = process.cwd()) {
   const offset = normalize(dir).replace(/^\.\/?/, '').replace(/\/$/, '');
   if (!offset) return null;
   const cwdAbs = resolve(cwd);
-  // Match `<root>/<offset>` OR `<root>/<offset>/<more>` — orchestrator may run from a subdir.
+  // Match `<root>/<offset>` OR `<root>/<offset>/<more>` - orchestrator may run from a subdir.
   const parts = cwdAbs.split('/');
   const offsetParts = offset.split('/');
   for (let start = parts.length - offsetParts.length; start >= 0; start--) {

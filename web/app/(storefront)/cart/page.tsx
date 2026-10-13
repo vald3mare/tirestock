@@ -18,7 +18,7 @@ import { removeFromCart, submitOrder, undoRemove } from "./actions";
 
 // Корзина (Figma → «Корзина», 37:261): список позиций 824 + саммари 264.
 // Состав живёт в куке (lib/cart.ts), цена и наличие подтягиваются из каталога
-// при каждом рендере — корзина не показывает вчерашнюю цену.
+// при каждом рендере - корзина не показывает вчерашнюю цену.
 // Оформление: имя + телефон → POST /orders → outbox → tradesk (заказ не теряется).
 
 export const metadata: Metadata = {
@@ -40,7 +40,7 @@ export default async function CartPage({
   const lines: Line[] = [];
   for (const line of cart) {
     const item = await resolveCartItem(line.slug, city).catch(() => null);
-    if (item) lines.push({ item, qty: line.qty }); // товар снят/закончился — не показываем
+    if (item) lines.push({ item, qty: line.qty }); // товар снят/закончился - не показываем
   }
 
   // Пункты выдачи города для выбора способа получения (фолбэк на статику СПб).
@@ -182,19 +182,19 @@ export default async function CartPage({
             Оформление заказа
           </h2>
           <p className="mt-2 text-body text-grey">
-            Оставьте контакты и выберите способ получения — менеджер перезвонит, подтвердит
+            Оставьте контакты и выберите способ получения - менеджер перезвонит, подтвердит
             наличие и согласует оплату. Онлайн-оплаты на сайте нет.
           </p>
           <form action={submitOrder} className="mt-6 flex flex-col gap-5">
             {/* Ключ идемпотентности рождается вместе с формой: даблклик по одной
                 отрисованной форме = один заказ, а повторная покупка тех же шин
-                после перезагрузки — уже новый заказ. */}
+                после перезагрузки - уже новый заказ. */}
             <input type="hidden" name="idempotency_key" value={randomUUID()} />
-            {/* Город — из переключателя (кука), уходит в комментарий заказа. */}
+            {/* Город - из переключателя (кука), уходит в комментарий заказа. */}
             <input type="hidden" name="city_label" value={CITIES[city].label} />
 
             <div className="flex flex-col gap-3">
-              <Field name="customer_name" autoComplete="name" required placeholder="Ф.И.О. — например: Иван Петров…" aria-label="Ф.И.О." />
+              <Field name="customer_name" autoComplete="name" required placeholder="Ф.И.О. - например: Иван Петров…" aria-label="Ф.И.О." />
               <Field
                 name="phone"
                 type="tel"
@@ -202,7 +202,7 @@ export default async function CartPage({
                 autoComplete="tel"
                 spellCheck={false}
                 required
-                placeholder="Телефон — например: +7 (921) 123-45-67…"
+                placeholder="Телефон - например: +7 (921) 123-45-67…"
                 aria-label="Телефон"
               />
               <Field name="email" type="email" autoComplete="email" placeholder="E-mail (необязательно)…" aria-label="E-mail" />
@@ -214,7 +214,7 @@ export default async function CartPage({
             {error && (
               <p className="text-body text-dark">
                 {error === "phone"
-                  ? "Укажите телефон — без него не сможем перезвонить."
+                  ? "Укажите телефон - без него не сможем перезвонить."
                   : error === "name"
                     ? "Укажите Ф.И.О., чтобы менеджер знал, к кому обращаться."
                     : error === "address"

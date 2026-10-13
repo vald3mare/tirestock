@@ -38,10 +38,10 @@ async function main() {
   }
 
   if (stale) process.exit(1);
-  console.error('[check-docs-fresh] OK — generated docs match source');
+  console.error('[check-docs-fresh] OK - generated docs match source');
 }
 
-// MUST stay byte-identical to build-docs.mjs renderers — duplication is the contract.
+// MUST stay byte-identical to build-docs.mjs renderers - duplication is the contract.
 function renderScanners() {
   const sorted = scanners.slice().sort((a, b) => a.metadata.id.localeCompare(b.metadata.id));
   let out = GENERATED_BANNER + '# Scanner patterns\n\n';
@@ -50,7 +50,7 @@ function renderScanners() {
   out += '## Patterns\n\n';
   for (const s of sorted) {
     const m = s.metadata;
-    out += `### \`${m.id}\` — ${m.title}\n\n`;
+    out += `### \`${m.id}\` - ${m.title}\n\n`;
     out += `- **Severity**: ${m.severity}\n`;
     out += `- **Billing dimension**: ${m.billingDimension}\n`;
     out += `- **Traffic-independent**: ${m.trafficIndependent ? 'yes (cold-path findings survive the doctrine drop)' : 'no (cold-path findings get dropped)'}\n\n`;

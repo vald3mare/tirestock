@@ -122,7 +122,7 @@ type UpsertWheelParams struct {
 	Stock      int32
 }
 
-// Диски: upsert синком + мультигород-офферы. Динамический листинг — сырым pgx.
+// Диски: upsert синком + мультигород-офферы. Динамический листинг - сырым pgx.
 func (q *Queries) UpsertWheel(ctx context.Context, arg UpsertWheelParams) error {
 	_, err := q.db.Exec(ctx, upsertWheel,
 		arg.Code,

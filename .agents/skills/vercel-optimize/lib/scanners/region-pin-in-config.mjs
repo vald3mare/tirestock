@@ -1,12 +1,12 @@
 // Detects pinned function regions in vercel.json or per-route segment config.
 // Provides the "configured region" signal for the region-misconfig gate when a TTFB
-// breakdown by function_region isn't available (current state — see Phase 0 preflight
+// breakdown by function_region isn't available (current state - see Phase 0 preflight
 // in plans/wild-splashing-flamingo.md).
 //
 // Subtypes:
-//   vercel-json-single   — vercel.json `regions: ["iad1"]` (single region, no failover)
-//   vercel-json-list     — vercel.json `regions: [...]` (multi-region; informational)
-//   segment-preferred    — `export const preferredRegion = 'iad1'` (or array)
+//   vercel-json-single   - vercel.json `regions: ["iad1"]` (single region, no failover)
+//   vercel-json-list     - vercel.json `regions: [...]` (multi-region; informational)
+//   segment-preferred    - `export const preferredRegion = 'iad1'` (or array)
 
 import { lineOf } from '../util.mjs';
 

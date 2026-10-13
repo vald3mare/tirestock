@@ -1,5 +1,5 @@
--- Upsert товара из синка SelectTyres (ключ — code). Динамические выборки каталога
--- (листинг с фильтрами) идут сырым pgx через Filters.WhereSQL — здесь только статика.
+-- Upsert товара из синка SelectTyres (ключ - code). Динамические выборки каталога
+-- (листинг с фильтрами) идут сырым pgx через Filters.WhereSQL - здесь только статика.
 
 -- name: UpsertProduct :exec
 INSERT INTO products (
@@ -34,7 +34,7 @@ UPDATE products SET stock = 0, synced_at = now()
 WHERE code <> '' AND synced_at < $1 AND stock <> 0;
 
 -- name: UpsertProductOffer :exec
--- Цена/остаток товара в городе (мультигород). Ключ — (product_code, city).
+-- Цена/остаток товара в городе (мультигород). Ключ - (product_code, city).
 INSERT INTO product_offers (product_code, city, price, stock, updated_at)
 VALUES ($1, $2, $3, $4, now())
 ON CONFLICT (product_code, city) DO UPDATE SET
@@ -42,7 +42,7 @@ ON CONFLICT (product_code, city) DO UPDATE SET
 
 -- name: ZeroStaleOffers :execrows
 -- Офферы, не обновлённые в текущем прогоне синка (товар пропал со складов города),
--- гасим до нуля остатка. Строки не удаляем — заказы/URL могут ссылаться.
+-- гасим до нуля остатка. Строки не удаляем - заказы/URL могут ссылаться.
 UPDATE product_offers SET stock = 0, updated_at = now()
 WHERE updated_at < $1 AND stock <> 0;
 

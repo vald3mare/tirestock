@@ -9,7 +9,7 @@ import (
 	"tirestock/api/internal/httpx"
 )
 
-// ListResponse — ответ GET /api/v1/products.
+// ListResponse - ответ GET /api/v1/products.
 type ListResponse struct {
 	Items   []Product `json:"items"`
 	Total   int       `json:"total"`
@@ -17,7 +17,7 @@ type ListResponse struct {
 	PerPage int       `json:"per_page"`
 }
 
-// Handlers — тонкие HTTP-хендлеры каталога: распарсить → сервис → DTO.
+// Handlers - тонкие HTTP-хендлеры каталога: распарсить → сервис → DTO.
 type Handlers struct {
 	svc *Service
 }

@@ -10,7 +10,7 @@ import { metadataFor } from "@/lib/seo";
 
 export function generateMetadata(): Promise<Metadata> {
   return metadataFor("/news", {
-    title: "Новости — TireStock, шины и диски в Санкт-Петербурге",
+    title: "Новости - TireStock, шины и диски в Санкт-Петербурге",
     description: "Новости шинного рынка, ассортимента и акций TireStock.",
   });
 }

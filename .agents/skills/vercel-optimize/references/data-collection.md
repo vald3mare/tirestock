@@ -60,7 +60,7 @@ The merged `signals.json` has this top-level shape:
 }
 ```
 
-All metric queries use the same `timeWindow` constant (`14d`) — defined as `TIME_WINDOW` in [lib/queries.mjs](../lib/queries.mjs) and covered by the repo test suite. Mixing windows silently produces incompatible rollups; never pin a per-query `since`.
+All metric queries use the same `timeWindow` constant (`14d`) - defined as `TIME_WINDOW` in [lib/queries.mjs](../lib/queries.mjs) and covered by the repo test suite. Mixing windows silently produces incompatible rollups; never pin a per-query `since`.
 
 All Vercel CLI commands that accept scope must use `commandScope.cliScope` (`--scope <team-slug-or-username>`). Linked project files often contain raw `team_...` or `usr_...` IDs, but several CLI subcommands silently fall back to the current team when `--scope` receives a raw account ID. `collect-signals.mjs` resolves raw team IDs to slugs and raw user IDs to usernames before running `vercel metrics`, `vercel usage`, or `vercel contract`; `deep-dive.mjs` reuses the same scope for follow-up metric queries. If the project link lacks an owner account or the CLI-safe scope cannot be resolved, stop and ask the user which Vercel project and team/personal scope they want audited. Do not infer scope from the current `vercel whoami` team.
 
@@ -71,7 +71,7 @@ Downstream consumers reference `signals.<field>` paths verbatim. Bumping `schema
 | Signal | CLI command | Required for | Fallback when missing |
 |---|---|---|---|
 | Auth | `vercel whoami` | Everything | Exit with "run `vercel login`" |
-| CLI version | `vercel --version` | Everything | Exit with "upgrade to v53+" — v53 is the skill's compatibility floor |
+| CLI version | `vercel --version` | Everything | Exit with "upgrade to v53+" - v53 is the skill's compatibility floor |
 | Project ID + Org ID | `.vercel/repo.json` (newer) or `.vercel/project.json` (legacy) → `VERCEL_PROJECT_ID` + `VERCEL_ORG_ID` → argv. When the user passes a project ID and multi-project `repo.json` contains exactly one matching entry, the collector uses that entry's owner account. | Everything | Exit with "run `vercel link` or pass projectId". Multi-project `repo.json` without an explicit matching project ID, or any project ID without owner account scope, is ambiguous; ask the user to clarify the intended project/account |
 | Framework support | local `package.json` via `detectStack()` + `classifyFrameworkSupport()` | Code-backed route recommendations | Stop before metric fan-out on unsupported frameworks unless the user chooses `--continue-unsupported-framework` |
 | CLI command scope | `vercel whoami --format json`, then `vercel api /v2/teams/:orgId` when a linked `team_...` ID must be converted to a slug | Keeps `vercel metrics`, `vercel usage`, and `vercel contract` on the linked project's account instead of the user's current/personal scope | `PROJECT_SCOPE_UNRESOLVED` or `SCOPE_UNRESOLVED`; stop and ask the user to clarify the intended project/account, then re-link under the intended team or personal account |
@@ -103,14 +103,14 @@ Downstream consumers reference `signals.<field>` paths verbatim. Bumping `schema
 
 **ISR read:write ratio caveat.** `isrReadsByRoute` exposes the **origin-tier** read count only. CDN-tier reads (regional cache hits that never reach the ISR origin) are not separately surfaced today and can dominate total read volume. Before flagging "writes > reads" as inverted, the gate and report must (a) acknowledge CDN-tier reads aren't included, (b) corroborate with `requestsByRouteCache` `cache_result=HIT` share before alarming. A high origin-write rate alone does not imply pathological over-revalidation if the CDN is absorbing the steady-state read traffic.
 | `metrics.imageCount`, `imageByHost`, `imageSourceBytes` | `vercel metrics vercel.image_transformation.*` | Image-optimization narrative | `{ok:false}` |
-| `metrics.cwvLcpByRoute`, `cwvInpByRoute`, `cwvClsByRoute`, `cwvTtfbByRoute`, `cwvCount`, `cwvCountByRoute` | `vercel metrics vercel.speed_insights_metric.*` (`p75` for vitals, `sum` for counts) `--since 14d` | `cwv_poor` gate | Empty when no Speed Insights measurements are returned for the 14-day window — gate stays dormant; do not infer disabled vs no traffic unless another signal proves it |
+| `metrics.cwvLcpByRoute`, `cwvInpByRoute`, `cwvClsByRoute`, `cwvTtfbByRoute`, `cwvCount`, `cwvCountByRoute` | `vercel metrics vercel.speed_insights_metric.*` (`p75` for vitals, `sum` for counts) `--since 14d` | `cwv_poor` gate | Empty when no Speed Insights measurements are returned for the 14-day window - gate stays dormant; do not infer disabled vs no traffic unless another signal proves it |
 | `metrics.firewallByAction` | `vercel metrics vercel.firewall_action.count -a sum --group-by waf_action --since 14d` | Bot-protection narrative; shows existing managed rule activity | `{ok:false}` |
 | `metrics.botIdChecks` | `vercel metrics vercel.bot_id_check.count -a sum --since 14d` | Confirms whether BotID is actively running | `{ok:false}` |
 | `metrics.externalApiCount`, `externalApiBytes` | `vercel metrics vercel.external_api_request.*` grouped by `origin_hostname` | External-dependency cost narrative | `{ok:false}` |
 
 ## Error states and fallbacks
 
-`lib/vercel.mjs`'s `runVercelJson()` parses stdout as JSON first (the most reliable signal — the CLI emits structured error payloads even when exit code is non-zero), and only falls back to stderr substring matching when JSON parsing fails:
+`lib/vercel.mjs`'s `runVercelJson()` parses stdout as JSON first (the most reliable signal - the CLI emits structured error payloads even when exit code is non-zero), and only falls back to stderr substring matching when JSON parsing fails:
 
 | Code | Meaning | Skill behavior |
 |---|---|---|
@@ -126,7 +126,7 @@ Downstream consumers reference `signals.<field>` paths verbatim. Bumping `schema
 | `invalid_filter_dimension` / `invalid_dimension` | Metric query used a dimension the metric doesn't support | Metric returns `{ok:false, code, allowedValues}`; consumer can introspect and adjust |
 | `NOT_LINKED` | The app directory is not linked in the way `vercel metrics` requires | Run `vercel link --yes --project <project-name-or-id> --cwd <app-dir>`; add `--team <team-id-or-slug>` when known. Passing only `VERCEL_PROJECT_ID` is not enough for route metrics if cwd is unlinked |
 | `NOT_AUTH` | Session expired | Caller exits with "run `vercel login`" |
-| `FORBIDDEN` | 403 — role lacks permission | Skip that endpoint; continue with degraded signal; surface in report |
+| `FORBIDDEN` | 403 - role lacks permission | Skip that endpoint; continue with degraded signal; surface in report |
 | `RATE_LIMIT` | 429 from API | Treat as "missing data" (no retry implemented yet) |
 | `EXIT_N` | Anything else | Treat as missing data; continue |
 
@@ -158,11 +158,11 @@ The skill never crashes the entire collection on a single endpoint failure. Ever
 }
 ```
 
-Field naming rule: the metric ID's dots become underscores, and the aggregation suffix is appended — `vercel.request.count` + `sum` → `vercel_request_count_sum`. `lib/vercel.mjs::normalizeSummary()` flattens `summary[]` into `[{<dim>: v, ..., value: <n>}]`.
+Field naming rule: the metric ID's dots become underscores, and the aggregation suffix is appended - `vercel.request.count` + `sum` → `vercel_request_count_sum`. `lib/vercel.mjs::normalizeSummary()` flattens `summary[]` into `[{<dim>: v, ..., value: <n>}]`.
 
 ### `vercel metrics schema --format json`
 
-Array of `{id, description}` entries — NOT an object. Many metric IDs in earlier docs don't exist: there is no `vercel.function.cold_starts`, no `vercel.cache.hits`. Cache state is the `cache_result` dimension on `vercel.request.count`.
+Array of `{id, description}` entries - NOT an object. Many metric IDs in earlier docs don't exist: there is no `vercel.function.cold_starts`, no `vercel.cache.hits`. Cache state is the `cache_result` dimension on `vercel.request.count`.
 
 ### `vercel metrics <id> --filter "<bad>"`
 
@@ -182,12 +182,12 @@ Status filtering uses `http_status` (not `status`). Both `http_status eq '500'` 
 
 Top-level keys relevant to the skill (real, verified):
 - `framework` (string, e.g. `"nextjs"`)
-- `resourceConfig.fluid` (boolean) — **Fluid Compute toggle**
-- `defaultResourceConfig.fluid` — template for new functions
-- `security.botIdEnabled` (boolean) — **BotID toggle**
-- `security.managedRules.bot_filter` (`{active, action}`) — firewall rule
+- `resourceConfig.fluid` (boolean) - **Fluid Compute toggle**
+- `defaultResourceConfig.fluid` - template for new functions
+- `security.botIdEnabled` (boolean) - **BotID toggle**
+- `security.managedRules.bot_filter` (`{active, action}`) - firewall rule
 - `speedInsights` (`{id, hasData}`)
-- `webAnalytics` (`{id}`) — installed but `features.webAnalytics` says enabled state
+- `webAnalytics` (`{id}`) - installed but `features.webAnalytics` says enabled state
 - `nodeVersion` (e.g. `"22.x"`)
 
 Calling without `?teamId=` returns 404 when the project belongs to a team other than the user's `currentTeam`. For user-owned projects (`orgId` starts with `usr_`), omit `teamId` and let the CLI use the authenticated user context.
@@ -204,11 +204,11 @@ The direct account billing record is the primary plan signal: `billing.plan` fro
 
 ### `vercel usage --format json`
 
-May return `Error: Costs not found (404)`. Treat that queried error as `USAGE_UNAVAILABLE` and degrade — the skill can still produce a useful report from metrics + scanner. Do not use this explanation when `usageError` is `NOT_COLLECTED_OBSERVABILITY_BLOCKED` or another `NOT_COLLECTED_*` value; those mean the audit stopped before `vercel usage` ran.
+May return `Error: Costs not found (404)`. Treat that queried error as `USAGE_UNAVAILABLE` and degrade - the skill can still produce a useful report from metrics + scanner. Do not use this explanation when `usageError` is `NOT_COLLECTED_OBSERVABILITY_BLOCKED` or another `NOT_COLLECTED_*` value; those mean the audit stopped before `vercel usage` ran.
 
 ## Why we avoid stderr grep
 
-CLI error message strings are not stable contracts — they can change between versions. Detecting `OPLUS_REQUIRED` by greping `stderr.includes('Observability Plus')` will break the moment Vercel rewords the message.
+CLI error message strings are not stable contracts - they can change between versions. Detecting `OPLUS_REQUIRED` by greping `stderr.includes('Observability Plus')` will break the moment Vercel rewords the message.
 
 `runVercelJson()` therefore:
 1. Always tries to **parse stdout as JSON** first. Most failures emit a structured `{error:{code,message,allowedValues}}` payload that's deterministic.

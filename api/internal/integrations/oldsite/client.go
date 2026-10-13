@@ -1,23 +1,24 @@
-// Package oldsite — ВРЕМЕННЫЙ мост доставки заявок в tradesk через публичные
+// Package oldsite - ВРЕМЕННЫЙ мост доставки заявок в tradesk через публичные
 // ajax-обработчики старого сайта tirestock.ru (Битрикс). Реализует orders.OrderDelivery.
 //
 // Зачем: у tradesk нет доступного «create»-эндпоинта (в админке backcall/create → 404),
 // а заявки исторически доходят до учётки именно через битриксовые скрипты
 // /ajax/call.php и /ajax/request.php. Пока не вскрыт прямой приёмник tradesk
-// (нужен исходник call.php или ответ владельца), новый бэкенд шлёт сюда — заявки
+// (нужен исходник call.php или ответ владельца), новый бэкенд шлёт сюда - заявки
 // капают в tradesk точно как со старого сайта.
 //
 // Контракт подтверждён исходниками /ajax/*.php (прочитаны через админку Битрикса,
-// 11.08.2026 — сами скрипты и их назначение: docs/OLDSITE_AJAX.md):
+// 11.08.2026 - сами скрипты и их назначение: docs/OLDSITE_AJAX.md):
 //   - Обратный звонок: POST /ajax/call.php,  body: phone=<>&comment=<>
 //   - Заявка:          POST /ajax/request.php, body: name=<>&phone=<>&extra=<>&type=<>
 //   - Заказ:           POST /ajax/order.php, body: phone/name/comment/qty/product/
-//     code/price/city/type — ОДНА ПОЗИЦИЯ на запрос; в ответе номер заказа в tradesk
+//     code/price/city/type - ОДНА ПОЗИЦИЯ на запрос; в ответе номер заказа в tradesk
 //     либо строка `error`.
-// Кодировка сайта — UTF-8 (проверено), конвертация не нужна. Авторизации/CSRF нет
+//
+// Кодировка сайта - UTF-8 (проверено), конвертация не нужна. Авторизации/CSRF нет
 // (публичные обработчики форм; фронт шлёт без токена).
 //
-// ⚠️ Это мост на период параллельного запуска. Он зависит от живого Битрикса —
+// ⚠️ Это мост на период параллельного запуска. Он зависит от живого Битрикса -
 // после его выключения переключить доставку на прямой адаптер tradesk (пакет tradesk).
 package oldsite
 
@@ -34,13 +35,13 @@ import (
 	"tirestock/api/internal/orders"
 )
 
-// Config — подключение к старому сайту.
+// Config - подключение к старому сайту.
 type Config struct {
 	BaseURL string        // напр. https://tirestock.ru
 	Timeout time.Duration // на один запрос; 0 → 15s
 }
 
-// Client — HTTP-клиент к ajax-обработчикам старого сайта.
+// Client - HTTP-клиент к ajax-обработчикам старого сайта.
 type Client struct {
 	cfg  Config
 	http *http.Client
@@ -90,7 +91,7 @@ func (c *Client) deliverRequest(ctx context.Context, payload []byte) error {
 
 // deliverCallback шлёт обратный звонок в /ajax/call.php.
 // call.php принимает только phone+comment (имени в форме нет), поэтому имя,
-// если задано, подмешиваем в начало комментария — чтобы менеджер его видел.
+// если задано, подмешиваем в начало комментария - чтобы менеджер его видел.
 func (c *Client) deliverCallback(ctx context.Context, payload []byte) error {
 	var in orders.CallbackInput
 	if err := json.Unmarshal(payload, &in); err != nil {
@@ -113,7 +114,7 @@ func (c *Client) deliverCallback(ctx context.Context, payload []byte) error {
 	})
 }
 
-// postFormRead — как postForm, но возвращает тело ответа (order.php печатает
+// postFormRead - как postForm, но возвращает тело ответа (order.php печатает
 // номер заказа из tradesk либо `error`).
 func (c *Client) postFormRead(ctx context.Context, path string, fields url.Values) (string, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.cfg.BaseURL+path, strings.NewReader(fields.Encode()))

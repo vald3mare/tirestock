@@ -21,7 +21,7 @@ export function CallbackModal({
   triggerLabel = "Заказать звонок",
   variant = "link",
   title = "Заказать звонок",
-  description = "Оставьте телефон — менеджер перезвонит, поможет с подбором и оформит заказ.",
+  description = "Оставьте телефон - менеджер перезвонит, поможет с подбором и оформит заказ.",
   defaultComment,
   submitLabel = "Жду звонка",
 }: {
@@ -103,7 +103,7 @@ export function CallbackModal({
             {state.status === "sent" ? (
               <div className="mt-6">
                 <p className="text-subtitle font-semibold text-dark">
-                  Заявка принята — перезвоним в рабочее время.
+                  Заявка принята - перезвоним в рабочее время.
                 </p>
                 <button
                   type="button"

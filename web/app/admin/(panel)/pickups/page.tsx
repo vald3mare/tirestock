@@ -4,11 +4,11 @@ import { adminPickupPoints, type AdminPickupPoint } from "@/lib/api/admin";
 import { deletePickupAction } from "@/app/admin/actions";
 
 // Раздел «Пункты выдачи»: адрес/метро/часы и бейдж-акция каждого пункта на
-// странице /points. Центральный склад — отдельным стилем на витрине.
+// странице /points. Центральный склад - отдельным стилем на витрине.
 
 function fmtDate(iso: string): string {
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("ru-RU");
+  return Number.isNaN(d.getTime()) ? "-" : d.toLocaleDateString("ru-RU");
 }
 
 function StatusBadge({ published }: { published: boolean }) {
@@ -41,7 +41,7 @@ export default async function AdminPickupsPage() {
 
       {items.length === 0 ? (
         <p className="mt-6 rounded-card-lg border border-line bg-white p-10 text-center text-caption-lg text-grey">
-          Пунктов пока нет. Добавьте первый — он появится на странице «Пункты выдачи».
+          Пунктов пока нет. Добавьте первый - он появится на странице «Пункты выдачи».
         </p>
       ) : (
         <div className="mt-6 overflow-x-auto rounded-card-lg border border-line bg-white">
@@ -69,13 +69,13 @@ export default async function AdminPickupsPage() {
                     </span>
                   </td>
                   <td className="px-4 py-4 text-grey">
-                    {[p.metro, p.hours].filter(Boolean).join(" · ") || "—"}
+                    {[p.metro, p.hours].filter(Boolean).join(" · ") || "-"}
                   </td>
                   <td className="px-4 py-4">
                     {p.badge ? (
                       <span className="rounded-badge bg-light px-2.5 py-1 text-legal font-semibold text-blue">{p.badge}</span>
                     ) : (
-                      <span className="text-grey">—</span>
+                      <span className="text-grey">-</span>
                     )}
                   </td>
                   <td className="tnum px-4 py-4 text-grey">{p.sort_order}</td>
@@ -105,7 +105,7 @@ export default async function AdminPickupsPage() {
       )}
 
       <p className="mt-4 max-w-180 text-caption text-grey">
-        «Бейдж» — своя акция у каждого пункта (пусто — бейджа нет). «Центральный склад»
+        «Бейдж» - своя акция у каждого пункта (пусто - бейджа нет). «Центральный склад»
         рендерится на витрине отдельной карточкой с телефоном и полным сервисом.
         Порядок задаёт поле «Порядок».
       </p>

@@ -26,7 +26,7 @@ export async function generateMetadata({
   const point = await loadPoint((await params).slug);
   if (!point) return { title: "Пункт выдачи не найден | TireStock" };
   return {
-    title: `Пункт выдачи ${point.address} — TireStock`,
+    title: `Пункт выдачи ${point.address} - TireStock`,
     description: `Пункт выдачи заказов TireStock: ${point.address}${point.metro ? `, ${point.metro}` : ""}. Часы работы: ${point.hours}.`,
   };
 }

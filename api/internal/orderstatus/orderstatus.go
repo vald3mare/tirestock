@@ -1,4 +1,4 @@
-// Package orderstatus — фича «Статус заказа»: чтение статуса заказа ИЗ tradesk
+// Package orderstatus - фича «Статус заказа»: чтение статуса заказа ИЗ tradesk
 // (обратная интеграция). Клиент вводит номер заказа → тянем из tradesk
 // GET /data/status?order_code= → маппим сырой статус в человекочитаемый.
 // Контракт снят с кода старого сайта (/status/index.php).
@@ -10,14 +10,14 @@ import (
 	"time"
 )
 
-// Raw — сырой ответ tradesk /data/status?order_code=. Поля 1:1 с JSON tradesk.
+// Raw - сырой ответ tradesk /data/status?order_code=. Поля 1:1 с JSON tradesk.
 type Raw struct {
-	Status    string       `json:"status"`
-	Date      string       `json:"date"`
-	Point     string       `json:"point"`
-	PointID   int          `json:"point_id"`
-	DriverID  int          `json:"driver_id"`
-	Products  []RawProduct `json:"products"`
+	Status   string       `json:"status"`
+	Date     string       `json:"date"`
+	Point    string       `json:"point"`
+	PointID  int          `json:"point_id"`
+	DriverID int          `json:"driver_id"`
+	Products []RawProduct `json:"products"`
 }
 
 type RawProduct struct {
@@ -26,21 +26,21 @@ type RawProduct struct {
 	ProductRetailPrice int    `json:"product_retail_price"`
 }
 
-// Source — источник статуса заказа (реализация: integrations/tradesk).
+// Source - источник статуса заказа (реализация: integrations/tradesk).
 // Возвращает (nil, nil), если заказ не найден (пустой ответ tradesk).
 type Source interface {
 	FetchStatus(ctx context.Context, orderCode string) (*Raw, error)
 }
 
-// Status — статус заказа для витрины (человекочитаемый).
+// Status - статус заказа для витрины (человекочитаемый).
 type Status struct {
 	Found      bool      `json:"found"`
 	Code       string    `json:"code"`
-	Status     string    `json:"status"`       // сырой код статуса tradesk
-	StatusText string    `json:"status_text"`  // человекочитаемый
-	Step       int        `json:"step"`        // 0 (нет прогресса) | 1..4 — этап для полосы прогресса
-	Date       string    `json:"date"`         // дата исполнения (dd-mm-yyyy) или пусто
-	Point      string    `json:"point"`        // пункт выдачи
+	Status     string    `json:"status"`      // сырой код статуса tradesk
+	StatusText string    `json:"status_text"` // человекочитаемый
+	Step       int       `json:"step"`        // 0 (нет прогресса) | 1..4 - этап для полосы прогресса
+	Date       string    `json:"date"`        // дата исполнения (dd-mm-yyyy) или пусто
+	Point      string    `json:"point"`       // пункт выдачи
 	Products   []Product `json:"products"`
 }
 
@@ -51,13 +51,13 @@ type Product struct {
 	Sum   int    `json:"sum"`   // qty*price
 }
 
-// Disabled — источник-заглушка, когда tradesk-приём не настроен (нет
+// Disabled - источник-заглушка, когда tradesk-приём не настроен (нет
 // TRADESK_BASE_URL): любой заказ «не найден». Витрина покажет обычное «не найден».
 type Disabled struct{}
 
 func (Disabled) FetchStatus(context.Context, string) (*Raw, error) { return nil, nil }
 
-// Service — бизнес-логика статуса поверх источника.
+// Service - бизнес-логика статуса поверх источника.
 type Service struct {
 	src Source
 }
@@ -105,7 +105,7 @@ func (s *Service) Lookup(ctx context.Context, code string) (Status, error) {
 }
 
 // mapStatus повторяет маппинг статусов старого сайта (/status/index.php).
-// Возвращает человекочитаемый текст и этап прогресса (0 — без полосы, 1..4).
+// Возвращает человекочитаемый текст и этап прогресса (0 - без полосы, 1..4).
 func mapStatus(r *Raw) (string, int) {
 	switch r.Status {
 	case "new":
@@ -129,7 +129,7 @@ func mapStatus(r *Raw) (string, int) {
 	}
 }
 
-// stockStatus — ветвление для статуса stock (логика старого сайта): пункт 26 или
+// stockStatus - ветвление для статуса stock (логика старого сайта): пункт 26 или
 // после 15:00 без водителя → «Водитель в пути»; иначе «Сборка на складе».
 func stockStatus(r *Raw) (string, int) {
 	if r.PointID == 26 {
@@ -155,5 +155,5 @@ func formatDate(s string) string {
 			return t.Format("02-01-2006")
 		}
 	}
-	return s // неизвестный формат — отдаём как есть
+	return s // неизвестный формат - отдаём как есть
 }

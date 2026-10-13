@@ -1,8 +1,8 @@
-# TireStock — новая витрина tirestock.ru
+# TireStock - новая витрина tirestock.ru
 
 Монорепо: `web/` (Next.js витрина + админка), `api/` (Go-сервис), `deploy/` (docker-compose).
 Контекст и правила: `CLAUDE.md`, `docs/CONVENTIONS.md`, `docs/DESIGN_SYSTEM.md`, `docs/ARCHITECTURE.md`.
-**Обзор всего, что сделано, и как оно устроено: `docs/PROJECT_OVERVIEW.md`** — начинать чтение отсюда.
+**Обзор всего, что сделано, и как оно устроено: `docs/PROJECT_OVERVIEW.md`** - начинать чтение отсюда.
 
 ## Запуск всего через Docker
 
@@ -18,7 +18,7 @@ docker compose -f deploy/docker-compose.yml --env-file deploy/.env up --build
 Миграции применяются автоматически при старте api.
 
 > Если api не может достучаться до postgres (firewall хоста блокирует
-> межконтейнерный трафик — так на текущей dev-машине), добавьте override:
+> межконтейнерный трафик - так на текущей dev-машине), добавьте override:
 > `docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.hostnet-workaround.yml --env-file deploy/.env up`
 
 ## Локальная разработка
@@ -50,7 +50,7 @@ DATABASE_URL='postgres://tirestock:tirestock@localhost:5432/tirestock?sslmode=di
 ### Тесты api
 
 Юнит-тесты (маппинг фильтров URL→SQL) бегут всегда; интеграционные тесты
-outbox-воркера требуют Postgres — задайте `TEST_DATABASE_URL`, иначе они пропускаются:
+outbox-воркера требуют Postgres - задайте `TEST_DATABASE_URL`, иначе они пропускаются:
 
 ```bash
 docker compose -f ../deploy/docker-compose.yml up -d postgres
@@ -60,9 +60,9 @@ TEST_DATABASE_URL='postgres://tirestock:tirestock@localhost:5432/tirestock?sslmo
 ### Кодогенерация
 
 - SQL → Go: `sqlc generate` в `api/` (бинарник: https://github.com/sqlc-dev/sqlc/releases).
-  Запросы фич — `api/internal/*/queries.sql`, вывод — `api/internal/db/`.
+  Запросы фич - `api/internal/*/queries.sql`, вывод - `api/internal/db/`.
 - OpenAPI → TS: `npm run gen:api` в `web/`. Любое изменение API начинается
-  с правки `api/openapi.yaml`, потом код (спека — источник истины).
+  с правки `api/openapi.yaml`, потом код (спека - источник истины).
 
 ## Что уже есть / чего нет
 

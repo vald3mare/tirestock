@@ -1,4 +1,4 @@
-# Мультигород (СПб/МСК) + чистые фото — план реализации
+# Мультигород (СПб/МСК) + чистые фото - план реализации
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -10,19 +10,19 @@
 
 ## Global Constraints
 
-- Цена = РРЦ: минимальная `recommended_retail_price` среди складов города; фолбэк — минимальная `minimal_internet_price`. Считается **по каждому городу отдельно**.
-- Ровно два города: `spb`, `msk`. Дефолт — `spb`. Невалидное значение города → `spb`.
-- Товар без предложения в выбранном городе — **скрыт** из выдачи (INNER JOIN), не «под заказ».
-- SQL — только сырой pgx + sqlc, без ORM. Пакеты плоские по фичам.
-- Секреты (URL фидов с токеном) — только в `deploy/.env` (gitignored), никогда в код/репо.
-- Не коммитить/пушить без явной просьбы пользователя (это правило проекта; шаги «Commit» выполняются, но `git push` — нет).
-- Данные ходят из Next в Go только через `web/lib/api/client.ts`; типы — из `schema.d.ts` (не править руками, регенерировать).
-- Тач-таргеты ≥44px, `:focus-visible`, `prefers-reduced-motion`, `font-variant-numeric: tabular-nums` для цен — уже в глобальных стилях, новые UI-элементы им следуют.
-- **graphify-мантра (CLAUDE.md → graphify):** поиск по коду — через graphify, не grep; после изменений кода — `graphify update .` (или полагаться на запущенный `graphify watch`); релевантные спек/MD-файлы (`ARCHITECTURE.md`, `PROJECT_OVERVIEW.md`, `TODO.md`, эта спека/план) держать в актуальном состоянии по мере работы.
+- Цена = РРЦ: минимальная `recommended_retail_price` среди складов города; фолбэк - минимальная `minimal_internet_price`. Считается **по каждому городу отдельно**.
+- Ровно два города: `spb`, `msk`. Дефолт - `spb`. Невалидное значение города → `spb`.
+- Товар без предложения в выбранном городе - **скрыт** из выдачи (INNER JOIN), не «под заказ».
+- SQL - только сырой pgx + sqlc, без ORM. Пакеты плоские по фичам.
+- Секреты (URL фидов с токеном) - только в `deploy/.env` (gitignored), никогда в код/репо.
+- Не коммитить/пушить без явной просьбы пользователя (это правило проекта; шаги «Commit» выполняются, но `git push` - нет).
+- Данные ходят из Next в Go только через `web/lib/api/client.ts`; типы - из `schema.d.ts` (не править руками, регенерировать).
+- Тач-таргеты ≥44px, `:focus-visible`, `prefers-reduced-motion`, `font-variant-numeric: tabular-nums` для цен - уже в глобальных стилях, новые UI-элементы им следуют.
+- **graphify-мантра (CLAUDE.md → graphify):** поиск по коду - через graphify, не grep; после изменений кода - `graphify update .` (или полагаться на запущенный `graphify watch`); релевантные спек/MD-файлы (`ARCHITECTURE.md`, `PROJECT_OVERVIEW.md`, `TODO.md`, эта спека/план) держать в актуальном состоянии по мере работы.
 
 ---
 
-## Task 1: Миграция 0004 — `image_clean_url` + таблица `product_offers`
+## Task 1: Миграция 0004 - `image_clean_url` + таблица `product_offers`
 
 **Files:**
 - Create: `api/internal/db/migrations/0004_multicity_photos.up.sql`
@@ -61,8 +61,8 @@ ALTER TABLE products DROP COLUMN IF EXISTS image_clean_url;
 - [ ] **Step 3: Применить миграцию через рестарт api (НЕ руками)**
 
 Миграции накатывает `db.Migrate` при старте api (golang-migrate ведёт `schema_migrations`).
-Применять up-файл руками через psql НЕЛЬЗЯ — migrate потом попытается накатить 0004 повторно
-и упадёт («relation already exists» / dirty). Правильно — перезапустить api:
+Применять up-файл руками через psql НЕЛЬЗЯ - migrate потом попытается накатить 0004 повторно
+и упадёт («relation already exists» / dirty). Правильно - перезапустить api:
 ```bash
 cd /home/valdemar/Desktop/tirestock
 docker compose -f deploy/docker-compose.yml up -d postgres
@@ -73,13 +73,13 @@ docker compose -f deploy/docker-compose.yml exec -T postgres \
 ```
 Expected: в логах миграция 0004 применена без ошибок; таблица `product_offers` с колонками
 product_code, city, price, stock, updated_at; PK по (product_code, city).
-(Код api ещё старый — это ок, рестарт нужен только чтобы прогнать миграции.)
+(Код api ещё старый - это ок, рестарт нужен только чтобы прогнать миграции.)
 
 - [ ] **Step 4: Commit**
 
 ```bash
 git add api/internal/db/migrations/0004_multicity_photos.up.sql api/internal/db/migrations/0004_multicity_photos.down.sql
-git commit -m "feat(db): миграция 0004 — product_offers + image_clean_url"
+git commit -m "feat(db): миграция 0004 - product_offers + image_clean_url"
 ```
 
 ---
@@ -95,11 +95,11 @@ git commit -m "feat(db): миграция 0004 — product_offers + image_clean_
   - `UpsertProductOffer(ctx, UpsertProductOfferParams{ProductCode string, City string, Price int64, Stock int32}) error`
   - `DeleteStaleOffers(ctx, pgtype.Timestamptz) (int64, error)`
   - `UpdateProductImageClean(ctx, UpdateProductImageCleanParams{Code string, ImageCleanUrl string}) (int64, error)`
-  - `GetCatalogProductBySlug(ctx, GetCatalogProductBySlugParams{Slug string, City string}) (...)` — теперь с city и колонками из offers.
+  - `GetCatalogProductBySlug(ctx, GetCatalogProductBySlugParams{Slug string, City string}) (...)` - теперь с city и колонками из offers.
 
-- [ ] **Step 1: Обновить `UpsertProduct` — убрать price/stock из products (пишем 0), оставить image_url**
+- [ ] **Step 1: Обновить `UpsertProduct` - убрать price/stock из products (пишем 0), оставить image_url**
 
-В `api/internal/catalog/queries.sql` заменить тело `UpsertProduct` так, чтобы price/stock всегда писались 0 (legacy-колонки; city-путь читает из product_offers). Оставляем колонки в INSERT, но значения приходят как параметры — синк передаёт 0 (правится в Task 3, здесь query не трогаем по сигнатуре). **Этот шаг — no-op для SQL**, `UpsertProduct` остаётся как есть. (Пометка: значения price/stock станут нулями со стороны Go в Task 3.)
+В `api/internal/catalog/queries.sql` заменить тело `UpsertProduct` так, чтобы price/stock всегда писались 0 (legacy-колонки; city-путь читает из product_offers). Оставляем колонки в INSERT, но значения приходят как параметры - синк передаёт 0 (правится в Task 3, здесь query не трогаем по сигнатуре). **Этот шаг - no-op для SQL**, `UpsertProduct` остаётся как есть. (Пометка: значения price/stock станут нулями со стороны Go в Task 3.)
 
 - [ ] **Step 2: Добавить запросы offers и фото в `queries.sql`**
 
@@ -121,7 +121,7 @@ DELETE FROM product_offers WHERE updated_at < $1;
 UPDATE products SET image_clean_url = $2 WHERE code = $1 AND code <> '';
 ```
 
-- [ ] **Step 3: Переписать `GetCatalogProductBySlug` — city + offers + чистое фото**
+- [ ] **Step 3: Переписать `GetCatalogProductBySlug` - city + offers + чистое фото**
 
 Заменить блок `GetCatalogProductBySlug` в `queries.sql` на:
 ```sql
@@ -144,12 +144,12 @@ Run:
 ```bash
 cd /home/valdemar/Desktop/tirestock/api && sqlc generate
 ```
-Expected: без ошибок; в `internal/db` появляются методы `UpsertProductOffer`, `DeleteStaleOffers`, `UpdateProductImageClean`; `GetCatalogProductBySlugParams` теперь `{Slug, City string}`, а `GetCatalogProductBySlugRow.Price/Stock` — из offers (`int64`/`int32`).
+Expected: без ошибок; в `internal/db` появляются методы `UpsertProductOffer`, `DeleteStaleOffers`, `UpdateProductImageClean`; `GetCatalogProductBySlugParams` теперь `{Slug, City string}`, а `GetCatalogProductBySlugRow.Price/Stock` - из offers (`int64`/`int32`).
 
 - [ ] **Step 5: Проверить компиляцию пакета db**
 
 Run: `cd /home/valdemar/Desktop/tirestock/api && go build ./internal/db/...`
-Expected: успешная сборка (пакет catalog пока может не собираться — правим в Task 3/6).
+Expected: успешная сборка (пакет catalog пока может не собираться - правим в Task 3/6).
 
 - [ ] **Step 6: Commit**
 
@@ -165,7 +165,7 @@ git commit -m "feat(db): sqlc-запросы product_offers, чистое фот
 **Files:**
 - Modify: `api/internal/catalog/catalog.go` (добавить `City`-константы, `CityOffer`)
 - Modify: `api/internal/catalog/syncstore.go`
-- Test: `api/internal/catalog/syncstore_test.go` (создать — юнит на маппинг параметров без БД не выйдет; вместо этого тест на структуру CityOffer/константы)
+- Test: `api/internal/catalog/syncstore_test.go` (создать - юнит на маппинг параметров без БД не выйдет; вместо этого тест на структуру CityOffer/константы)
 
 **Interfaces:**
 - Consumes: `db.UpsertProductOffer`, `db.DeleteStaleOffers` (Task 2).
@@ -178,7 +178,7 @@ git commit -m "feat(db): sqlc-запросы product_offers, чистое фот
 
 - [ ] **Step 1: Написать тест на константы городов и `ValidCity`**
 
-`api/internal/catalog/catalog_test.go` (создать; если файл есть — дописать):
+`api/internal/catalog/catalog_test.go` (создать; если файл есть - дописать):
 ```go
 package catalog
 
@@ -196,10 +196,10 @@ func TestValidCity(t *testing.T) {
 }
 ```
 
-- [ ] **Step 2: Запустить тест — падает (нет ValidCity)**
+- [ ] **Step 2: Запустить тест - падает (нет ValidCity)**
 
 Run: `cd /home/valdemar/Desktop/tirestock/api && go test ./internal/catalog/ -run TestValidCity`
-Expected: FAIL — `undefined: ValidCity` / `undefined: AllCities`.
+Expected: FAIL - `undefined: ValidCity` / `undefined: AllCities`.
 
 - [ ] **Step 3: Добавить город-константы и `CityOffer` в `catalog.go`**
 
@@ -211,7 +211,7 @@ const (
 	CityMSK = "msk"
 )
 
-// AllCities — список валидных городов (порядок = дефолтный порядок вывода).
+// AllCities - список валидных городов (порядок = дефолтный порядок вывода).
 var AllCities = []string{CitySPB, CityMSK}
 
 // ValidCity сообщает, поддерживается ли город.
@@ -224,7 +224,7 @@ func ValidCity(c string) bool {
 	return false
 }
 
-// CityOffer — цена и остаток товара в конкретном городе (агрегат синка).
+// CityOffer - цена и остаток товара в конкретном городе (агрегат синка).
 type CityOffer struct {
 	City  string
 	Price int
@@ -232,12 +232,12 @@ type CityOffer struct {
 }
 ```
 
-- [ ] **Step 4: Переписать `SyncProduct` в `syncstore.go` — offers вместо плоских Price/Stock**
+- [ ] **Step 4: Переписать `SyncProduct` в `syncstore.go` - offers вместо плоских Price/Stock**
 
 В `api/internal/catalog/syncstore.go` заменить struct `SyncProduct`:
 ```go
-// SyncProduct — строка каталога для upsert синком. Цена/остаток разнесены по
-// городам (Offers). Ключ идемпотентности — Code.
+// SyncProduct - строка каталога для upsert синком. Цена/остаток разнесены по
+// городам (Offers). Ключ идемпотентности - Code.
 type SyncProduct struct {
 	Code      string
 	Slug      string
@@ -265,7 +265,7 @@ func (s *SyncStore) Upsert(ctx context.Context, p SyncProduct) error {
 		Code: p.Code, Slug: p.Slug, Brand: p.Brand, Model: p.Model, Name: p.Name,
 		SizeLabel: p.SizeLabel, Width: int32(p.Width), Profile: int32(p.Profile),
 		Diameter: int32(p.Diameter), Season: string(p.Season), Spikes: p.Spikes,
-		Runflat: p.Runflat, Price: 0, Stock: 0, ImageUrl: p.ImageURL, // price/stock legacy — читаем из product_offers
+		Runflat: p.Runflat, Price: 0, Stock: 0, ImageUrl: p.ImageURL, // price/stock legacy - читаем из product_offers
 	}); err != nil {
 		return fmt.Errorf("upsert product %s: %w", p.Code, err)
 	}
@@ -287,10 +287,10 @@ func (s *SyncStore) PruneStaleBefore(ctx context.Context, before time.Time) (int
 ```
 (Удалить старый метод `ZeroStaleBefore`.)
 
-- [ ] **Step 6: Запустить тест — проходит**
+- [ ] **Step 6: Запустить тест - проходит**
 
 Run: `cd /home/valdemar/Desktop/tirestock/api && go test ./internal/catalog/ -run TestValidCity`
-Expected: PASS. (Пакет `dbsource.go` ещё не собирается — правим в Task 6; это ок, `go test` пакета упадёт на сборке. Если так — временно допустимо, но лучше выполнять Task 3 и 6 подряд перед запуском полного `go build`.)
+Expected: PASS. (Пакет `dbsource.go` ещё не собирается - правим в Task 6; это ок, `go test` пакета упадёт на сборке. Если так - временно допустимо, но лучше выполнять Task 3 и 6 подряд перед запуском полного `go build`.)
 
 - [ ] **Step 7: Commit**
 
@@ -301,7 +301,7 @@ git commit -m "feat(catalog): CityOffer + SyncProduct.Offers + SyncStore пиш�
 
 ---
 
-## Task 4: SelectTyres JSON-клиент — агрегация по городам
+## Task 4: SelectTyres JSON-клиент - агрегация по городам
 
 **Files:**
 - Modify: `api/internal/integrations/selecttyres/client.go`
@@ -312,7 +312,7 @@ git commit -m "feat(catalog): CityOffer + SyncProduct.Offers + SyncStore пиш�
 - Produces:
   - `selecttyres.Config{FeedURL string, CityFilters map[string][]string, Timeout time.Duration}`
   - `selecttyres.DefaultCityFilters = map[string][]string{"spb": {"spb","sankt-peterburg"}, "msk": {"msk","moskva","moscow"}}`
-  - `Client.Fetch(ctx, fn func(catalog.SyncProduct) error) (parsed, kept int, err error)` — сигнатура прежняя, внутри mapTire отдаёт per-city offers.
+  - `Client.Fetch(ctx, fn func(catalog.SyncProduct) error) (parsed, kept int, err error)` - сигнатура прежняя, внутри mapTire отдаёт per-city offers.
 
 - [ ] **Step 1: Переписать тест `mapTire` под per-city агрегаты**
 
@@ -378,12 +378,12 @@ func TestMapTire_NoTargetCity_Skip(t *testing.T) {
 		{StockName: "other-1", Quantity: 5, RRP: rrp("3000")},
 	}}
 	if _, ok := testClient(t).mapTire(tire); ok {
-		t.Error("ожидался ok=false — нет складов целевых городов")
+		t.Error("ожидался ok=false - нет складов целевых городов")
 	}
 }
 ```
 
-- [ ] **Step 2: Запустить — падает**
+- [ ] **Step 2: Запустить - падает**
 
 Run: `cd /home/valdemar/Desktop/tirestock/api && go test ./internal/integrations/selecttyres/ -run TestMapTire`
 Expected: FAIL (компиляция: `Config` без `CityFilters`, `SyncProduct.Price` больше нет и т.п.).
@@ -392,21 +392,21 @@ Expected: FAIL (компиляция: `Config` без `CityFilters`, `SyncProduc
 
 В `api/internal/integrations/selecttyres/client.go` заменить блок `DefaultStockFilter`, `Config`, `Client`, `NewClient`:
 ```go
-// DefaultCityFilters — подстроки stock_name по городам (нижний регистр).
-// MSK-подстроки — предположение; свериться с живым фидом (см. spec §10).
+// DefaultCityFilters - подстроки stock_name по городам (нижний регистр).
+// MSK-подстроки - предположение; свериться с живым фидом (см. spec §10).
 var DefaultCityFilters = map[string][]string{
 	catalog.CitySPB: {"spb", "sankt-peterburg"},
 	catalog.CityMSK: {"msk", "moskva", "moscow"},
 }
 
-// Config — параметры источника.
+// Config - параметры источника.
 type Config struct {
 	FeedURL     string
 	CityFilters map[string][]string // город → подстроки stock_name; пусто → DefaultCityFilters
 	Timeout     time.Duration       // на скачивание фида; 0 → 6m
 }
 
-// Client — загрузчик и парсер фида.
+// Client - загрузчик и парсер фида.
 type Client struct {
 	cfg    Config
 	cities []string // детерминированный порядок городов
@@ -433,11 +433,11 @@ func NewClient(cfg Config) (*Client, error) {
 }
 ```
 
-- [ ] **Step 4: Переписать `mapTire` — цикл по городам**
+- [ ] **Step 4: Переписать `mapTire` - цикл по городам**
 
 Заменить `mapTire` и `isTargetStock` в `client.go`:
 ```go
-// mapTire агрегирует предложения по каждому городу отдельно. ok=false — товар без
+// mapTire агрегирует предложения по каждому городу отдельно. ok=false - товар без
 // предложений ни в одном целевом городе (или без вычислимой цены во всех).
 func (c *Client) mapTire(t feedTire) (catalog.SyncProduct, bool) {
 	var offers []catalog.CityOffer
@@ -468,7 +468,7 @@ func (c *Client) mapTire(t feedTire) (catalog.SyncProduct, bool) {
 		if !found {
 			continue
 		}
-		if !hasPrice { // нет РРЦ ни у одного склада города — фолбэк на интернет-цену
+		if !hasPrice { // нет РРЦ ни у одного склада города - фолбэк на интернет-цену
 			for _, o := range t.Offers {
 				if matchStock(o.StockName, subs) {
 					consider(o.MinInternet)
@@ -476,7 +476,7 @@ func (c *Client) mapTire(t feedTire) (catalog.SyncProduct, bool) {
 			}
 		}
 		if !hasPrice {
-			continue // город есть, но цену не вычислить — пропускаем город
+			continue // город есть, но цену не вычислить - пропускаем город
 		}
 		offers = append(offers, catalog.CityOffer{City: city, Price: price, Stock: stock})
 	}
@@ -517,7 +517,7 @@ func matchStock(stockName string, subs []string) bool {
 ```
 (Удалить метод `isTargetStock`.)
 
-- [ ] **Step 5: Запустить тесты — проходят**
+- [ ] **Step 5: Запустить тесты - проходят**
 
 Run: `cd /home/valdemar/Desktop/tirestock/api && go test ./internal/integrations/selecttyres/ -run TestMapTire -v`
 Expected: PASS все три теста.
@@ -531,7 +531,7 @@ git commit -m "feat(selecttyres): агрегация цены/остатка п�
 
 ---
 
-## Task 5: Синкер — использовать `PruneStaleBefore`
+## Task 5: Синкер - использовать `PruneStaleBefore`
 
 **Files:**
 - Modify: `api/internal/integrations/selecttyres/syncer.go`
@@ -595,7 +595,7 @@ git commit -m "refactor(selecttyres): синкер использует PruneSta
   - `catalog.Service.BySlug(ctx, slug, city string) (Product, error)`
   - `WhereSQL` фильтрует по `po.price` (город приходит отдельным первым аргументом из DBSource).
 
-- [ ] **Step 1: Тест — ParseFilters читает city и валидирует**
+- [ ] **Step 1: Тест - ParseFilters читает city и валидирует**
 
 Дописать в `api/internal/catalog/filters_test.go`:
 ```go
@@ -616,10 +616,10 @@ func TestParseFilters_City(t *testing.T) {
 ```
 (Убедиться, что в импортах теста есть `net/url`.)
 
-- [ ] **Step 2: Запустить — падает**
+- [ ] **Step 2: Запустить - падает**
 
 Run: `cd /home/valdemar/Desktop/tirestock/api && go test ./internal/catalog/ -run TestParseFilters_City`
-Expected: FAIL — `f.City undefined`.
+Expected: FAIL - `f.City undefined`.
 
 - [ ] **Step 3: Добавить `City` в Filters, парсинг, изменить price на po.price**
 
@@ -632,7 +632,7 @@ Expected: FAIL — `f.City undefined`.
 		f.City = c
 	}
 ```
-- в `WhereSQL` заменить две строки цены на квалифицированные (в JOIN `price` неоднозначен — есть и в products, и в product_offers):
+- в `WhereSQL` заменить две строки цены на квалифицированные (в JOIN `price` неоднозначен - есть и в products, и в product_offers):
 ```go
 	if f.PriceMin != nil {
 		add("po.price >= $%d", *f.PriceMin)
@@ -641,9 +641,9 @@ Expected: FAIL — `f.City undefined`.
 		add("po.price <= $%d", *f.PriceMax)
 	}
 ```
-(`Match` для мока не трогаем — город к моку неприменим.)
+(`Match` для мока не трогаем - город к моку неприменим.)
 
-- [ ] **Step 4: Запустить тест city — проходит**
+- [ ] **Step 4: Запустить тест city - проходит**
 
 Run: `cd /home/valdemar/Desktop/tirestock/api && go test ./internal/catalog/ -run TestParseFilters_City`
 Expected: PASS.
@@ -651,7 +651,7 @@ Expected: PASS.
 - [ ] **Step 5: Обновить интерфейс и Service.BySlug в `catalog.go`**
 
 В `api/internal/catalog/catalog.go`:
-- добавить в `Product` поле после `ImageURL`? — не нужно; image приходит уже как эффективный URL. Оставляем `ImageURL` как есть (значение = чистое или фолбэк).
+- добавить в `Product` поле после `ImageURL`? - не нужно; image приходит уже как эффективный URL. Оставляем `ImageURL` как есть (значение = чистое или фолбэк).
 - в интерфейсе `CatalogSource` заменить `BySlug(ctx, slug string)` на:
 ```go
 	BySlug(ctx context.Context, slug, city string) (Product, error)
@@ -663,7 +663,7 @@ func (s *Service) BySlug(ctx context.Context, slug, city string) (Product, error
 }
 ```
 
-- [ ] **Step 6: Обновить DBSource — JOIN product_offers, чистое фото, city-аргумент**
+- [ ] **Step 6: Обновить DBSource - JOIN product_offers, чистое фото, city-аргумент**
 
 В `api/internal/catalog/dbsource.go`:
 - заменить `listCols`:
@@ -752,7 +752,7 @@ func (s *CatalogSource) BySlug(_ context.Context, slug, _ string) (catalog.Produ
 ```
 (город мок игнорирует.)
 
-- [ ] **Step 8: Обновить handler bySlug — читать city из query**
+- [ ] **Step 8: Обновить handler bySlug - читать city из query**
 
 В `api/internal/catalog/handlers.go` заменить `bySlug`:
 ```go
@@ -859,10 +859,10 @@ func TestPhotoClient_Fetch(t *testing.T) {
 }
 ```
 
-- [ ] **Step 2: Запустить — падает**
+- [ ] **Step 2: Запустить - падает**
 
 Run: `cd /home/valdemar/Desktop/tirestock/api && go test ./internal/integrations/selecttyres/ -run TestPhotoClient`
-Expected: FAIL — `undefined: NewPhotoClient`.
+Expected: FAIL - `undefined: NewPhotoClient`.
 
 - [ ] **Step 3: Реализовать PhotoClient и PhotoSyncer**
 
@@ -881,13 +881,13 @@ import (
 	"time"
 )
 
-// PhotoConfig — параметры Avito-фида «чистых» фото (без вотермарка).
+// PhotoConfig - параметры Avito-фида «чистых» фото (без вотермарка).
 type PhotoConfig struct {
 	FeedURL string
 	Timeout time.Duration // 0 → 6m
 }
 
-// PhotoClient — стриминговый парсер Avito-XML (по <Ad>).
+// PhotoClient - стриминговый парсер Avito-XML (по <Ad>).
 type PhotoClient struct {
 	cfg  PhotoConfig
 	http *http.Client
@@ -913,7 +913,7 @@ type xmlAd struct {
 }
 
 // Fetch скачивает Avito-фид и для каждого <Ad> с непустым фото зовёт fn(code, url).
-// Разбор потоковый — весь файл в память не грузится.
+// Разбор потоковый - весь файл в память не грузится.
 func (c *PhotoClient) Fetch(ctx context.Context, fn func(code, url string) error) (parsed, withPhoto int, err error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.cfg.FeedURL, nil)
 	if err != nil {
@@ -962,12 +962,12 @@ func (c *PhotoClient) Fetch(ctx context.Context, fn func(code, url string) error
 	return parsed, withPhoto, nil
 }
 
-// PhotoStore — приёмник чистых фото (обновление products.image_clean_url).
+// PhotoStore - приёмник чистых фото (обновление products.image_clean_url).
 type PhotoStore interface {
 	UpdateImageClean(ctx context.Context, code, url string) (int64, error)
 }
 
-// PhotoSyncer — фоновый контур: раз в interval тянет Avito-фид и обновляет чистые фото.
+// PhotoSyncer - фоновый контур: раз в interval тянет Avito-фид и обновляет чистые фото.
 type PhotoSyncer struct {
 	client   *PhotoClient
 	store    PhotoStore
@@ -1024,13 +1024,13 @@ func (s *PhotoSyncer) SyncOnce(ctx context.Context) error {
 В `api/internal/catalog/syncstore.go` дописать метод:
 ```go
 // UpdateImageClean записывает чистое фото товара по коду. Возвращает число строк
-// (0 — товара с таким кодом ещё нет в каталоге).
+// (0 - товара с таким кодом ещё нет в каталоге).
 func (s *SyncStore) UpdateImageClean(ctx context.Context, code, url string) (int64, error) {
 	return s.q.UpdateProductImageClean(ctx, db.UpdateProductImageCleanParams{Code: code, ImageCleanUrl: url})
 }
 ```
 
-- [ ] **Step 5: Запустить тест — проходит; собрать пакеты**
+- [ ] **Step 5: Запустить тест - проходит; собрать пакеты**
 
 Run: `cd /home/valdemar/Desktop/tirestock/api && go test ./internal/integrations/selecttyres/ -run TestPhotoClient && go build ./...`
 Expected: PASS + зелёная сборка.
@@ -1048,12 +1048,12 @@ git commit -m "feat(selecttyres): Avito-синкер чистых фото → i
 
 **Files:**
 - Modify: `api/cmd/api/main.go`
-- Modify: `deploy/.env` (секреты — локально, не в git)
+- Modify: `deploy/.env` (секреты - локально, не в git)
 - Modify: `deploy/.env.example`
 - Modify: `deploy/docker-compose.yml` (проброс новых env в сервис api)
 
 **Interfaces:**
-- Consumes: `selecttyres.NewPhotoClient/NewPhotoSyncer`, `selecttyres.DefaultCityFilters`, `catalog.NewSyncStore` (Store и PhotoStore — один и тот же `*SyncStore`).
+- Consumes: `selecttyres.NewPhotoClient/NewPhotoSyncer`, `selecttyres.DefaultCityFilters`, `catalog.NewSyncStore` (Store и PhotoStore - один и тот же `*SyncStore`).
 
 - [ ] **Step 1: Расширить config и loadConfig**
 
@@ -1076,7 +1076,7 @@ git commit -m "feat(selecttyres): Avito-синкер чистых фото → i
 - добавить хелпер под `loadConfig`:
 ```go
 // cityFiltersFromEnv читает подстроки складов по городам из env; пусто → дефолты.
-// SELECTYRES_STOCK_SPB / SELECTYRES_STOCK_MSK — списки через запятую.
+// SELECTYRES_STOCK_SPB / SELECTYRES_STOCK_MSK - списки через запятую.
 func cityFiltersFromEnv() map[string][]string {
 	parse := func(env, city string) []string {
 		v := strings.TrimSpace(os.Getenv(env))
@@ -1148,11 +1148,11 @@ Expected: зелёная сборка.
 
 - [ ] **Step 4: Прописать env**
 
-В `deploy/.env` добавить (значение фото-URL — рабочая ссылка, что прислал Виталий; JSON-URL обновить, когда перегенерирует):
+В `deploy/.env` добавить (значение фото-URL - рабочая ссылка, что прислал Виталий; JSON-URL обновить, когда перегенерирует):
 ```
 SELECTYRES_PHOTO_FEED_URL=https://files.selectyre.ru/a1fadc32-409b-4d95-934f-4b93c0d8d80b.xml
 # Подстроки складов по городам (нижний регистр, через запятую). Пусто → дефолты кода.
-# MSK-подстроки — предположение; свериться с живым JSON-фидом.
+# MSK-подстроки - предположение; свериться с живым JSON-фидом.
 SELECTYRES_STOCK_SPB=spb,sankt-peterburg
 SELECTYRES_STOCK_MSK=msk,moskva,moscow
 ```
@@ -1169,7 +1169,7 @@ SELECTYRES_STOCK_MSK=msk,moskva,moscow
       SELECTYRES_STOCK_MSK: ${SELECTYRES_STOCK_MSK}
 ```
 
-- [ ] **Step 5: Commit (без .env — он gitignored)**
+- [ ] **Step 5: Commit (без .env - он gitignored)**
 
 ```bash
 git add api/cmd/api/main.go deploy/.env.example deploy/docker-compose.yml
@@ -1178,7 +1178,7 @@ git commit -m "feat(api): проводка фото-синкера и city-фи�
 
 ---
 
-## Task 9: OpenAPI — параметр `city` + регенерация типов
+## Task 9: OpenAPI - параметр `city` + регенерация типов
 
 **Files:**
 - Modify: `api/openapi.yaml`
@@ -1190,7 +1190,7 @@ git commit -m "feat(api): проводка фото-синкера и city-фи�
 - [ ] **Step 1: Добавить параметр city в openapi**
 
 В `api/openapi.yaml`:
-- добавить переиспользуемый параметр в `components.parameters` (если секции нет — создать):
+- добавить переиспользуемый параметр в `components.parameters` (если секции нет - создать):
 ```yaml
     CityParam:
       name: city
@@ -1226,7 +1226,7 @@ git commit -m "feat(api): openapi параметр city + регенерация
 
 ---
 
-## Task 10: Next — кука города, серверный хелпер, проброс city в API
+## Task 10: Next - кука города, серверный хелпер, проброс city в API
 
 **Files:**
 - Create: `web/lib/city.ts`
@@ -1234,7 +1234,7 @@ git commit -m "feat(api): openapi параметр city + регенерация
 - Modify: `web/app/api/catalog-count/route.ts`
 - Modify: `web/app/(storefront)/catalog/page.tsx`
 - Modify: `web/app/(storefront)/catalog/[slug]/page.tsx`
-- Modify: `web/app/(storefront)/page.tsx` (главная — «Популярные»)
+- Modify: `web/app/(storefront)/page.tsx` (главная - «Популярные»)
 
 **Interfaces:**
 - Produces:
@@ -1251,7 +1251,7 @@ export type City = "spb" | "msk";
 export const CITY_COOKIE = "city";
 export const DEFAULT_CITY: City = "spb";
 
-// Метаданные городов для шапки/футера. Адрес/телефон МСК — плейсхолдер до данных
+// Метаданные городов для шапки/футера. Адрес/телефон МСК - плейсхолдер до данных
 // от Виталия (TODO: уточнить реальный адрес и телефон Москвы).
 export const CITIES: Record<City, { label: string; address: string; phone: string; phoneHref: string }> = {
   spb: {
@@ -1291,7 +1291,7 @@ export function getProductBySlug(slug: string, city?: "spb" | "msk"): Promise<Pr
   return request(`/products/${encodeURIComponent(slug)}${q}`);
 }
 ```
-(`listProducts` уже сериализует все поля `ProductFilters`, включая `city` — правки не нужны.)
+(`listProducts` уже сериализует все поля `ProductFilters`, включая `city` - правки не нужны.)
 
 - [ ] **Step 3: Проброс city в catalog-count route**
 
@@ -1301,7 +1301,7 @@ export function getProductBySlug(slug: string, city?: "spb" | "msk"): Promise<Pr
 - [ ] **Step 4: Проброс city в страницы каталога/товара/главной**
 
 - `web/app/(storefront)/catalog/page.tsx`: импортировать `getCity`, в начале серверного компонента `const city = await getCity();`, и добавить `city` в объект фильтров, передаваемый в `listProducts(...)`.
-- `web/app/(storefront)/catalog/[slug]/page.tsx`: `const city = await getCity();` и вызвать `getProductBySlug(slug, city)` (и в `generateMetadata`, если он тоже грузит товар — там тоже `getCity()` + city). Если товар грузится через `React.cache`-обёртку, добавить `city` в аргументы обёртки, чтобы кэш был по (slug, city).
+- `web/app/(storefront)/catalog/[slug]/page.tsx`: `const city = await getCity();` и вызвать `getProductBySlug(slug, city)` (и в `generateMetadata`, если он тоже грузит товар - там тоже `getCity()` + city). Если товар грузится через `React.cache`-обёртку, добавить `city` в аргументы обёртки, чтобы кэш был по (slug, city).
 - `web/app/(storefront)/page.tsx`: `const city = await getCity();`, передать `city` в `listProducts(...)` для блока «Популярные».
 
 - [ ] **Step 5: Проверить типы и сборку**
@@ -1323,7 +1323,7 @@ git commit -m "feat(web): кука города + проброс city в кат�
 **Files:**
 - Create: `web/components/blocks/CitySwitcher.tsx`
 - Create: `web/app/api/city/route.ts` (установка куки city)
-- Modify: `web/components/blocks/Header.tsx` (топбар — заменить статичный адрес)
+- Modify: `web/components/blocks/Header.tsx` (топбар - заменить статичный адрес)
 
 **Interfaces:**
 - Consumes: `web/lib/city.ts` (`City`, `CITIES`, `CITY_COOKIE`, `getCity`).
@@ -1337,7 +1337,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { CITY_COOKIE, isCity } from "@/lib/city";
 
 // Ставит куку выбранного города на год. Клиентский переключатель дёргает POST,
-// затем делает router.refresh() — серверные страницы перечитывают куку.
+// затем делает router.refresh() - серверные страницы перечитывают куку.
 export async function POST(req: NextRequest) {
   const city = req.nextUrl.searchParams.get("city") ?? "";
   if (!isCity(city)) {
@@ -1364,7 +1364,7 @@ import { useState, useTransition } from "react";
 import { CITIES, type City } from "@/lib/city";
 
 // Переключатель города в топбаре (DNS-стиль): один домен, город в куке.
-// Enter/Escape, aria-expanded; при выборе — POST /api/city + router.refresh().
+// Enter/Escape, aria-expanded; при выборе - POST /api/city + router.refresh().
 export function CitySwitcher({ city }: { city: City }) {
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -1425,7 +1425,7 @@ export function CitySwitcher({ city }: { city: City }) {
 - [ ] **Step 3: Встроить переключатель в Header (топбар) + город-зависимые адрес/телефон**
 
 В `web/components/blocks/Header.tsx`:
-- сделать компонент серверным читателем города: импортировать `getCity`, `CITIES`; в начале `export async function Header()` — `const city = await getCity();` (компонент станет `async`; он серверный — ок);
+- сделать компонент серверным читателем города: импортировать `getCity`, `CITIES`; в начале `export async function Header()` - `const city = await getCity();` (компонент станет `async`; он серверный - ок);
 - заменить статичный блок адреса (`<p>…Санкт-Петербург, Зотовский…</p>`) на `<CitySwitcher city={city} />`;
 - телефон в топбаре заменить на город-зависимый:
 ```tsx
@@ -1438,14 +1438,14 @@ export function CitySwitcher({ city }: { city: City }) {
 
 - [ ] **Step 4: Проверить, что Header используется как async-компонент**
 
-Убедиться, что `Header` рендерится в серверном layout (`web/app/(storefront)/layout.tsx`) — он уже там. Async серверный компонент допустим. Прогнать типы:
+Убедиться, что `Header` рендерится в серверном layout (`web/app/(storefront)/layout.tsx`) - он уже там. Async серверный компонент допустим. Прогнать типы:
 Run: `cd /home/valdemar/Desktop/tirestock/web && npx tsc --noEmit`
 Expected: без ошибок.
 
 - [ ] **Step 5: Собрать web**
 
 Run: `cd /home/valdemar/Desktop/tirestock/web && npm run build`
-Expected: сборка проходит (страницы каталога/товара/главной остаются динамическими/ISR — не ломаются от чтения куки; если Next ругается на `cookies()` в статической странице — убедиться, что затронутые страницы уже не статические, т.к. читают куку).
+Expected: сборка проходит (страницы каталога/товара/главной остаются динамическими/ISR - не ломаются от чтения куки; если Next ругается на `cookies()` в статической странице - убедиться, что затронутые страницы уже не статические, т.к. читают куку).
 
 - [ ] **Step 6: Commit**
 
@@ -1470,7 +1470,7 @@ cd /home/valdemar/Desktop/tirestock
 docker compose -f deploy/docker-compose.yml up -d --build
 docker compose -f deploy/docker-compose.yml logs --tail=40 api
 ```
-Expected: миграция 0004 применилась; логи «синк начат/фото начат». JSON-синк может ругаться `AccessDenied` (протухший URL) — это ожидаемо до свежего URL от Виталия; фото-синк должен пройти (XML-URL рабочий).
+Expected: миграция 0004 применилась; логи «синк начат/фото начат». JSON-синк может ругаться `AccessDenied` (протухший URL) - это ожидаемо до свежего URL от Виталия; фото-синк должен пройти (XML-URL рабочий).
 
 - [ ] **Step 2: Проверить, что чистые фото проливаются**
 
@@ -1483,7 +1483,7 @@ Expected: `clean` > 0 (для товаров, что уже есть в ката
 
 - [ ] **Step 3: Проверить city-aware каталог через API (после свежего JSON-URL)**
 
-Когда Виталий пришлёт рабочий `SELECTYRES_FEED_URL` — прописать в `.env`, пересобрать, дождаться синка, затем:
+Когда Виталий пришлёт рабочий `SELECTYRES_FEED_URL` - прописать в `.env`, пересобрать, дождаться синка, затем:
 ```bash
 curl -s "http://localhost:8080/api/v1/products?city=spb&per_page=1" | head -c 300; echo
 curl -s "http://localhost:8080/api/v1/products?city=msk&per_page=1" | head -c 300; echo
@@ -1492,10 +1492,10 @@ Expected: разные `total`/наборы по городам; поле `image
 
 - [ ] **Step 4: Проверить сверку MSK-складов**
 
-Когда JSON-фид доступен — вытащить реальные `stock_name` и убедиться, что MSK-подстроки ловят московские склады (иначе поправить `SELECTYRES_STOCK_MSK` в `.env`):
+Когда JSON-фид доступен - вытащить реальные `stock_name` и убедиться, что MSK-подстроки ловят московские склады (иначе поправить `SELECTYRES_STOCK_MSK` в `.env`):
 ```bash
 # из логов/фида: перечислить уникальные stock_name; проверить, что московские
-# попадают под msk,moskva,moscow. При расхождении — обновить env и пересобрать.
+# попадают под msk,moskva,moscow. При расхождении - обновить env и пересобрать.
 ```
 Expected: московские склады матчатся; `product_offers` содержит строки с `city='msk'`.
 
@@ -1512,7 +1512,7 @@ Expected: московские склады матчатся; `product_offers` �
 
 ```bash
 git add TODO.md
-git commit -m "docs: TODO — мультигород и чистые фото, хвосты по SelectTyres"
+git commit -m "docs: TODO - мультигород и чистые фото, хвосты по SelectTyres"
 ```
 
 ---
@@ -1520,12 +1520,12 @@ git commit -m "docs: TODO — мультигород и чистые фото, �
 ## Заметки для исполнителя
 
 - Задачи 3 и 6 меняют один пакет `catalog`; между ними пакет может не собираться целиком. Прогонять полный `go build ./...` только после Task 6.
-- JSON-фид сейчас отдаёт `AccessDenied` — это **не** дефект кода. Живая проверка мультигорода (Task 12 шаги 3–4) ждёт свежий URL от Виталия. Фото-синк проверяется независимо (шаг 2).
-- MSK-подстроки складов — предположение. До сверки с живым фидом `city=msk` может давать пусто; это ожидаемо, чинится значением `SELECTYRES_STOCK_MSK` в `.env` без пересборки кода.
-- Реальные адрес/телефон Москвы неизвестны — в `CITIES.msk` плейсхолдер, пометить в TODO.
-- Секреты (URL с токеном) — только `deploy/.env`; в git идёт только `.env.example` с пустыми значениями.
+- JSON-фид сейчас отдаёт `AccessDenied` - это **не** дефект кода. Живая проверка мультигорода (Task 12 шаги 3–4) ждёт свежий URL от Виталия. Фото-синк проверяется независимо (шаг 2).
+- MSK-подстроки складов - предположение. До сверки с живым фидом `city=msk` может давать пусто; это ожидаемо, чинится значением `SELECTYRES_STOCK_MSK` в `.env` без пересборки кода.
+- Реальные адрес/телефон Москвы неизвестны - в `CITIES.msk` плейсхолдер, пометить в TODO.
+- Секреты (URL с токеном) - только `deploy/.env`; в git идёт только `.env.example` с пустыми значениями.
 - **ISR → динамика:** чтение `cookies()` (через `getCity()` в Header и страницах) переводит
   затронутые страницы в динамический рендер per-request. Это осознанный компромисс DNS-стиля
   (один домен, город в куке): `export const revalidate` на главной больше не даёт статический
-  кэш — «Популярные» рендерятся под город на каждый запрос. Так и должно быть. Не пытаться
-  «чинить» это возвратом к статике — сломается переключение города.
+  кэш - «Популярные» рендерятся под город на каждый запрос. Так и должно быть. Не пытаться
+  «чинить» это возвратом к статике - сломается переключение города.

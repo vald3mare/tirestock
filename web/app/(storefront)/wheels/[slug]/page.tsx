@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const w = await loadWheel((await params).slug, city);
   if (!w) return { title: "Диск не найден | TireStock" };
   return {
-    title: `${w.name} — купить в ${CITIES[city].loc} | TireStock`,
+    title: `${w.name} - купить в ${CITIES[city].loc} | TireStock`,
     description: `Диск ${w.name}: в наличии ${w.stock} шт., цена ${formatPrice(w.price)}/шт. Доставка по России.`,
   };
 }
@@ -45,11 +45,11 @@ export default async function WheelPage({ params }: { params: Promise<Params> })
     ["Модель", w.model],
     ["Диаметр", `R${w.diameter}`],
     ["Ширина обода", `${w.width}″`],
-    ["Сверловка (PCD)", w.pcd || "—"],
-    ["Вылет (ET)", w.et ? String(w.et) : "—"],
-    ["Ступичное отверстие (DIA)", w.dia ? `${w.dia} мм` : "—"],
-    ["Тип", w.wheel_type || "—"],
-    ["Цвет", w.color || "—"],
+    ["Сверловка (PCD)", w.pcd || "-"],
+    ["Вылет (ET)", w.et ? String(w.et) : "-"],
+    ["Ступичное отверстие (DIA)", w.dia ? `${w.dia} мм` : "-"],
+    ["Тип", w.wheel_type || "-"],
+    ["Цвет", w.color || "-"],
   ];
 
   return (
@@ -92,7 +92,7 @@ export default async function WheelPage({ params }: { params: Promise<Params> })
             </form>
           ) : (
             <CallbackModal variant="button" triggerLabel="Уточнить при наличии" title="Уточнить наличие"
-              description={`Оставьте телефон — сообщим, когда диск «${w.brand} ${w.model}» появится.`}
+              description={`Оставьте телефон - сообщим, когда диск «${w.brand} ${w.model}» появится.`}
               defaultComment={`Диск ${w.name} (${w.code})`} submitLabel="Уточнить" />
           )}
         </div>

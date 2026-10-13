@@ -1,4 +1,4 @@
-// Pure async claim verifier. No LLM, no network — fs + grep only.
+// Pure async claim verifier. No LLM, no network - fs + grep only.
 
 import { readFile, access, readdir } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
@@ -11,7 +11,7 @@ import { canonicalizeRoute } from './route-normalize.mjs';
 const execFileP = promisify(execFile);
 const cacheInvalidationFileCache = new Map();
 
-// Bad inputs surface as `unsupported` — never throws.
+// Bad inputs surface as `unsupported` - never throws.
 export async function verifyClaim(claim) {
   if (!claim || typeof claim !== 'object') {
     return { disposition: 'unverifiable', reason: 'claim is not an object' };
@@ -173,7 +173,7 @@ async function verifyCitationInLibrary({ url }) {
   const known = await isKnownUrl(url);
   return known
     ? { disposition: 'verified', reason: 'URL in curated library' }
-    : { disposition: 'failed', reason: 'URL not in curated library — likely hallucination' };
+    : { disposition: 'failed', reason: 'URL not in curated library - likely hallucination' };
 }
 
 async function verifyCitationAppliesToVersion({ url, framework, frameworkVersion }) {

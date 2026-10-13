@@ -2,7 +2,7 @@ import Link from "next/link";
 import { popularSizeGrid, sizeHref, sizeLabel } from "@/lib/popular-sizes-grid";
 
 // Блок «Популярные размеры» на главной (был на старом сайте, здесь отсутствовал).
-// Сетка ходовых типоразмеров — перелинковка на SEO-посадочные каталога.
+// Сетка ходовых типоразмеров - перелинковка на SEO-посадочные каталога.
 export function PopularSizesBlock() {
   return (
     <section aria-labelledby="sizes-h" className="flex flex-col gap-6">

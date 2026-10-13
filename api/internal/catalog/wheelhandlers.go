@@ -9,7 +9,7 @@ import (
 	"tirestock/api/internal/httpx"
 )
 
-// WheelListResponse — ответ GET /api/v1/wheels.
+// WheelListResponse - ответ GET /api/v1/wheels.
 type WheelListResponse struct {
 	Items   []Wheel `json:"items"`
 	Total   int     `json:"total"`
@@ -17,7 +17,7 @@ type WheelListResponse struct {
 	PerPage int     `json:"per_page"`
 }
 
-// WheelHandlers — HTTP-хендлеры каталога дисков (изолированы от шин).
+// WheelHandlers - HTTP-хендлеры каталога дисков (изолированы от шин).
 type WheelHandlers struct {
 	svc *WheelService
 }

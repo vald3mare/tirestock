@@ -12,7 +12,7 @@ export const metadata = {
   scope: 'account',
   sourceCitation: 'vercel-optimize gate threshold',
   description:
-    'When BotID is disabled AND there is evidence (observed bot bandwidth share, edge cost, or substantial request volume) that bot traffic is non-trivial. Bot traffic inflates edge request counts without delivering user value; staged bot protection can reduce waste on bot-heavy projects. Skipped on quiet projects with no bot evidence — the recommendation would be noise.',
+    'When BotID is disabled AND there is evidence (observed bot bandwidth share, edge cost, or substantial request volume) that bot traffic is non-trivial. Bot traffic inflates edge request counts without delivering user value; staged bot protection can reduce waste on bot-heavy projects. Skipped on quiet projects with no bot evidence - the recommendation would be noise.',
 };
 
 export function gate(signals) {
@@ -24,7 +24,7 @@ export function gate(signals) {
     || signals.project?.delegatedProtection?.bot === true;
   if (botEnabled) return [];
 
-  // Project config failed — we can't tell if BotID is on, so stay silent.
+  // Project config failed - we can't tell if BotID is on, so stay silent.
   if (signals.project?.error) return [];
 
   const totalRequests = totalRequestsFromSignals(signals);
@@ -34,7 +34,7 @@ export function gate(signals) {
   );
   const edgeCost = edgeService?.billedCost ?? null;
 
-  // Require observable bot share, edge cost, OR substantial traffic — otherwise rec is just config nagging.
+  // Require observable bot share, edge cost, OR substantial traffic - otherwise rec is just config nagging.
   const hasObservedBots = botShare?.botPct != null && botShare.botPct >= MIN_BOT_PCT;
   const hasMaterialEdgeCost = edgeCost != null && edgeCost >= MIN_EDGE_COST;
   const hasSubstantialTraffic = totalRequests >= MIN_TOTAL_REQUESTS;
@@ -45,7 +45,7 @@ export function gate(signals) {
     ? `firewall bot_filter rule active (action=${challengeRule.action ?? '?'})`
     : 'no firewall bot_filter rule';
 
-  // Kicker on high observed bot share — harder evidence than config alone.
+  // Kicker on high observed bot share - harder evidence than config alone.
   let priority = edgeCost != null ? Math.max(20, Math.round(edgeCost)) : 30;
   if (botShare?.botPct != null && botShare.botPct > 0.2) priority += 20;
 

@@ -1,6 +1,6 @@
 // Популярные типоразмеры шин для блока-сетки на главной (перелинковка на
 // SEO-посадочные /catalog/?width=&profile=&diameter=). Как на старом сайте
-// tirestock.ru — курируемый список ходовых размеров рынка РФ, R13–R22.
+// tirestock.ru - курируемый список ходовых размеров рынка РФ, R13–R22.
 // Каждый ведёт на фильтрованный каталог с уникальной метой (lib/catalog-seo.ts).
 
 export type TireSize = { width: number; profile: number; diameter: number };

@@ -1,4 +1,4 @@
-// Package selecttyres — адаптер синка каталога из SelectTyres. Единый JSON-фид
+// Package selecttyres - адаптер синка каталога из SelectTyres. Единый JSON-фид
 // (ассортимент + остатки в одном файле, ~40МБ) по ссылке с токеном. Стримингом
 // разбирает массив tires и отдаёт агрегированные строки каталога.
 //
@@ -21,12 +21,12 @@ import (
 	"tirestock/api/internal/catalog"
 )
 
-// BaseCity — город снапшота products (для живучести/фолбэка). Мультигород: СПб + Москва.
+// BaseCity - город снапшота products (для живучести/фолбэка). Мультигород: СПб + Москва.
 const BaseCity = "spb"
 
-// DefaultCityStocks — подстроки stock_name складов по городам (нижний регистр).
-// NB: склад "sever-avto-msk_sankt-peterburg" содержит "msk", но физически питерский —
-// поэтому СПб матчим по "spb"/"sankt-peterburg". Москва — сам город + Подмосковье
+// DefaultCityStocks - подстроки stock_name складов по городам (нижний регистр).
+// NB: склад "sever-avto-msk_sankt-peterburg" содержит "msk", но физически питерский -
+// поэтому СПб матчим по "spb"/"sankt-peterburg". Москва - сам город + Подмосковье
 // (mosobl, Домодедово-Кучино, Давыдово): это склады МО, обслуживающие московского
 // клиента. Ярославль/Наб.Челны в Москву НЕ включаем (это отдельные города).
 var DefaultCityStocks = map[string][]string{
@@ -34,18 +34,18 @@ var DefaultCityStocks = map[string][]string{
 	"msk": {"moskva", "moscow", "mosobl", "domodedovo", "davydovo"},
 }
 
-// Config — параметры источника.
+// Config - параметры источника.
 type Config struct {
 	FeedURL    string
 	CityStocks map[string][]string // город → подстроки stock_name; пусто → DefaultCityStocks
 	Timeout    time.Duration       // на скачивание фида; 0 → 6m
 }
 
-// Client — загрузчик и парсер фида.
+// Client - загрузчик и парсер фида.
 type Client struct {
 	cfg  Config
 	http *http.Client
-	// unrecognized — склады из последнего Fetch, не прошедшие фильтр СПб
+	// unrecognized - склады из последнего Fetch, не прошедшие фильтр СПб
 	// (stock_name → число офферов). Сбрасывается в начале Fetch. Не потокобезопасно:
 	// Fetch вызывается последовательно одним синкером.
 	unrecognized map[string]int
@@ -64,7 +64,7 @@ func NewClient(cfg Config) (*Client, error) {
 	return &Client{cfg: cfg, http: &http.Client{Timeout: cfg.Timeout}}, nil
 }
 
-// feedTire — нужные поля товара из фида (остальные игнорируются).
+// feedTire - нужные поля товара из фида (остальные игнорируются).
 type feedTire struct {
 	Code       string      `json:"code"`
 	FullName   string      `json:"p_full_name"`
@@ -97,7 +97,7 @@ var seasonMap = map[string]catalog.Season{
 }
 
 // Fetch скачивает фид и для каждого подходящего товара вызывает fn с готовой
-// строкой каталога. Разбор потоковый — весь файл в память не грузится.
+// строкой каталога. Разбор потоковый - весь файл в память не грузится.
 func (c *Client) Fetch(ctx context.Context, fn func(catalog.SyncProduct) error) (parsed, kept int, err error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.cfg.FeedURL, nil)
 	if err != nil {
@@ -162,7 +162,7 @@ func (c *Client) Fetch(ctx context.Context, fn func(catalog.SyncProduct) error) 
 }
 
 // mapTire собирает товар и агрегирует предложения по каждому городу в свой оффер.
-// ok=false — товара нет ни в одном городе (нет склада или не удалось вычислить цену).
+// ok=false - товара нет ни в одном городе (нет склада или не удалось вычислить цену).
 func (c *Client) mapTire(t feedTire) (catalog.SyncProduct, bool) {
 	var offers []catalog.CityOffer
 	for city, subs := range c.cfg.CityStocks {
@@ -173,7 +173,7 @@ func (c *Client) mapTire(t feedTire) (catalog.SyncProduct, bool) {
 	if len(offers) == 0 {
 		return catalog.SyncProduct{}, false
 	}
-	// Снапшот базового города (СПб) в products; если базового нет — первый попавшийся.
+	// Снапшот базового города (СПб) в products; если базового нет - первый попавшийся.
 	base := offers[0]
 	for _, of := range offers {
 		if of.City == BaseCity {
@@ -205,7 +205,7 @@ func (c *Client) mapTire(t feedTire) (catalog.SyncProduct, bool) {
 }
 
 // aggregateCity суммирует остаток и берёт минимальную цену по складам города.
-// Цена — мин. РРЦ; фолбэк на мин. интернет-цену, если РРЦ нет. ok=false — города нет.
+// Цена - мин. РРЦ; фолбэк на мин. интернет-цену, если РРЦ нет. ok=false - города нет.
 func aggregateCity(offers []feedOffer, subs []string) (price, stock int, ok bool) {
 	hasPrice, found := false, false
 	consider := func(raw *string) {
@@ -264,9 +264,9 @@ func (c *Client) recognized(stockName string) bool {
 	return false
 }
 
-// UnrecognizedStocks — склады из последнего Fetch, не попавшие ни в один город
+// UnrecognizedStocks - склады из последнего Fetch, не попавшие ни в один город
 // (stock_name → число офферов с наличием). Товары с таких складов в каталог не
-// попадают — синкер логирует это, чтобы новый склад не терялся молча.
+// попадают - синкер логирует это, чтобы новый склад не терялся молча.
 func (c *Client) UnrecognizedStocks() map[string]int {
 	return c.unrecognized
 }

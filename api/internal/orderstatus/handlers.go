@@ -8,7 +8,7 @@ import (
 	"tirestock/api/internal/httpx"
 )
 
-// PublicHandlers — публичный HTTP-слой: проверка статуса заказа по номеру
+// PublicHandlers - публичный HTTP-слой: проверка статуса заказа по номеру
 // (страница /status/ витрины). Без авторизации, как на старом сайте.
 type PublicHandlers struct {
 	svc *Service

@@ -11,7 +11,7 @@ import (
 	"tirestock/api/internal/db"
 )
 
-// DBWheelSource — каталог дисков из БД (wheels + wheel_offers). City-aware:
+// DBWheelSource - каталог дисков из БД (wheels + wheel_offers). City-aware:
 // INNER JOIN оффера города, цена/остаток из оффера. Изолирован от шин.
 type DBWheelSource struct {
 	pool *pgxpool.Pool
@@ -27,7 +27,7 @@ const wheelListCols = `w.id, w.slug, w.code, w.brand, w.model, w.name, w.width, 
 
 func (s *DBWheelSource) List(ctx context.Context, f WheelFilters, page, perPage int) ([]Wheel, int, error) {
 	city := cityOrDefault(f.City)
-	where, filterArgs := f.WhereSQL(2) // $1 — город
+	where, filterArgs := f.WhereSQL(2) // $1 - город
 	allArgs := append([]any{city}, filterArgs...)
 
 	cond := "w.code <> ''"
@@ -92,7 +92,7 @@ func scanWheel(rows pgx.Rows) (Wheel, error) {
 	return w, nil
 }
 
-// Facets — реальные значения фильтров дисков в наличии города (для сайдбара).
+// Facets - реальные значения фильтров дисков в наличии города (для сайдбара).
 func (s *DBWheelSource) Facets(ctx context.Context, city string) (WheelFacets, error) {
 	city = cityOrDefault(city)
 	q := fmt.Sprintf(`

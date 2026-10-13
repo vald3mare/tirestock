@@ -1,6 +1,6 @@
 // Strip Cache-Control directives Vercel's CDN silently ignores
 // (stale-if-error, proxy-revalidate, must-revalidate). s-maxage/max-age/
-// stale-while-revalidate/no-store/private/public are honored — leave them.
+// stale-while-revalidate/no-store/private/public are honored - leave them.
 
 import { escapeRegex } from '../util.mjs';
 

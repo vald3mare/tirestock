@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// Filters — фильтры каталога. Имена полей = имена query-параметров URL витрины
+// Filters - фильтры каталога. Имена полей = имена query-параметров URL витрины
 // (width, profile, diameter, season, brand, price_min, price_max, spikes, runflat).
 type Filters struct {
 	Query    *string // текстовый поиск (q): по названию/бренду/модели
@@ -21,15 +21,15 @@ type Filters struct {
 	Spikes   *bool
 	Runflat  *bool
 	Sort     string // "" (по умолчанию) | price_asc | price_desc | name
-	// Availability — фильтр наличия: "" (все) | "in" (в наличии) | "out" (распродано).
+	// Availability - фильтр наличия: "" (все) | "in" (в наличии) | "out" (распродано).
 	// Нужен админке, чтобы найти распроданные товары (их синк не удаляет, обнуляет остаток).
 	Availability string
-	// City — город (мультигород): каталог показывает товары с оффером в этом городе,
+	// City - город (мультигород): каталог показывает товары с оффером в этом городе,
 	// цена/остаток берутся из оффера. Пусто → базовый город (СПб).
 	City string
 }
 
-// Cities — поддерживаемые города (мультигород: СПб + Москва). Ключ = код в URL/БД.
+// Cities - поддерживаемые города (мультигород: СПб + Москва). Ключ = код в URL/БД.
 var Cities = map[string]bool{"spb": true, "msk": true}
 
 // ParseCity нормализует код города из query: неизвестный/пустой → "spb".
@@ -41,10 +41,10 @@ func ParseCity(s string) string {
 	return "spb"
 }
 
-// SortOrders — допустимые значения сортировки → SQL-выражение ORDER BY.
+// SortOrders - допустимые значения сортировки → SQL-выражение ORDER BY.
 // Первичный ключ всегда «в наличии сверху», затем выбранная сортировка, затем id
 // (стабильность пагинации). Пустая строка = дефолт (наличие + id).
-// Цена/остаток — из оффера города (po.*). Наличие всегда сверху.
+// Цена/остаток - из оффера города (po.*). Наличие всегда сверху.
 var SortOrders = map[string]string{
 	"":           "(po.stock > 0) DESC, p.id",
 	"price_asc":  "(po.stock > 0) DESC, po.price ASC, p.id",
@@ -52,12 +52,12 @@ var SortOrders = map[string]string{
 	"name":       "(po.stock > 0) DESC, p.brand ASC, p.model ASC, p.id",
 }
 
-// DefaultPerPage — дефолт пагинации каталога по конвенциям API.
+// DefaultPerPage - дефолт пагинации каталога по конвенциям API.
 const DefaultPerPage = 24
 const MaxPerPage = 100
 
 // ParseFilters разбирает query-параметры URL в Filters + пагинацию.
-// Невалидное значение — ошибка (ответ 400 validation_failed), а не молчаливый пропуск.
+// Невалидное значение - ошибка (ответ 400 validation_failed), а не молчаливый пропуск.
 func ParseFilters(q url.Values) (Filters, int, int, error) {
 	var f Filters
 
@@ -151,7 +151,7 @@ func ParseFilters(q url.Values) (Filters, int, int, error) {
 
 // WhereSQL строит WHERE-условие и аргументы для SQL-запроса по read-модели products.
 // Используется источником на синк-БД; мок фильтрует в памяти теми же Filters.
-// startArg — номер первого плейсхолдера ($1, $2, …).
+// startArg - номер первого плейсхолдера ($1, $2, …).
 func (f Filters) WhereSQL(startArg int) (string, []any) {
 	var conds []string
 	var args []any
@@ -180,7 +180,7 @@ func (f Filters) WhereSQL(startArg int) (string, []any) {
 	if f.Brand != nil {
 		add("brand ILIKE $%d", *f.Brand)
 	}
-	// Цена/остаток берутся из оффера города (po.*) — квалифицируем, т.к. в JOIN
+	// Цена/остаток берутся из оффера города (po.*) - квалифицируем, т.к. в JOIN
 	// присутствуют и products.price/stock (снапшот базового города).
 	if f.PriceMin != nil {
 		add("po.price >= $%d", *f.PriceMin)
@@ -194,7 +194,7 @@ func (f Filters) WhereSQL(startArg int) (string, []any) {
 	if f.Runflat != nil {
 		add("runflat = $%d", *f.Runflat)
 	}
-	// Наличие — без плейсхолдера (константное выражение), значение из белого списка.
+	// Наличие - без плейсхолдера (константное выражение), значение из белого списка.
 	switch f.Availability {
 	case "in":
 		conds = append(conds, "po.stock > 0")

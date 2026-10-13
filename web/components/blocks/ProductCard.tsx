@@ -13,18 +13,18 @@ import { inquiryComment } from "@/lib/inquiry";
 // типоразмер 14 grey, цена 22 XB tabular-nums + «/ шт.», CTA на всю ширину.
 // Тупой компонент: данные только пропсами.
 // Оверрайды админки: badge_hit → синий пилл «Хит» (скрытые товары в каталог
-// вообще не попадают — фильтруется в SQL). Состояние «нет в наличии» (stock<1):
+// вообще не попадают - фильтруется в SQL). Состояние «нет в наличии» (stock<1):
 // серый бейдж вместо зелёного, CTA отключён.
 
 const PLACEHOLDER = "/images/tire-placeholder.png";
 
 export function ProductCard({ product, imageSrc }: { product: Product; imageSrc?: string }) {
-  // Фото из SelectTyres (product.image_url); плейсхолдер — если пусто или явно передан.
+  // Фото из SelectTyres (product.image_url); плейсхолдер - если пусто или явно передан.
   const src = imageSrc ?? product.image_url ?? PLACEHOLDER;
   const inStock = product.stock > 0;
   return (
     <article className="flex w-full flex-col gap-2.5 rounded-card-lg border border-line bg-white p-3 sm:p-4">
-      {/* Дубль ссылки с названием ниже — прячем от табуляции и скринридера */}
+      {/* Дубль ссылки с названием ниже - прячем от табуляции и скринридера */}
       <Link
         href={`/catalog/${product.slug}`}
         tabIndex={-1}
@@ -76,8 +76,8 @@ export function ProductCard({ product, imageSrc }: { product: Product; imageSrc?
         <span className="text-caption-lg text-grey">/ шт.</span>
       </p>
 
-      {/* Дефолт 4 шт. — шины покупают комплектами; количество меняется в корзине.
-          Нет в наличии — вместо заказа предлагаем уточнить наличие: заявка с
+      {/* Дефолт 4 шт. - шины покупают комплектами; количество меняется в корзине.
+          Нет в наличии - вместо заказа предлагаем уточнить наличие: заявка с
           товаром уходит в tradesk (обратный звонок), менеджер сообщит о поступлении. */}
       {inStock ? (
         <form action={addToCart}>
@@ -92,7 +92,7 @@ export function ProductCard({ product, imageSrc }: { product: Product; imageSrc?
           variant="button"
           triggerLabel="Уточнить при наличии"
           title="Уточнить наличие"
-          description={`Оставьте телефон — сообщим, когда «${product.brand} ${product.model}» появится, и подскажем аналоги.`}
+          description={`Оставьте телефон - сообщим, когда «${product.brand} ${product.model}» появится, и подскажем аналоги.`}
           defaultComment={inquiryComment(product)}
           submitLabel="Уточнить"
         />

@@ -1,5 +1,5 @@
 -- Возврат к модели с городами: таблица воссоздаётся и наполняется из products
--- (единственный город, который у нас есть, — СПб).
+-- (единственный город, который у нас есть, - СПб).
 CREATE TABLE IF NOT EXISTS product_offers (
     product_code TEXT        NOT NULL,
     city         TEXT        NOT NULL,

@@ -4,10 +4,10 @@ import { Breadcrumbs } from "@/components/blocks/Breadcrumbs";
 import { SHOP } from "@/lib/shop";
 import { yandexEmbedUrl } from "@/lib/pickup-points";
 
-// «Контакты» (Figma → «Инфо — Контакты», 117:608). URL /contacts/ — 1:1 со
+// «Контакты» (Figma → «Инфо - Контакты», 117:608). URL /contacts/ - 1:1 со
 // старым сайтом (SEO). Закрывает требование «контактная информация: телефон,
-// адрес, реквизиты Организации». Реквизиты — со старого tirestock.ru/contacts/
-// (ООО «ВИТАСФЕРА»). TODO: на /about/ старого сайта другие реквизиты (ИП Бунин) —
+// адрес, реквизиты Организации». Реквизиты - со старого tirestock.ru/contacts/
+// (ООО «ВИТАСФЕРА»). TODO: на /about/ старого сайта другие реквизиты (ИП Бунин) -
 // уточнить у Виталия, какие актуальны.
 
 export const metadata: Metadata = {
@@ -31,7 +31,7 @@ export default function ContactsPage() {
 
       <h1 className="mt-6 text-h2 text-black lg:text-h1">Контакты</h1>
       <p className="mt-6 max-w-182 text-body text-dark">
-        Есть вопросы по подбору, заказу или доставке? Позвоните или напишите нам — поможем.
+        Есть вопросы по подбору, заказу или доставке? Позвоните или напишите нам - поможем.
       </p>
 
       <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
@@ -76,7 +76,7 @@ export default function ContactsPage() {
       {/* Живая карта Яндекс.Карт (виджет без API-ключа) с точкой на главном адресе. */}
       <div className="mt-12 overflow-hidden rounded-container border border-line">
         <iframe
-          title={`TireStock на карте — ${SHOP.address}`}
+          title={`TireStock на карте - ${SHOP.address}`}
           src={yandexEmbedUrl(SHOP.address)}
           loading="lazy"
           className="block h-[360px] w-full border-0"

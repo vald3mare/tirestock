@@ -8,7 +8,7 @@ type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 // Button/Primary: blue, radius 10, px40 py14, 16 SemiBold white, hover темнее ~8%.
 // Button/Secondary: white, бордер line, текст dark.
-// size="sm" — CTA в карточке товара (py10). Для ссылок-кнопок — ButtonLink.
+// size="sm" - CTA в карточке товара (py10). Для ссылок-кнопок - ButtonLink.
 export function Button({
   variant = "primary",
   size = "md",

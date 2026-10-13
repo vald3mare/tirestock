@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { AdminPickupPoint } from "@/lib/api/admin";
 
-// Форма пункта выдачи — общая для создания и правки. action и submitLabel от
+// Форма пункта выдачи - общая для создания и правки. action и submitLabel от
 // страницы; при правке передаётся point (заполняет поля + hidden id).
 
 const fieldCls =
@@ -37,7 +37,7 @@ export function PickupForm({
         <label className="block flex-1">
           <span className="mb-1.5 block text-caption text-grey">URL-адрес (slug)</span>
           <input name="slug" defaultValue={point?.slug} placeholder="novoselov-49" className={`${fieldCls} tnum`} />
-          <p className="mt-1.5 text-legal text-grey">Для ссылки /points/… Пусто — сгенерируется из адреса.</p>
+          <p className="mt-1.5 text-legal text-grey">Для ссылки /points/… Пусто - сгенерируется из адреса.</p>
         </label>
         <label className="block sm:w-40">
           <span className="mb-1.5 block text-caption text-grey">Город</span>
@@ -62,7 +62,7 @@ export function PickupForm({
       <label className="mt-5 block">
         <span className="mb-1.5 block text-caption text-grey">Бейдж-акция</span>
         <input name="badge" defaultValue={point?.badge} placeholder="Например: −15% на шиномонтаж…" className={fieldCls} />
-        <p className="mt-1.5 text-legal text-grey">Синий бейдж на карточке. Пусто — бейджа не будет. У каждого пункта свой.</p>
+        <p className="mt-1.5 text-legal text-grey">Синий бейдж на карточке. Пусто - бейджа не будет. У каждого пункта свой.</p>
       </label>
 
       <label className="mt-5 block">
@@ -73,7 +73,7 @@ export function PickupForm({
       <label className="mt-5 block max-w-40">
         <span className="mb-1.5 block text-caption text-grey">Порядок</span>
         <input name="sort_order" type="number" inputMode="numeric" defaultValue={point?.sort_order ?? 0} className={`${fieldCls} tnum`} />
-        <p className="mt-1.5 text-legal text-grey">Меньше — выше в списке.</p>
+        <p className="mt-1.5 text-legal text-grey">Меньше - выше в списке.</p>
       </label>
 
       <label className="mt-5 flex items-center gap-2.5">

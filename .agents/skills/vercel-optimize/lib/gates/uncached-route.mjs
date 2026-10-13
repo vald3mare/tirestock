@@ -1,6 +1,6 @@
 // getShare>0.20 filter WHY: a route that's >80% POST/PUT/DELETE is a mutation endpoint
-// where 0% cache is correct — recommending caching there is wrong.
-// cache_result values STALE/REVALIDATED/BYPASS fold into "total but not HIT" — matches the "uncached" framing.
+// where 0% cache is correct - recommending caching there is wrong.
+// cache_result values STALE/REVALIDATED/BYPASS fold into "total but not HIT" - matches the "uncached" framing.
 
 import { withRouteShapeWarnings } from '../route-normalize.mjs';
 
@@ -14,7 +14,7 @@ export const metadata = {
   scope: 'route',
   sourceCitation: 'vercel-optimize gate threshold',
   description:
-    'Routes serving > 500 requests/period at < 50% cache hit AND at least 20% GET traffic. Each uncached GET request reaches the function, costing edge requests + function duration. Routes that are mostly POST/PUT/DELETE (Server Actions, mutations) are skipped — 0% cache is correct behavior there. Routes with missing method-share data are gated instead of launched. Auth-gated routes are disqualified separately.',
+    'Routes serving > 500 requests/period at < 50% cache hit AND at least 20% GET traffic. Each uncached GET request reaches the function, costing edge requests + function duration. Routes that are mostly POST/PUT/DELETE (Server Actions, mutations) are skipped - 0% cache is correct behavior there. Routes with missing method-share data are gated instead of launched. Auth-gated routes are disqualified separately.',
 };
 
 /**
@@ -45,7 +45,7 @@ export function gate(signals) {
       return {
         ...candidate,
         disqualified: true,
-        disqualifyReason: 'missing GET-share data — route method mix is required before recommending edge caching',
+        disqualifyReason: 'missing GET-share data - route method mix is required before recommending edge caching',
         warnings: [...new Set([...(candidate.warnings ?? []), 'method-share:missing'])],
       };
     });

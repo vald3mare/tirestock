@@ -3,7 +3,7 @@
 
 const DEFAULT_CONCURRENCY = 8;
 const DEFAULT_MAX_RETRIES = 3;
-// Wait most of a 60s window when rate-limited — we don't know how much headroom remains. Jitter prevents lockstep retry.
+// Wait most of a 60s window when rate-limited - we don't know how much headroom remains. Jitter prevents lockstep retry.
 const BASE_BACKOFF_MS = 60_000;
 const JITTER_MS = 15_000;
 // 20% headroom under the 100/60s cap for the user's other concurrent CLI usage.
@@ -98,7 +98,7 @@ export class Semaphore {
   }
 }
 
-// Load-bearing — semaphore alone is insufficient (8 concurrent × ~1s queries = 480/min, well above the 100/min cap).
+// Load-bearing - semaphore alone is insufficient (8 concurrent × ~1s queries = 480/min, well above the 100/min cap).
 export class SlidingWindowRateLimiter {
   constructor(maxCalls, windowMs, opts = {}) {
     if (!Number.isInteger(maxCalls) || maxCalls < 1) {
@@ -180,7 +180,7 @@ export function getMetricThrottle() {
   return metricThrottleSingleton;
 }
 
-// Back-compat alias — returns the throttle object (compatible `.run(fn)` shape).
+// Back-compat alias - returns the throttle object (compatible `.run(fn)` shape).
 export const getMetricSemaphore = getMetricThrottle;
 
 export function _resetMetricSemaphoreForTests() {

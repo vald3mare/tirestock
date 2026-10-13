@@ -3,7 +3,7 @@ import { listProducts, type ProductFilters, type Season } from "@/lib/api/client
 import { getCity } from "@/lib/get-city";
 
 // Живой счётчик «Показать N шин»: клиентские фильтр/hero дёргают его при изменении
-// выбора (до применения). Серверный роут — чтобы браузер не ходил во внутренний API.
+// выбора (до применения). Серверный роут - чтобы браузер не ходил во внутренний API.
 export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
   const num = (k: string) => {
@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   const str = (k: string) => sp.get(k) || undefined;
   const bool = (k: string) => (sp.get(k) === "true" ? true : undefined);
 
-  // Город берём из куки (сервер), а не из query — клиентский счётчик его не шлёт.
+  // Город берём из куки (сервер), а не из query - клиентский счётчик его не шлёт.
   const city = await getCity();
 
   const filters: ProductFilters = {

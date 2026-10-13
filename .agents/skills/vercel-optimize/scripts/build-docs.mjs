@@ -31,7 +31,7 @@ function renderScanners() {
   out += '## Patterns\n\n';
   for (const s of sorted) {
     const m = s.metadata;
-    out += `### \`${m.id}\` — ${m.title}\n\n`;
+    out += `### \`${m.id}\` - ${m.title}\n\n`;
     out += `- **Severity**: ${m.severity}\n`;
     out += `- **Billing dimension**: ${m.billingDimension}\n`;
     out += `- **Traffic-independent**: ${m.trafficIndependent ? 'yes (cold-path findings survive the doctrine drop)' : 'no (cold-path findings get dropped)'}\n\n`;

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/admin-session";
 import { createPageAction } from "@/app/admin/actions";
 
-// Новая контентная страница — черновик. Полный контент/SEO редактируются после
+// Новая контентная страница - черновик. Полный контент/SEO редактируются после
 // создания в редакторе. URL можно менять до публикации.
 
 const fieldCls =
@@ -51,7 +51,7 @@ export default async function AdminNewPage({
           <span className="mb-1.5 block text-caption text-grey">URL</span>
           <input name="slug" required placeholder="/dostavka/" className={`${fieldCls} tnum`} />
           <p className="mt-1.5 text-legal text-grey">
-            Начинается со слэша. Пока черновик — URL можно менять; после публикации закрепится.
+            Начинается со слэша. Пока черновик - URL можно менять; после публикации закрепится.
           </p>
         </label>
 

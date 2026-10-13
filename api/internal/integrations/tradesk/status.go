@@ -12,7 +12,7 @@ import (
 	"tirestock/api/internal/orderstatus"
 )
 
-// FetchStatus читает статус заказа из tradesk — обратная интеграция.
+// FetchStatus читает статус заказа из tradesk - обратная интеграция.
 // GET /data/status?order_code=<code> → JSON. Контракт снят с /status/index.php
 // старого сайта. Пустой ответ tradesk (заказ не найден) → (nil, nil).
 // Реализует orderstatus.Source.
@@ -40,10 +40,10 @@ func (c *Client) FetchStatus(ctx context.Context, orderCode string) (*orderstatu
 	}
 	var raw orderstatus.Raw
 	if err := json.Unmarshal(body, &raw); err != nil {
-		// tradesk вернул не-JSON (напр. «error»/пусто) — трактуем как «не найден».
+		// tradesk вернул не-JSON (напр. «error»/пусто) - трактуем как «не найден».
 		return nil, nil
 	}
-	// Пустой статус — тоже «не найден».
+	// Пустой статус - тоже «не найден».
 	if strings.TrimSpace(raw.Status) == "" {
 		return nil, nil
 	}

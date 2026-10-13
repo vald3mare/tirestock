@@ -23,12 +23,12 @@ export function renderReport({ recommendations = [], gated = [], abstentions = [
   const usage = signals.usage ?? null;
   const plan = signals.plan ?? { plan: 'unknown', reason: '(not detected)' };
 
-  // Sub-agents don't always propagate o11ySignal/aliasRoutes — look them up by candidateRef and canonicalize the displayed ref.
+  // Sub-agents don't always propagate o11ySignal/aliasRoutes - look them up by candidateRef and canonicalize the displayed ref.
   recommendations = recommendations.map((r) => enrichRecFromCandidates(r, candidates));
   const { needsEvidenceRows, noChangeRows } = splitInvestigationOutcomes(abstentions);
 
   const lines = [];
-  lines.push(`# Vercel Optimization Report — ${projectName}`);
+  lines.push(`# Vercel Optimization Report - ${projectName}`);
   lines.push('');
   lines.push(renderMetadataLine(stack, plan, usage, signals));
   const coverageLine = renderCoverageLine(candidates, recommendations, signals, {
@@ -67,7 +67,7 @@ export function renderReport({ recommendations = [], gated = [], abstentions = [
     top.forEach((rec, i) => {
       const candidate = candidateForDisplay(rec);
       const signal = formatSignal(rec.o11ySignal ?? signalFromRec(rec) ?? '', candidate);
-      lines.push(`${i + 1}. **${formatCandidateLabel(candidate)}** — ${signal}`);
+      lines.push(`${i + 1}. **${formatCandidateLabel(candidate)}** - ${signal}`);
       lines.push(`   - **What to do**: ${formatRecommendationText(rec.what ?? '')}`);
       lines.push(`   - **Impact**: ${formatRecommendationText(impactString(rec, signals))}`);
       if (rec.effort) lines.push(`   - **Effort**: ${rec.effort}`);
@@ -108,7 +108,7 @@ export function renderReport({ recommendations = [], gated = [], abstentions = [
   lines.push('## Platform recommendations');
   lines.push('');
   if (platformRecs.length === 0) {
-    lines.push('_(none — the gate did not surface any platform-scope recommendations)_');
+    lines.push('_(none - the gate did not surface any platform-scope recommendations)_');
   } else {
     for (const [i, rec] of platformRecs.entries()) {
       lines.push(...renderRecDetail(rec, i + 1, { compact: true, signals }));
@@ -269,7 +269,7 @@ function stripDetailsLink(line) {
   return String(line).replace(/\s*·\s*\[details\]\(#not-investigated-in-this-run\)\s*$/, '');
 }
 
-// Hidden when no candidates exist (e.g., observability blocker — nothing to cover).
+// Hidden when no candidates exist (e.g., observability blocker - nothing to cover).
 function renderCoverageLine(candidates, recommendations, signals, opts = {}) {
   if (!Array.isArray(candidates) || candidates.length === 0) return null;
   const launched = candidates.filter((c) => !c.gatedReason && !c.disqualified && c.scope !== 'account');
@@ -288,7 +288,7 @@ function renderCoverageLine(candidates, recommendations, signals, opts = {}) {
   parts.push(`Found **${total}** potential issue${total === 1 ? '' : 's'} to check`);
   parts.push(`${launched.length} investigated`);
   if (skippedByBudget.length > 0) {
-    parts.push(`${skippedByBudget.length} left for a larger run — re-run with \`--max-candidates all\` to see the rest`);
+    parts.push(`${skippedByBudget.length} left for a larger run - re-run with \`--max-candidates all\` to see the rest`);
   }
   if (coveredByDedup.length > 0) {
     parts.push(`${coveredByDedup.length} similar route variant${coveredByDedup.length === 1 ? '' : 's'} grouped`);
@@ -321,7 +321,7 @@ function renderMetadataLine(stack, plan, usage, signals = {}) {
     ? `${usage.period.from ?? '?'} → ${usage.period.to ?? '?'}`
     : '(unavailable)';
   const oplusLabel = observabilityLabel(signals, usage);
-  // Plan-inference reason is debug detail — only surface when plan is uncertain.
+  // Plan-inference reason is debug detail - only surface when plan is uncertain.
   const planLabel = plan.plan === 'uncertain'
     ? `${plan.plan} (${plan.reason ?? 'no signal'})`
     : (plan.plan ?? 'unknown');
@@ -330,33 +330,33 @@ function renderMetadataLine(stack, plan, usage, signals = {}) {
 
 function observabilityLabel(signals, usage) {
   if (signals.observabilityPlusUsable === true) {
-    return 'Observability Plus enabled — per-route metrics included';
+    return 'Observability Plus enabled - per-route metrics included';
   }
   if (signals.observabilityPlusUsable === false) {
     if (usage) {
-      return 'Per-route metrics unavailable — analysis based on billing + scanner findings';
+      return 'Per-route metrics unavailable - analysis based on billing + scanner findings';
     }
     if (signals.usageError === 'NOT_COLLECTED_OBSERVABILITY_BLOCKED') {
-      return 'Per-route metrics unavailable — audit paused before metric-backed route ranking';
+      return 'Per-route metrics unavailable - audit paused before metric-backed route ranking';
     }
-    return 'Per-route metrics unavailable — limited analysis based on scanner findings';
+    return 'Per-route metrics unavailable - limited analysis based on scanner findings';
   }
   if (signals.observabilityPlus === true) {
-    return 'Observability Plus enabled — per-route metrics included';
+    return 'Observability Plus enabled - per-route metrics included';
   }
   if (signals.usageError === 'NOT_COLLECTED_UNSUPPORTED_FRAMEWORK') {
-    return 'Not checked — audit paused at unsupported-framework preflight';
+    return 'Not checked - audit paused at unsupported-framework preflight';
   }
   if (signals.usageError === 'NOT_COLLECTED_OBSERVABILITY_BLOCKED') {
-    return 'Per-route metrics unavailable — audit paused before metric-backed route ranking';
+    return 'Per-route metrics unavailable - audit paused before metric-backed route ranking';
   }
   if (usage) {
-    return 'Not enabled — analysis based on billing + scanner findings';
+    return 'Not enabled - analysis based on billing + scanner findings';
   }
   if (signals.observabilityPlus === false) {
-    return 'Not enabled — limited analysis only';
+    return 'Not enabled - limited analysis only';
   }
-  return 'Not checked — limited analysis only';
+  return 'Not checked - limited analysis only';
 }
 
 function renderCostHeader(signals) {
@@ -366,7 +366,7 @@ function renderCostHeader(signals) {
   }
   if (scope === 'team' && signals.usage) {
     return [
-      '## Cost breakdown (team-wide — `vercel usage` has no per-project filter)',
+      '## Cost breakdown (team-wide - `vercel usage` has no per-project filter)',
       '',
       '_The Vercel CLI\'s `vercel usage` reports team-wide billing without a project filter (verified May 2026). This breakdown is the whole team\'s bill for the window. Per-route metrics in the rest of this report are project-scoped via `vercel metrics`._',
     ];
@@ -440,7 +440,7 @@ function renderCostBreakdown(usage, signals) {
 function renderServiceCostRows(services, { costLabel, costOf, omittedZeroRows = 0, total = null, totalLabel, totalSuffix = '' }) {
   const lines = [];
   const rows = services.slice().sort((a, b) => (costOf(b) ?? 0) - (costOf(a) ?? 0));
-  // Drop Usage column when every cell is "(unspecified)" — happens when CLI emits pricingUnit=USD.
+  // Drop Usage column when every cell is "(unspecified)" - happens when CLI emits pricingUnit=USD.
   const usageCells = rows.map((s) => formatUsage(s));
   const hasRealUsage = usageCells.some((c) => c !== '(unspecified)');
   if (hasRealUsage) {
@@ -730,14 +730,14 @@ function renderStrengths(signals) {
   const hit = cache.find((r) => r.cache_result === 'HIT' || r.cache_result === 'STALE');
   const miss = cache.find((r) => r.cache_result === 'MISS' || r.cache_result === 'BYPASS');
   if (hit && miss && (hit.value ?? 0) > (miss.value ?? 0)) {
-    lines.push(`- Cache hit-rate is healthy at the bandwidth tier — HIT/STALE bandwidth (${formatBytes(hit.value)}) exceeds MISS/BYPASS (${formatBytes(miss.value)}).`);
+    lines.push(`- Cache hit-rate is healthy at the bandwidth tier - HIT/STALE bandwidth (${formatBytes(hit.value)}) exceeds MISS/BYPASS (${formatBytes(miss.value)}).`);
   }
   const cold = signals.metrics?.fnStartTypeByRoute?.rows ?? [];
   const totalInv = cold.reduce((s, r) => s + (r.total ?? 0), 0);
   const totalCold = cold.reduce((s, r) => s + (r.coldCount ?? 0), 0);
   if (totalInv > 1000) {
     const coldPct = totalCold / totalInv;
-    if (coldPct < 0.02) lines.push(`- Cold-start rate is very low (${(coldPct * 100).toFixed(2)}%) — Fluid Compute or warm-instance reuse is doing its job.`);
+    if (coldPct < 0.02) lines.push(`- Cold-start rate is very low (${(coldPct * 100).toFixed(2)}%) - Fluid Compute or warm-instance reuse is doing its job.`);
   }
   const errors = signals.metrics?.requestsByRouteStatus?.rows ?? [];
   const total5xx = errors.filter((r) => /^5/.test(r.http_status ?? '')).reduce((s, r) => s + (r.value ?? 0), 0);
@@ -746,7 +746,7 @@ function renderStrengths(signals) {
     const rate = total5xx / totalReq;
     if (rate < 0.001) lines.push(`- 5xx rate is very low (${(rate * 100).toFixed(3)}%) on ${formatNum(totalReq)} requests.`);
   }
-  if (lines.length === 0) lines.push('_(no headline strengths to call out — see the gated table for signals we considered)_');
+  if (lines.length === 0) lines.push('_(no headline strengths to call out - see the gated table for signals we considered)_');
   return lines;
 }
 
@@ -767,24 +767,24 @@ function renderDataGaps(signals) {
     lines.push(`- Speed Insights metrics were not usable (\`${cwvMetric.code}\`), so LCP/INP/CLS analysis was skipped.`);
   } else if (cwvMetric.collected) {
     const cwv = cwvMetric.rows?.[0]?.value ?? 0;
-    if (cwv === 0) lines.push('- No Speed Insights measurements — Core Web Vitals analysis dormant. Wire up Speed Insights to enable LCP/INP/CLS recommendations.');
+    if (cwv === 0) lines.push('- No Speed Insights measurements - Core Web Vitals analysis dormant. Wire up Speed Insights to enable LCP/INP/CLS recommendations.');
   }
   const isrMetric = metricState(signals, 'isrReadsByRoute');
   if (isrMetric.collected) {
     const isrR = isrMetric.rows ?? [];
-    if (isrR.length === 0) lines.push('- No ISR activity observed — either the project does not use ISR or no eligible routes had traffic in the window.');
+    if (isrR.length === 0) lines.push('- No ISR activity observed - either the project does not use ISR or no eligible routes had traffic in the window.');
   }
   const imageMetric = metricState(signals, 'imageCount');
   if (imageMetric.collected) {
     const images = imageMetric.rows?.[0]?.value ?? 0;
-    if (images === 0) lines.push('- No image transformations observed — either `next/image` is not used or no images served in the window.');
+    if (images === 0) lines.push('- No image transformations observed - either `next/image` is not used or no images served in the window.');
   }
   const middlewareMetric = metricState(signals, 'middlewareCount');
   if (middlewareMetric.collected) {
     const middleware = middlewareMetric.rows ?? [];
-    if (middleware.length === 0) lines.push('- No middleware invocations — either no `middleware.ts` is shipped or its matcher excludes all observed traffic.');
+    if (middleware.length === 0) lines.push('- No middleware invocations - either no `middleware.ts` is shipped or its matcher excludes all observed traffic.');
   }
-  if (lines.length === 0) lines.push('_(no relevant gaps — every signal had data)_');
+  if (lines.length === 0) lines.push('_(no relevant gaps - every signal had data)_');
   return lines;
 }
 
@@ -795,36 +795,36 @@ function observabilityDataGap(signals = {}) {
   if (signals.observabilityPlusUsable === false) {
     const blocker = signals.observabilityPlusBlocker;
     if (blocker === 'project_disabled') {
-      return '- Per-route metrics unavailable — Observability Plus is disabled for this project.';
+      return '- Per-route metrics unavailable - Observability Plus is disabled for this project.';
     }
     if (blocker === 'forbidden' || blocker === 'project_not_found') {
-      return '- Per-route metrics unavailable — the authenticated Vercel scope cannot read this project.';
+      return '- Per-route metrics unavailable - the authenticated Vercel scope cannot read this project.';
     }
     if (blocker === 'not_linked') {
-      return '- Per-route metrics unavailable — the app directory is not linked to the Vercel project.';
+      return '- Per-route metrics unavailable - the app directory is not linked to the Vercel project.';
     }
     if (blocker === 'no_oplus_probe') {
-      return '- Per-route metrics unavailable — Observability Plus was not detected for this scope.';
+      return '- Per-route metrics unavailable - Observability Plus was not detected for this scope.';
     }
     if (blocker === 'payment_required') {
-      return '- Per-route metrics unavailable — Observability Plus metrics were not usable for this scope.';
+      return '- Per-route metrics unavailable - Observability Plus metrics were not usable for this scope.';
     }
     if (blocker === 'daily_quota_exceeded') {
-      return '- Per-route metrics unavailable — the Observability Plus query quota is exhausted for today.';
+      return '- Per-route metrics unavailable - the Observability Plus query quota is exhausted for today.';
     }
     if (blocker === 'no_traffic') {
-      return '- Per-route metrics sparse — no route-level traffic was returned in the metrics window.';
+      return '- Per-route metrics sparse - no route-level traffic was returned in the metrics window.';
     }
     if (blocker === 'all_failed_other') {
-      return '- Per-route metrics unavailable — all Observability Plus metric queries failed.';
+      return '- Per-route metrics unavailable - all Observability Plus metric queries failed.';
     }
     if (blocker) {
-      return `- Per-route metrics unavailable — Observability Plus metrics returned \`${blocker}\`.`;
+      return `- Per-route metrics unavailable - Observability Plus metrics returned \`${blocker}\`.`;
     }
-    return '- Per-route metrics unavailable — Observability Plus data was not usable for this run.';
+    return '- Per-route metrics unavailable - Observability Plus data was not usable for this run.';
   }
   if (signals.observabilityPlus === false) {
-    return '- Observability Plus not enabled — per-route latency / cache-hit / cold-start metrics unavailable.';
+    return '- Observability Plus not enabled - per-route latency / cache-hit / cold-start metrics unavailable.';
   }
   return null;
 }

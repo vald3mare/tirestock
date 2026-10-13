@@ -1,6 +1,6 @@
 // Maps billing line items to gate coverage so report surfaces uncovered dimensions (Sandbox, AI Gateway, Build, …) as blind spots.
 
-// Service → billing dimension. dim=null means uncovered. Substring match — Vercel billing names are stable but untyped.
+// Service → billing dimension. dim=null means uncovered. Substring match - Vercel billing names are stable but untyped.
 const SERVICE_DIMENSION = [
   { match: /^Function Duration$/i,                       dim: 'function-duration' },
   { match: /^Function Invocations$/i,                    dim: 'function-duration' },
@@ -38,7 +38,7 @@ const SERVICE_DIMENSION = [
   { match: /^Firewall/i,                                 dim: null, family: 'firewall' },
   { match: /^Vercel Agent$/i,                            dim: null, family: 'vercel-agent' },
 
-  // Fixed costs (seats, contracts) — not actionable.
+  // Fixed costs (seats, contracts) - not actionable.
   { match: /^v0 /i,                                      dim: null, family: 'fixed', actionable: false },
   { match: /^Additional Team Seats$/i,                   dim: null, family: 'fixed', actionable: false },
   { match: /^SAML$/i,                                    dim: null, family: 'fixed', actionable: false },
@@ -99,7 +99,7 @@ export function computeCostCoverage(usage, gates) {
     .sort((a, b) => b.billed - a.billed)
     .map((f) => ({ ...f, services: f.services.sort((a, b) => b.billed - a.billed) }));
 
-  // Pick top gaps globally so multiple families surface (Sandbox + AI Gateway + Build, not 5 Sandbox sub-services). Exclude fixed costs — seats aren't actionable workload.
+  // Pick top gaps globally so multiple families surface (Sandbox + AI Gateway + Build, not 5 Sandbox sub-services). Exclude fixed costs - seats aren't actionable workload.
   const allActionableServices = [];
   for (const family of uncoveredByFamily) {
     if (!family.actionable) continue;

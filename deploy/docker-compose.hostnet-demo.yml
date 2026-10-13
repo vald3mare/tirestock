@@ -7,7 +7,7 @@
 # Использование:
 #   docker compose -f docker-compose.yml -f docker-compose.hostnet-demo.yml --env-file .env up -d
 #
-# Правильное решение — починить firewall (iptables FORWARD ACCEPT для docker),
+# Правильное решение - починить firewall (iptables FORWARD ACCEPT для docker),
 # тогда достаточно базового docker-compose.yml.
 services:
   api:

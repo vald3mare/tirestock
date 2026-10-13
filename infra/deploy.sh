@@ -14,13 +14,13 @@ CF="${COMPOSE_FILE:-infra/docker-compose.prod.yml}"
 COMPOSE="docker compose -f $CF --env-file infra/.env.prod"
 
 if [ ! -f infra/.env.prod ]; then
-  echo "✗ Нет infra/.env.prod — скопируй infra/.env.prod.example и заполни." >&2
+  echo "✗ Нет infra/.env.prod - скопируй infra/.env.prod.example и заполни." >&2
   exit 1
 fi
 
 echo "▶ Обновляю код (жёсткая синхронизация с origin)…"
 # Ненадёжный `git pull` (иногда «Already up to date» и не тянет) заменён на
-# fetch + reset --hard на ТЕКУЩУЮ ветку — гарантированно = origin. Безопасно на VM:
+# fetch + reset --hard на ТЕКУЩУЮ ветку - гарантированно = origin. Безопасно на VM:
 # reset --hard не трогает untracked/gitignored (infra/.env.prod остаётся на месте).
 BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 git fetch origin "$BRANCH"

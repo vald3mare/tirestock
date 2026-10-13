@@ -6,7 +6,7 @@ import { Field } from "@/components/ui/Field";
 import { PickupMap } from "@/components/blocks/PickupMap";
 
 // Способ получения (Figma старого сайта): радио «Доставка курьером» + самовывоз
-// из каждого пункта. При доставке — поле адреса (обязательное). Ссылка «на карте»
+// из каждого пункта. При доставке - поле адреса (обязательное). Ссылка «на карте»
 // открывает модалку с интерактивной картой всех пунктов: клик по пину → «Выбрать»
 // → пункт отмечается в списке ниже (как на старом сайте, правка заказчика B).
 // Выбор кладётся в скрытые поля fulfilment_kind / fulfilment_point / address,
@@ -20,12 +20,12 @@ export function CheckoutFulfilment({
 }: {
   points: Pick<PickupPoint, "id" | "slug" | "address" | "metro" | "hours" | "badge" | "note">[];
   // Курьерская доставка есть только в СПб (склад тут). В других городах товар едет
-  // из СПб через ТК — курьера нет, доступен только самовывоз из пунктов (правка
+  // из СПб через ТК - курьера нет, доступен только самовывоз из пунктов (правка
   // владельца 14.09.2026). courier=false → скрываем «Доставку курьером».
   courier?: boolean;
 }) {
-  // Значение: "delivery" | адрес пункта. По умолчанию — доставка (СПб), а без
-  // курьера (др. города) — первый пункт выдачи.
+  // Значение: "delivery" | адрес пункта. По умолчанию - доставка (СПб), а без
+  // курьера (др. города) - первый пункт выдачи.
   const [choice, setChoice] = useState<string>(courier ? DELIVERY : (points[0]?.address ?? DELIVERY));
   const [mapOpen, setMapOpen] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -71,8 +71,8 @@ export function CheckoutFulfilment({
       <fieldset className="flex flex-col gap-2.5 rounded-container border border-line p-4">
         <legend className="sr-only">Способ получения</legend>
 
-        {/* Курьер — только в СПб. В других городах товар едет из СПб через ТК,
-            поэтому доступен лишь самовывоз из пунктов (у московских — пометка «2 дня»). */}
+        {/* Курьер - только в СПб. В других городах товар едет из СПб через ТК,
+            поэтому доступен лишь самовывоз из пунктов (у московских - пометка «2 дня»). */}
         {courier ? (
           <>
             <label className="flex cursor-pointer items-start gap-2.5">
@@ -126,7 +126,7 @@ export function CheckoutFulfilment({
                 <span className="text-caption text-grey">
                   {[p.metro, p.hours && `Время работы: ${p.hours}`].filter(Boolean).join(" · ")}
                 </span>
-                {/* note — напр. у Москвы «доставка из СПб ~2 дня, не в наличии». */}
+                {/* note - напр. у Москвы «доставка из СПб ~2 дня, не в наличии». */}
                 {p.note && <span className="text-caption font-medium text-red">{p.note}</span>}
               </span>
             </label>

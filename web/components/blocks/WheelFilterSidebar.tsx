@@ -9,7 +9,7 @@ import type { WheelFacets } from "@/lib/api/client";
 import { formatNumber } from "@/lib/format";
 
 // Фильтр каталога дисков: диаметр / ширина / сверловка / тип / производитель / цена.
-// Параметры ↔ URL query (имена = API 1:1). Опции — из фасетов дисков (в наличии).
+// Параметры ↔ URL query (имена = API 1:1). Опции - из фасетов дисков (в наличии).
 
 type Opt = { value: string; label: string };
 const opts = (xs: (string | number)[], fmt?: (x: string) => string): Opt[] =>

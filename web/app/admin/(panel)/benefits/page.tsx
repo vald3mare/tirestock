@@ -8,7 +8,7 @@ import { deleteBenefitAction } from "@/app/admin/actions";
 
 function fmtDate(iso: string): string {
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("ru-RU");
+  return Number.isNaN(d.getTime()) ? "-" : d.toLocaleDateString("ru-RU");
 }
 
 function StatusBadge({ published }: { published: boolean }) {
@@ -47,7 +47,7 @@ export default async function AdminBenefitsPage() {
 
       {items.length === 0 ? (
         <p className="mt-6 rounded-card-lg border border-line bg-white p-10 text-center text-caption-lg text-grey">
-          Пока нет офферов. Добавьте первый — он появится в строке над каталогом.
+          Пока нет офферов. Добавьте первый - он появится в строке над каталогом.
         </p>
       ) : (
         <div className="mt-6 overflow-x-auto rounded-card-lg border border-line bg-white">
@@ -76,7 +76,7 @@ export default async function AdminBenefitsPage() {
                       <span className="font-medium">{b.title}</span>
                     </span>
                   </td>
-                  <td className="px-4 py-4 text-grey">{b.note || "—"}</td>
+                  <td className="px-4 py-4 text-grey">{b.note || "-"}</td>
                   <td className="tnum px-4 py-4 text-grey">{b.sort_order}</td>
                   <td className="px-4 py-4">
                     <StatusBadge published={b.published} />
@@ -113,7 +113,7 @@ export default async function AdminBenefitsPage() {
 
       <p className="mt-4 max-w-180 text-caption text-grey">
         Офферы показываются строкой над каталогом на главной. Порядок задаёт поле «Порядок»
-        (меньше — левее). Скрытый оффер не показывается на сайте, но остаётся здесь.
+        (меньше - левее). Скрытый оффер не показывается на сайте, но остаётся здесь.
       </p>
     </main>
   );

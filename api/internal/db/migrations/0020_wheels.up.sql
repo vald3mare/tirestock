@@ -1,6 +1,6 @@
--- Диски (колёсные) — ОТДЕЛЬНЫЙ тип товара, отдельный фид SelectTyres (секция wheels).
+-- Диски (колёсные) - ОТДЕЛЬНЫЙ тип товара, отдельный фид SelectTyres (секция wheels).
 -- Полная изоляция от шин (products/product_offers): свой синк, свой prune, свой
--- каталог. Шинный конвейер не затрагивается — сломать его невозможно.
+-- каталог. Шинный конвейер не затрагивается - сломать его невозможно.
 CREATE TABLE wheels (
     id           BIGSERIAL PRIMARY KEY,
     code         TEXT        NOT NULL DEFAULT '',   -- код SelectTyres (w…)
@@ -29,7 +29,7 @@ CREATE INDEX wheels_size_idx ON wheels (diameter, width);
 CREATE INDEX wheels_brand_idx ON wheels (brand);
 CREATE INDEX wheels_pcd_idx ON wheels (pcd);
 
--- Цена/остаток диска в городе (мультигород, как у шин, но своя таблица — изоляция).
+-- Цена/остаток диска в городе (мультигород, как у шин, но своя таблица - изоляция).
 CREATE TABLE wheel_offers (
     wheel_code TEXT        NOT NULL,
     city       TEXT        NOT NULL,

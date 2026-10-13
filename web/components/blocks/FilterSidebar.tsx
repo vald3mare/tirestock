@@ -16,8 +16,8 @@ import { useLiveCount } from "@/lib/use-live-count";
 
 // Фильтр каталога = тот же набор, что в hero-поиске, вертикально в сайдбаре 264
 // + Производитель, цена от/до, чекбоксы Шипы/RunFlat. Параметры ↔ URL query
-// (имена совпадают с API 1:1). total приходит с сервера. options — опции
-// брендов/размеров (фасеты каталога СПб); дефолт — статика.
+// (имена совпадают с API 1:1). total приходит с сервера. options - опции
+// брендов/размеров (фасеты каталога СПб); дефолт - статика.
 
 export function FilterSidebar({
   total,
@@ -39,7 +39,7 @@ export function FilterSidebar({
   const [spikes, setSpikes] = useState(sp.get("spikes") === "true");
   const [runflat, setRunflat] = useState(sp.get("runflat") === "true");
 
-  // Живое число под выбранные (ещё не применённые) фильтры; фолбэк — total сервера.
+  // Живое число под выбранные (ещё не применённые) фильтры; фолбэк - total сервера.
   const live = useLiveCount({
     q: sp.get("q") ?? undefined,
     width,
@@ -68,7 +68,7 @@ export function FilterSidebar({
   };
 
   // Сброс: очищаем локальный стейт полей И навигируем. Раньше был только
-  // router.push — поля (контролируемый стейт) сохраняли выбор до перезагрузки.
+  // router.push - поля (контролируемый стейт) сохраняли выбор до перезагрузки.
   const reset = () => {
     setWidth(undefined);
     setProfile(undefined);

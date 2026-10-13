@@ -11,13 +11,13 @@ import (
 	"time"
 )
 
-// PhotoConfig — параметры Avito-фида «чистых» фото (без вотермарка).
+// PhotoConfig - параметры Avito-фида «чистых» фото (без вотермарка).
 type PhotoConfig struct {
 	FeedURL string
 	Timeout time.Duration // 0 → 6m
 }
 
-// PhotoClient — стриминговый парсер Avito-XML (по <Ad>).
+// PhotoClient - стриминговый парсер Avito-XML (по <Ad>).
 type PhotoClient struct {
 	cfg  PhotoConfig
 	http *http.Client
@@ -43,7 +43,7 @@ type xmlAd struct {
 }
 
 // Fetch скачивает Avito-фид и для каждого <Ad> с непустым фото зовёт fn(code, url).
-// Разбор потоковый — весь файл в память не грузится.
+// Разбор потоковый - весь файл в память не грузится.
 func (c *PhotoClient) Fetch(ctx context.Context, fn func(code, url string) error) (parsed, withPhoto int, err error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.cfg.FeedURL, nil)
 	if err != nil {
@@ -92,12 +92,12 @@ func (c *PhotoClient) Fetch(ctx context.Context, fn func(code, url string) error
 	return parsed, withPhoto, nil
 }
 
-// PhotoStore — приёмник чистых фото (обновление products.image_clean_url).
+// PhotoStore - приёмник чистых фото (обновление products.image_clean_url).
 type PhotoStore interface {
 	UpdateImageClean(ctx context.Context, code, url string) (int64, error)
 }
 
-// PhotoSyncer — фоновый контур: раз в interval тянет Avito-фид и обновляет чистые фото.
+// PhotoSyncer - фоновый контур: раз в interval тянет Avito-фид и обновляет чистые фото.
 type PhotoSyncer struct {
 	client   *PhotoClient
 	store    PhotoStore

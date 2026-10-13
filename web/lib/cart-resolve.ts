@@ -2,7 +2,7 @@ import { ApiError, getProductBySlug, getWheelBySlug } from "@/lib/api/client";
 import { seasonLabel } from "@/lib/format";
 import { wheelSize } from "@/components/blocks/WheelCard";
 
-// Позиция корзины в едином виде — корзина хранит только slug, а товар может быть
+// Позиция корзины в едином виде - корзина хранит только slug, а товар может быть
 // шиной ИЛИ диском (разные каталоги). Резолвер по slug пробует шину, затем диск.
 export type CartItem = {
   slug: string;

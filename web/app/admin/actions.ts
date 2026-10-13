@@ -52,7 +52,7 @@ export async function logoutAction() {
     try {
       await adminLogout(token);
     } catch {
-      // сессия уже недействительна — всё равно чистим куку
+      // сессия уже недействительна - всё равно чистим куку
     }
   }
   await clearSessionCookie();
@@ -113,13 +113,13 @@ export async function updatePageAction(formData: FormData) {
     meta_title: String(formData.get("meta_title") ?? "").trim(),
     meta_description: String(formData.get("meta_description") ?? "").trim(),
   });
-  // Черновик может менять URL — поле slug присутствует только для незалоченных.
+  // Черновик может менять URL - поле slug присутствует только для незалоченных.
   const slug = formData.get("slug");
   if (typeof slug === "string" && slug.trim()) {
     try {
       await adminRenamePage(token, id, slug.trim());
     } catch (err) {
-      if (!(err instanceof ApiError)) throw err; // 403/409 — молча (URL остался прежним)
+      if (!(err instanceof ApiError)) throw err; // 403/409 - молча (URL остался прежним)
     }
   }
   revalidatePath(`/admin/pages/${id}`);

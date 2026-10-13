@@ -1,6 +1,6 @@
 // Warn when a rec's claimed rendering mode (static/ISR/SSR) contradicts
 // the scanner-tagged mode for that route. No-op when the scanner didn't
-// tag a renderingMode — full AST inference isn't implemented yet.
+// tag a renderingMode - full AST inference isn't implemented yet.
 
 import { extractRoute } from '../util.mjs';
 

@@ -1,13 +1,13 @@
 import Link from "next/link";
 import type { AdminBenefit } from "@/lib/api/admin";
 
-// Форма оффера «Преимущества» — общая для создания и правки. action и submitLabel
+// Форма оффера «Преимущества» - общая для создания и правки. action и submitLabel
 // приходят от страницы; при правке передаётся benefit (заполняет поля + hidden id).
 
 const fieldCls =
   "w-full rounded-field border border-line bg-white px-5 py-3.5 text-field text-dark placeholder:text-grey hover:border-grey focus-visible:border-blue";
 
-// Иконки из public/icons — подсказка для поля пути (можно указать любой свой путь).
+// Иконки из public/icons - подсказка для поля пути (можно указать любой свой путь).
 const iconHints = [
   "/icons/benefit-mount.svg",
   "/icons/benefit-storage.svg",
@@ -93,7 +93,7 @@ export function BenefitForm({
           <option value="/delivery/" />
         </datalist>
         <p className="mt-1.5 text-legal text-grey">
-          Страница услуги. Пусто — оффер не кликабельный.
+          Страница услуги. Пусто - оффер не кликабельный.
         </p>
       </label>
 
@@ -106,7 +106,7 @@ export function BenefitForm({
           defaultValue={benefit?.sort_order ?? 0}
           className={`${fieldCls} tnum`}
         />
-        <p className="mt-1.5 text-legal text-grey">Меньше — левее в строке.</p>
+        <p className="mt-1.5 text-legal text-grey">Меньше - левее в строке.</p>
       </label>
 
       <label className="mt-5 flex items-center gap-2.5">

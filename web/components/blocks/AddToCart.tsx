@@ -7,10 +7,10 @@ import { Stepper } from "@/components/ui/Stepper";
 import { formatPrice } from "@/lib/format";
 import { addToCart } from "@/app/(storefront)/cart/actions";
 
-// Блок покупки на странице товара: степпер (дефолт 4 — шины покупают
-// комплектами) + живая сумма комплекта + CTA. Кнопка — обычная form-кнопка:
+// Блок покупки на странице товара: степпер (дефолт 4 - шины покупают
+// комплектами) + живая сумма комплекта + CTA. Кнопка - обычная form-кнопка:
 // состав корзины пишется в куку server action'ом, клиентского стейта корзины нет.
-// «Купить в 1 клик» — заявка в tradesk через outbox (переиспользуем CallbackModal);
+// «Купить в 1 клик» - заявка в tradesk через outbox (переиспользуем CallbackModal);
 // комментарий с товаром и ТЕКУЩИМ количеством (поле монтируется при открытии модалки).
 export function AddToCart({
   slug,
@@ -28,7 +28,7 @@ export function AddToCart({
   const [qty, setQty] = useState(4);
 
   return (
-    // CallbackModal НЕ внутри <form> (у него своя форма — вложенные формы невалидны).
+    // CallbackModal НЕ внутри <form> (у него своя форма - вложенные формы невалидны).
     <div className="flex flex-col gap-4">
       <form action={addToCart} className="flex flex-col gap-4">
         <input type="hidden" name="slug" value={slug} />
@@ -36,7 +36,7 @@ export function AddToCart({
         <div className="flex items-center gap-4">
           <Stepper defaultValue={4} min={1} max={stock} onChange={setQty} />
           <p className="tnum text-body font-semibold text-dark">
-            Комплект {qty} шт. — {formatPrice(price * qty)}
+            Комплект {qty} шт. - {formatPrice(price * qty)}
           </p>
         </div>
         <Button type="submit" className="w-full" disabled={stock < 1}>
@@ -47,7 +47,7 @@ export function AddToCart({
         variant="button"
         triggerLabel="Купить в 1 клик"
         title="Купить в 1 клик"
-        description={`Оставьте телефон — менеджер перезвонит, подтвердит наличие и оформит заказ на «${name}».`}
+        description={`Оставьте телефон - менеджер перезвонит, подтвердит наличие и оформит заказ на «${name}».`}
         defaultComment={`Купить в 1 клик: ${name}, ${sizeLabel}. Количество: ${qty} шт. Цена ${formatPrice(price)}/шт.`}
         submitLabel="Оформить заказ"
       />

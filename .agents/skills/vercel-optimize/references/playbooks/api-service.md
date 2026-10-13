@@ -17,14 +17,14 @@ Function Duration dominates (every request is a function invocation). Edge Reque
 ## Frequent gotchas
 
 - **No `Cache-Control` on the public GETs.** This is the most common finding in this profile, and the easiest fix.
-- **Auth check serialized with data load.** `await checkAuth()` then `await loadData()` — these are often independent and can run in parallel if your auth path doesn't depend on the data.
+- **Auth check serialized with data load.** `await checkAuth()` then `await loadData()` - these are often independent and can run in parallel if your auth path doesn't depend on the data.
 - **External API fan-out for one user.** A "build me a profile" endpoint that calls 5 third parties sequentially. Even small latency improvements multiplied by every user are huge.
 - **Long-running async operations on the request path.** Image generation, PDF rendering, big report computation. Move these to background queues or `after()`.
 
 ## Cross-references
 
-- `https://vercel.com/docs/caching/cdn-cache` — the GET-handler Cache-Control fix
-- `vercel-react-best-practices:async-parallel` — parallelize external API calls
-- `vercel-react-best-practices:server-after-nonblocking` — `after()` for post-response work
-- `https://vercel.com/docs/fluid-compute` — when cold starts on infrequently-called endpoints hurt
-- `https://nextjs.org/docs/app/building-your-application/routing/middleware` — for rate-limit middleware
+- `https://vercel.com/docs/caching/cdn-cache` - the GET-handler Cache-Control fix
+- `vercel-react-best-practices:async-parallel` - parallelize external API calls
+- `vercel-react-best-practices:server-after-nonblocking` - `after()` for post-response work
+- `https://vercel.com/docs/fluid-compute` - when cold starts on infrequently-called endpoints hurt
+- `https://nextjs.org/docs/app/building-your-application/routing/middleware` - for rate-limit middleware

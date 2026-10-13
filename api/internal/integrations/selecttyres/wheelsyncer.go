@@ -8,16 +8,16 @@ import (
 	"tirestock/api/internal/catalog"
 )
 
-// WheelStore — приёмник синка дисков. Объявляет потребитель (изолирован от шин).
+// WheelStore - приёмник синка дисков. Объявляет потребитель (изолирован от шин).
 type WheelStore interface {
 	Upsert(ctx context.Context, w catalog.SyncWheel) error
 	PruneStaleBefore(ctx context.Context, before time.Time) (int64, error)
 	CountSynced(ctx context.Context) (int64, error)
 }
 
-// WheelSyncer — фоновый контур синка дисков. Живучесть 1:1 с шинным Syncer:
+// WheelSyncer - фоновый контур синка дисков. Живучесть 1:1 с шинным Syncer:
 // при ошибке Fetch офферы НЕ трогаем; при усохшем фиде prune пропускаем.
-// Отдельный контур — падение фида дисков НЕ влияет на шины и наоборот.
+// Отдельный контур - падение фида дисков НЕ влияет на шины и наоборот.
 type WheelSyncer struct {
 	client     *Client
 	store      WheelStore
@@ -68,11 +68,11 @@ func (s *WheelSyncer) SyncOnce(ctx context.Context) error {
 		return s.store.Upsert(ctx, w)
 	})
 	if err != nil {
-		return err // офферы не трогаем — последнее состояние сохраняется
+		return err // офферы не трогаем - последнее состояние сохраняется
 	}
 
 	if prev > 0 && float64(kept) < s.minHealthy*float64(prev) {
-		s.log.Warn("selecttyres wheels: усохший фид — prune пропущен",
+		s.log.Warn("selecttyres wheels: усохший фид - prune пропущен",
 			"пришло", kept, "было", prev, "порог", s.minHealthy)
 		return nil
 	}

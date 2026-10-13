@@ -39,7 +39,7 @@ const nav: { label: string; href: string; items?: NavItem[] }[] = [
       { label: "Штампованные", href: "/wheels/?type=Штампованный" },
     ],
   },
-  // «Хранение» временно убрано (вернём, когда владелец запустит свой шиномонтаж —
+  // «Хранение» временно убрано (вернём, когда владелец запустит свой шиномонтаж -
   // правка заказчика 14.09.2026). Осталась одна услуга → прямая ссылка без подменю.
   { label: "Шиномонтаж", href: "/mounting/" },
   { label: "Пункты выдачи", href: "/points/" },
@@ -85,7 +85,7 @@ export async function Header() {
               cityLabel={cityMeta.label}
               hours={SHOP.hours}
             />
-            <Link href="/" className="flex min-h-touch items-center" aria-label="TireStock — на главную">
+            <Link href="/" className="flex min-h-touch items-center" aria-label="TireStock - на главную">
               <img src="/images/logo.png" alt="TireStock" width={94} height={56} className="h-14 w-auto" />
             </Link>
           </div>

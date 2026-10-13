@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
 
-// Сортировка каталога. Значение живёт в URL (?sort=), как и фильтры — конвенция
+// Сортировка каталога. Значение живёт в URL (?sort=), как и фильтры - конвенция
 // проекта: состояние списка в query params, товар = отдельный URL. Меняя сортировку,
 // сбрасываем пагинацию на первую страницу.
 const OPTIONS = [

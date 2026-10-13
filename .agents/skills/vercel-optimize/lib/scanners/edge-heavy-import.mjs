@@ -82,7 +82,7 @@ function isMiddleware(path) {
 
 function extractSpecifiers(line) {
   const out = new Set();
-  // IMPORT_RE has `gm` flag — reset lastIndex per call.
+  // IMPORT_RE has `gm` flag - reset lastIndex per call.
   IMPORT_RE.lastIndex = 0;
   let m;
   while ((m = IMPORT_RE.exec(line)) !== null) out.add(m[1]);

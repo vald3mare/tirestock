@@ -1,4 +1,4 @@
-# ── env / секреты (никогда не коммитим; шаблон — deploy/.env.example) ──
+# ── env / секреты (никогда не коммитим; шаблон - deploy/.env.example) ──
 .env
 .env.*
 !.env.example
@@ -18,7 +18,7 @@ api/api
 api/*.exe
 
 # ── graphify (генерируется локально: graphify claude install + git-хуки) ──
-# graph.json/html пересобираются из кода; memory/ — локальные заметки сессий
+# graph.json/html пересобираются из кода; memory/ - локальные заметки сессий
 graphify-out/
 
 # ── локальные настройки Claude Code (личные права доступа) ──

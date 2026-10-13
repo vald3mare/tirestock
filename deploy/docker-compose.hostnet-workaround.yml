@@ -2,7 +2,7 @@
 # (FORWARD droppped): сервисы ходят друг к другу через published-порты хоста.
 # Использование:
 #   docker compose -f docker-compose.yml -f docker-compose.hostnet-workaround.yml up
-# Правильное решение — починить firewall (см. README), этот файл тогда не нужен.
+# Правильное решение - починить firewall (см. README), этот файл тогда не нужен.
 services:
   api:
     extra_hosts:

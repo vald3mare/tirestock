@@ -2,7 +2,7 @@ import type { ProductFilters } from "@/lib/api/client";
 
 // SEO-мета фильтрованного каталога (рекомендация сеошника): для востребованных
 // комбинаций фильтров генерим уникальные H1/Title/Description и решаем, индексировать
-// ли страницу. Цель — посадочные вроде «Шины R15», «Летние шины R17», «Шины Michelin»
+// ли страницу. Цель - посадочные вроде «Шины R15», «Летние шины R17», «Шины Michelin»
 // с чистыми мета-тегами, без дублей от каждой возможной комбинации фильтров.
 
 const seasonAdj: Record<string, string> = {
@@ -36,7 +36,7 @@ export type CatalogSeo = {
   canonicalPath: string; // канонический URL (дедуп вариантов)
 };
 
-// noise-фильтры — не создают отдельную SEO-посадочную (цена/шипы/RunFlat/сортировка/
+// noise-фильтры - не создают отдельную SEO-посадочную (цена/шипы/RunFlat/сортировка/
 // текстовый поиск/страница пагинации). При их наличии страница noindex + canonical
 // на чистую версию.
 function hasNoise(f: ProductFilters): boolean {
@@ -47,7 +47,7 @@ function hasNoise(f: ProductFilters): boolean {
 }
 
 // Чистый ли набор размеров: пусто / только диаметр / полный 195/65 R15.
-// Частичные (только ширина/профиль) — тонкие, не индексируем.
+// Частичные (только ширина/профиль) - тонкие, не индексируем.
 function cleanSize(f: ProductFilters): boolean {
   const has = (v?: number) => v !== undefined;
   if (!has(f.width) && !has(f.profile) && !has(f.diameter)) return true;
@@ -69,7 +69,7 @@ function canonical(f: ProductFilters, city: string): string {
   return `/catalog${p.size ? `?${p}` : ""}`;
 }
 
-// cityLoc — предложный падеж для Title («в Санкт-Петербурге» / «в Москве»).
+// cityLoc - предложный падеж для Title («в Санкт-Петербурге» / «в Москве»).
 export function catalogSeo(f: ProductFilters, cityLoc: string, city: string): CatalogSeo {
   const size = sizeLabel(f);
   const brand = f.brand?.trim();
@@ -91,10 +91,10 @@ export function catalogSeo(f: ProductFilters, cityLoc: string, city: string): Ca
     .filter(Boolean)
     .join(" ");
 
-  // H1 — богатый, как просил сеошник: «Шины R15 — купить в Санкт-Петербурге»
-  // (без «| TireStock» — бренд в H1 не нужен; количество товаров НЕ в H1).
-  const h1 = `${subject} — купить в ${cityLoc}`;
-  const title = `${subject} — купить в ${cityLoc} | TireStock`;
+  // H1 - богатый, как просил сеошник: «Шины R15 - купить в Санкт-Петербурге»
+  // (без «| TireStock» - бренд в H1 не нужен; количество товаров НЕ в H1).
+  const h1 = `${subject} - купить в ${cityLoc}`;
+  const title = `${subject} - купить в ${cityLoc} | TireStock`;
   const description = `Каталог ${descCore}: подбор по размеру и сезону, наличие на складе в ${cityLoc}, доставка по России.`;
 
   const indexable = !hasNoise(f) && cleanSize(f);

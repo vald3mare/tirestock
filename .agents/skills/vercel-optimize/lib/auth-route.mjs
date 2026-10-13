@@ -7,7 +7,7 @@ export function isAuthRoute(route) {
   return AUTH_ROUTE_REGEX.test(String(route ?? ''));
 }
 
-// Non-cache candidates pass through — errors/slowness on auth routes still warrant investigation.
+// Non-cache candidates pass through - errors/slowness on auth routes still warrant investigation.
 export function applyAuthDisqualifier(candidate) {
   const cacheKinds = new Set(['uncached_route', 'cache_header_gap']);
   if (!cacheKinds.has(candidate.kind)) return candidate;
@@ -16,7 +16,7 @@ export function applyAuthDisqualifier(candidate) {
     return {
       ...candidate,
       disqualified: true,
-      disqualifyReason: 'auth-like route — should not be cached at edge',
+      disqualifyReason: 'auth-like route - should not be cached at edge',
     };
   }
   return candidate;

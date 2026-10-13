@@ -145,7 +145,7 @@ Give matching controls in fallback and content the same `viewTransitionName`:
 <input placeholder="Search..." style={{ viewTransitionName: 'search-input' }} />
 ```
 
-Don't put manual `viewTransitionName` on the root DOM node inside `<ViewTransition>` — React's auto-generated name overrides it.
+Don't put manual `viewTransitionName` on the root DOM node inside `<ViewTransition>` - React's auto-generated name overrides it.
 
 ## Reusable Animated Collapse
 
@@ -185,8 +185,8 @@ const [optimisticSort, setOptimisticSort] = useOptimistic(sort);
 function cycleSort() {
   const nextSort = getNextSort(optimisticSort);
   startTransition(() => {
-    setOptimisticSort(nextSort);  // before snapshot — no animation
-    setSort(nextSort);            // between snapshots — animates
+    setOptimisticSort(nextSort);  // before snapshot - no animation
+    setSort(nextSort);            // between snapshots - animates
   });
 }
 

@@ -26,7 +26,7 @@ import { productDescription } from "@/lib/product-description";
 type Params = { slug: string };
 
 // React.cache: generateMetadata и страница делят один запрос к api в рамках
-// одного рендера (иначе товар грузился бы дважды). Ключ кэша — (slug, city):
+// одного рендера (иначе товар грузился бы дважды). Ключ кэша - (slug, city):
 // мультигород, у товара разная цена/наличие по городам; нет оффера → 404.
 const loadProduct = cache(async (slug: string, city: string): Promise<Product | null> => {
   try {
@@ -43,7 +43,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   if (!product) return { title: "Товар не найден | TireStock" };
   const loc = CITIES[city].loc;
   return {
-    title: `${product.name} — купить в ${loc} | TireStock`,
+    title: `${product.name} - купить в ${loc} | TireStock`,
     description: `${seasonLabel[product.season]} шины ${product.name}: в наличии ${product.stock} шт., цена ${formatPrice(product.price)}/шт. Доставка по ${loc} и России.`,
   };
 }
@@ -55,7 +55,7 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
 
   const [relatedRes, pickupRes] = await Promise.all([
     listProducts({ season: product.season, per_page: 5, city }),
-    // Пункты выдачи города — для блока «Самовывоз из N пунктов» и карты «Где забрать».
+    // Пункты выдачи города - для блока «Самовывоз из N пунктов» и карты «Где забрать».
     listPickupPoints(city)
       .then((r) => (r.items.length ? r.items : city === "spb" ? fallbackPickupPoints : []))
       .catch(() => (city === "spb" ? fallbackPickupPoints : [])),
@@ -150,7 +150,7 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
               variant="button"
               triggerLabel="Уточнить при наличии"
               title="Уточнить наличие"
-              description={`Оставьте телефон — сообщим, когда «${product.brand} ${product.model}» появится, и подскажем аналоги.`}
+              description={`Оставьте телефон - сообщим, когда «${product.brand} ${product.model}» появится, и подскажем аналоги.`}
               defaultComment={inquiryComment(product)}
               submitLabel="Уточнить"
             />
@@ -164,7 +164,7 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
                   <span className="text-caption-lg font-semibold text-blue">
                     Самовывоз из {points.length} пункт{pluralPoints(points.length)} выдачи
                   </span>
-                  <span className="text-caption text-grey">Бесплатно · {cityLoc} — см. на карте ниже</span>
+                  <span className="text-caption text-grey">Бесплатно · {cityLoc} - см. на карте ниже</span>
                 </span>
               </Link>
             )}
@@ -185,7 +185,7 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
             Где забрать заказ
           </h2>
           <p className="mt-2 text-body text-grey">
-            Самовывоз из {points.length} пункт{pluralPoints(points.length)} выдачи в {cityLoc} —
+            Самовывоз из {points.length} пункт{pluralPoints(points.length)} выдачи в {cityLoc} -
             выберите удобный на карте.
           </p>
           <div className="mt-6 overflow-hidden rounded-card-lg border border-line">

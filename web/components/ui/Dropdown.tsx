@@ -68,7 +68,7 @@ export function Dropdown({ options, value, onChange, placeholder, label, disable
       </button>
 
       {open && (
-        // pt-1 — hover-мостик: курсор не проваливается между кнопкой и панелью
+        // pt-1 - hover-мостик: курсор не проваливается между кнопкой и панелью
         <div className="absolute left-0 right-0 top-full z-10 pt-1">
           <ul
             id={listboxId}

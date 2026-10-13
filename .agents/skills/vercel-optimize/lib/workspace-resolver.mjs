@@ -33,7 +33,7 @@ export async function detectMonorepoRoot(startDir) {
   return null;
 }
 
-// Zero-dependency — pnpm-workspace.yaml shape is predictable; not pulling in js-yaml.
+// Zero-dependency - pnpm-workspace.yaml shape is predictable; not pulling in js-yaml.
 export async function readWorkspaceGlobs(monorepoRoot) {
   const pnpmPath = join(monorepoRoot, 'pnpm-workspace.yaml');
   if (await fileExists(pnpmPath)) {
@@ -77,7 +77,7 @@ export async function listWorkspacePackages(monorepoRoot) {
   return out.sort((a, b) => a.name.localeCompare(b.name));
 }
 
-// Handles workspace-shape globs only. `**` collapses to one level — npm/pnpm don't document deep `**`.
+// Handles workspace-shape globs only. `**` collapses to one level - npm/pnpm don't document deep `**`.
 async function expandWorkspaceGlob(root, glob) {
   const parts = glob.replace(/\\/g, '/').split('/');
   return await expandParts(root, parts);

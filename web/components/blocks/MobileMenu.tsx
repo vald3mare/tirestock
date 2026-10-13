@@ -14,15 +14,15 @@ type Props = {
   hours: string;
 };
 
-// Мобильное меню-бургер (Figma «Mobile — Burger menu», 99:764). Полноэкранная
+// Мобильное меню-бургер (Figma «Mobile - Burger menu», 99:764). Полноэкранная
 // панель с аккордеоном по разделам с подпунктами. Виден только < lg (десктоп
-// использует NavDropdown). Данные нава — те же, что в Header.
+// использует NavDropdown). Данные нава - те же, что в Header.
 export function MobileMenu({ nav, phone, phoneHref, cityLabel, hours }: Props) {
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState<string | null>("Шины"); // как на макете
   const panelId = useId();
 
-  // Escape закрывает; пока открыто — блокируем прокрутку body.
+  // Escape закрывает; пока открыто - блокируем прокрутку body.
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -72,7 +72,7 @@ export function MobileMenu({ nav, phone, phoneHref, cityLabel, hours }: Props) {
               href="/"
               onClick={() => setOpen(false)}
               className="text-nav font-extrabold text-dark"
-              aria-label="TireStock — на главную"
+              aria-label="TireStock - на главную"
             >
               TIRESTOCK
             </Link>

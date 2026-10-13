@@ -11,16 +11,16 @@ import (
 	"tirestock/api/internal/db"
 )
 
-// CityOffer — цена и остаток товара в конкретном городе (агрегат складов города).
+// CityOffer - цена и остаток товара в конкретном городе (агрегат складов города).
 type CityOffer struct {
 	City  string
 	Price int // рубли за штуку
 	Stock int
 }
 
-// SyncProduct — строка каталога для upsert синком. Городонезависимые атрибуты +
-// цена/остаток по городам (Offers). Price/Stock — снапшот базового города (СПб)
-// для products (живучесть/фолбэк). Ключ идемпотентности — Code.
+// SyncProduct - строка каталога для upsert синком. Городонезависимые атрибуты +
+// цена/остаток по городам (Offers). Price/Stock - снапшот базового города (СПб)
+// для products (живучесть/фолбэк). Ключ идемпотентности - Code.
 type SyncProduct struct {
 	Code      string
 	Slug      string
@@ -40,7 +40,7 @@ type SyncProduct struct {
 	Offers    []CityOffer // цена/остаток по городам (СПб, Москва…)
 }
 
-// SyncStore — запись read-модели products синком. Обёртка над sqlc.
+// SyncStore - запись read-модели products синком. Обёртка над sqlc.
 type SyncStore struct {
 	q *db.Queries
 }
@@ -51,7 +51,7 @@ func NewSyncStore(pool *pgxpool.Pool) *SyncStore {
 
 func (s *SyncStore) Upsert(ctx context.Context, p SyncProduct) error {
 	// products держит городонезависимые атрибуты + снапшот базового города (СПб);
-	// цена/остаток по городам — в product_offers (мультигород, СПб + Москва).
+	// цена/остаток по городам - в product_offers (мультигород, СПб + Москва).
 	if err := s.q.UpsertProduct(ctx, db.UpsertProductParams{
 		Code: p.Code, Slug: p.Slug, Brand: p.Brand, Model: p.Model, Name: p.Name,
 		SizeLabel: p.SizeLabel, Width: int32(p.Width), Profile: int32(p.Profile),
@@ -95,7 +95,7 @@ func (s *SyncStore) CountSynced(ctx context.Context) (int64, error) {
 }
 
 // UpdateImageClean записывает чистое фото товара по коду. Возвращает число строк
-// (0 — товара с таким кодом ещё нет в каталоге).
+// (0 - товара с таким кодом ещё нет в каталоге).
 func (s *SyncStore) UpdateImageClean(ctx context.Context, code, url string) (int64, error) {
 	return s.q.UpdateProductImageClean(ctx, db.UpdateProductImageCleanParams{Code: code, ImageCleanUrl: url})
 }

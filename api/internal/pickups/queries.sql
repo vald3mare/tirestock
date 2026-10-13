@@ -1,4 +1,4 @@
--- Раздел «Пункты выдачи» админки. Правила — в сервисе internal/pickups.
+-- Раздел «Пункты выдачи» админки. Правила - в сервисе internal/pickups.
 
 -- name: ListPickupPoints :many
 -- Все пункты для админки (любой статус), основные первыми, затем по порядку.
@@ -18,7 +18,7 @@ SELECT id, slug, address, metro, hours, badge, note, is_central, is_main, city, 
 FROM pickup_points WHERE id = $1;
 
 -- name: GetPickupPointBySlug :one
--- Опубликованный пункт по slug — для отдельной страницы /points/<slug>.
+-- Опубликованный пункт по slug - для отдельной страницы /points/<slug>.
 SELECT id, slug, address, metro, hours, badge, note, is_central, is_main, city, sort_order, published, updated_by, updated_at
 FROM pickup_points WHERE slug = $1 AND slug <> '' AND published = true;
 

@@ -1,11 +1,11 @@
-// Общие классы Button — используются и <button> (Button), и <a> (ButtonLink),
+// Общие классы Button - используются и <button> (Button), и <a> (ButtonLink),
 // чтобы кнопки-ссылки не расходились со спекой Button из DESIGN_SYSTEM.md.
 
 export type ButtonVariant = "primary" | "secondary";
 export type ButtonSize = "md" | "sm";
 
 // Анимация кнопок: плавный цвет + лёгкое «нажатие» (scale). Анимируем только
-// конкретные свойства (не transition:all). Фокус — глобальный :focus-visible
+// конкретные свойства (не transition:all). Фокус - глобальный :focus-visible
 // (globals.css), prefers-reduced-motion там же глушит все transition.
 const base =
   "inline-flex min-h-touch cursor-pointer select-none items-center justify-center gap-2 " +

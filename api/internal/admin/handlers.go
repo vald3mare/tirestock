@@ -21,7 +21,7 @@ type ctxKey int
 
 const userKey ctxKey = 0
 
-// Handlers — HTTP-слой админки. Токен сессии ходит между Next и Go в заголовке
+// Handlers - HTTP-слой админки. Токен сессии ходит между Next и Go в заголовке
 // Authorization: Bearer <token>; httpOnly-куку на домене витрины ставит Next.
 type Handlers struct {
 	svc      *Service
@@ -35,7 +35,7 @@ func NewHandlers(svc *Service, contentSvc *content.Service, benefitsSvc *benefit
 	return &Handlers{svc: svc, content: contentSvc, benefits: benefitsSvc, seo: seoSvc, pickups: pickupsSvc}
 }
 
-// Mount вешает роуты админки. Публичен только login; остальное — за сессией.
+// Mount вешает роуты админки. Публичен только login; остальное - за сессией.
 func (h *Handlers) Mount(r chi.Router) {
 	r.Route("/admin", func(r chi.Router) {
 		r.Post("/login", h.login)

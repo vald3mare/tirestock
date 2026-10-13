@@ -1,5 +1,5 @@
 // Типизированный клиент API. Типы генерируются из api/openapi.yaml
-// командой `npm run gen:api` — руками schema.d.ts не править.
+// командой `npm run gen:api` - руками schema.d.ts не править.
 // Все данные ходят ТОЛЬКО через этот модуль (см. CONVENTIONS.md → Next.js-2).
 
 import type { components } from "./schema";
@@ -62,7 +62,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       code = body.error.code;
       message = body.error.message;
     } catch {
-      // тело не JSON — оставляем дефолты
+      // тело не JSON - оставляем дефолты
     }
     throw new ApiError(res.status, code, message);
   }
@@ -87,7 +87,7 @@ export function getProductBySlug(slug: string, city = "spb"): Promise<Product> {
 }
 
 // ── Диски (отдельный каталог /wheels/) ──────────────────────────────────────
-// Типы заданы вручную (эндпоинты дисков пока не в OpenAPI — кандидат на вынос,
+// Типы заданы вручную (эндпоинты дисков пока не в OpenAPI - кандидат на вынос,
 // как admin-API). Держать поля синхронно с catalog.Wheel (Go).
 export type Wheel = {
   id: number;
@@ -145,7 +145,7 @@ export function getWheelFacets(city = "spb"): Promise<WheelFacets> {
   return request(`/wheels/facets?city=${encodeURIComponent(city)}`);
 }
 
-// Фасеты каталога — реальные бренды/размеры в наличии города. Строят опции
+// Фасеты каталога - реальные бренды/размеры в наличии города. Строят опции
 // сайдбара вместо статики; фолбэк на lib/catalog-options при пустом ответе.
 export function getCatalogFacets(city = "spb"): Promise<CatalogFacets> {
   return request(`/catalog/facets?city=${encodeURIComponent(city)}`);
@@ -172,32 +172,32 @@ export function listContentByPrefix(prefix: string): Promise<{ items: ContentPag
   return request(`/content-list?prefix=${encodeURIComponent(prefix)}`, { cache: "no-store" });
 }
 
-// Офферы строки «Преимущества» (главная). Контент из админки; no-store —
-// правки видны сразу. Фолбэк на статику — на стороне вызывающего компонента.
+// Офферы строки «Преимущества» (главная). Контент из админки; no-store -
+// правки видны сразу. Фолбэк на статику - на стороне вызывающего компонента.
 export function listBenefits(): Promise<{ items: Benefit[] }> {
   return request("/benefits", { cache: "no-store" });
 }
 
-// Пункты выдачи города для страницы /points. Контент из админки; no-store —
-// правки видны сразу. Фолбэк на статику — на стороне вызывающего компонента.
+// Пункты выдачи города для страницы /points. Контент из админки; no-store -
+// правки видны сразу. Фолбэк на статику - на стороне вызывающего компонента.
 export function listPickupPoints(city = "spb"): Promise<{ items: PickupPoint[] }> {
   return request(`/pickup-points?city=${encodeURIComponent(city)}`, { cache: "no-store" });
 }
 
-// Пункт выдачи по slug — для отдельной страницы /points/<slug>.
+// Пункт выдачи по slug - для отдельной страницы /points/<slug>.
 export function getPickupPoint(slug: string): Promise<PickupPoint> {
   return request(`/pickup-points/${encodeURIComponent(slug)}`, { cache: "no-store" });
 }
 
 // Статус заказа по номеру (обратная интеграция tradesk). Страница /status/.
-// no-store — статус живой. found=false, если не найден.
+// no-store - статус живой. found=false, если не найден.
 export function getOrderStatus(code: string): Promise<OrderStatus> {
   return request(`/order-status?code=${encodeURIComponent(code)}`, { cache: "no-store" });
 }
 
 // Эффективная SEO-мета маршрута для generateMetadata. Мета из админки (раздел
 // «SEO-мета»). Ревалидация 300с (не no-store): мета меняется редко, а главная/
-// каталог должны остаться ISR, а не рендериться на каждый запрос. Фолбэк — у вызывающего.
+// каталог должны остаться ISR, а не рендериться на каждый запрос. Фолбэк - у вызывающего.
 export function resolveSeo(path: string): Promise<SeoResolved> {
   return request(`/seo?path=${encodeURIComponent(path)}`, { next: { revalidate: 300 } });
 }

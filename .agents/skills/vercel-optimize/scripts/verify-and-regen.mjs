@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-// Verify → grade → emit regenPlan. Does NOT spawn sub-agents — the
+// Verify → grade → emit regenPlan. Does NOT spawn sub-agents - the
 // orchestrator reads regenPlan, re-spawns one sub-agent per targeted candidate
 // with topFailures injected, then re-runs this script. Thresholds are tuned
-// below (REGEN_*, QUALITY_FLOOR) — read those constants for the live values.
+// below (REGEN_*, QUALITY_FLOOR) - read those constants for the live values.
 
 import { readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
@@ -18,7 +18,7 @@ const SCHEMA_VERSION = '1.0';
 const REGEN_PASS_RATE_THRESHOLD = 0.8;
 // 1/1 failed is as broken as 1/5; below 2 claims is below the noise floor.
 const REGEN_MIN_CLAIMS = 2;
-// The Poor/Fair grade boundary — Poor recs erode trust faster than recall helps.
+// The Poor/Fair grade boundary - Poor recs erode trust faster than recall helps.
 const QUALITY_FLOOR = 0.55;
 
 const log = (...a) => console.error('[verify-and-regen]', ...a);
@@ -53,7 +53,7 @@ async function main() {
   }
 
   // Repo-root priority: (1) signals.project.rootDirectory from Vercel API
-  // (authoritative — returns "apps/<name>" so cwd can be back-mapped without
+  // (authoritative - returns "apps/<name>" so cwd can be back-mapped without
   // filesystem probing), (2) supplied --repo-root, (3) walk-up from cwd.
   const rootResult = await resolveRepoRoot(recs, args.repoRoot, process.cwd(), signals);
   const repoRoot = rootResult.root;
@@ -64,10 +64,10 @@ async function main() {
   } else if (rootResult.source === 'corrected') {
     log(`repo-root auto-corrected: '${args.repoRoot}' → '${repoRoot}' (sub-agent paths resolve there)`);
   }
-  log(`verifying ${recs.length} rec(s) — framework=${framework ?? '?'}@${version ?? '?'} repoRoot=${repoRoot}`);
+  log(`verifying ${recs.length} rec(s) - framework=${framework ?? '?'}@${version ?? '?'} repoRoot=${repoRoot}`);
 
   // knownFindings MUST combine scanner findings + sub-agent's verified
-  // findingRefs — scanner-only grounding would miss every metric-gate rec.
+  // findingRefs - scanner-only grounding would miss every metric-gate rec.
   // Abstentions are first-class outputs ({abstain:true, candidateRef, reason})
   // and MUST NOT be graded; the abstention IS the answer.
   const recsGraded = [];

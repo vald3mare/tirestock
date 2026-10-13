@@ -1,5 +1,5 @@
-// Package content — фича «контентные страницы админки». Истина контента витрины
-// (тексты, SEO-мета) живёт здесь. Правила блокировки URL/удаления — в сервисе.
+// Package content - фича «контентные страницы админки». Истина контента витрины
+// (тексты, SEO-мета) живёт здесь. Правила блокировки URL/удаления - в сервисе.
 package content
 
 import (
@@ -24,7 +24,7 @@ var (
 	ErrSlugTaken   = errors.New("content: страница с таким URL уже есть")
 )
 
-// Page — контентная страница. Locked/Deletable вычисляются из indexed/system,
+// Page - контентная страница. Locked/Deletable вычисляются из indexed/system,
 // чтобы фронт сразу знал, можно ли менять URL и удалять.
 type Page struct {
 	ID              int64     `json:"id"`
@@ -51,7 +51,7 @@ func mkPage(id int64, slug, title, body, mt, md string, pub, idx, sys bool, by s
 	}
 }
 
-// UpdateInput — редактируемые поля контента (без URL и статуса).
+// UpdateInput - редактируемые поля контента (без URL и статуса).
 type UpdateInput struct {
 	Title           string
 	Body            string
@@ -59,7 +59,7 @@ type UpdateInput struct {
 	MetaDescription string
 }
 
-// Service — бизнес-логика контентных страниц поверх sqlc.
+// Service - бизнес-логика контентных страниц поверх sqlc.
 type Service struct {
 	q *db.Queries
 }
@@ -81,7 +81,7 @@ func (s *Service) List(ctx context.Context) ([]Page, error) {
 	return pages, nil
 }
 
-// ListPublishedByPrefix — опубликованные страницы под префиксом URL (напр. '/news/'),
+// ListPublishedByPrefix - опубликованные страницы под префиксом URL (напр. '/news/'),
 // для раздела-листинга на витрине. Свежие сверху. Всегда не-nil срез.
 func (s *Service) ListPublishedByPrefix(ctx context.Context, prefix string) ([]Page, error) {
 	prefix = NormalizePath(prefix)
@@ -122,7 +122,7 @@ func (s *Service) BySlug(ctx context.Context, slug string) (Page, error) {
 		r.Published, r.Indexed, r.System, r.UpdatedBy, r.UpdatedAt), nil
 }
 
-// PublicBySlug — рендер страницы на витрине: нормализует путь и отдаёт только
+// PublicBySlug - рендер страницы на витрине: нормализует путь и отдаёт только
 // ОПУБЛИКОВАННУЮ страницу (черновик → ErrNotFound).
 func (s *Service) PublicBySlug(ctx context.Context, path string) (Page, error) {
 	p, err := s.BySlug(ctx, NormalizePath(path))
@@ -162,7 +162,7 @@ func (s *Service) Create(ctx context.Context, slug, title, editor string) (Page,
 		r.Published, r.Indexed, r.System, r.UpdatedBy, r.UpdatedAt), nil
 }
 
-// Update меняет контент/мета (URL и статус — отдельными операциями). Разрешено всегда.
+// Update меняет контент/мета (URL и статус - отдельными операциями). Разрешено всегда.
 func (s *Service) Update(ctx context.Context, id int64, in UpdateInput, editor string) error {
 	if _, err := s.Get(ctx, id); err != nil {
 		return err
@@ -173,7 +173,7 @@ func (s *Service) Update(ctx context.Context, id int64, in UpdateInput, editor s
 	})
 }
 
-// Rename меняет URL — только для незалоченных (черновик, не системная).
+// Rename меняет URL - только для незалоченных (черновик, не системная).
 func (s *Service) Rename(ctx context.Context, id int64, newSlug, editor string) error {
 	p, err := s.Get(ctx, id)
 	if err != nil {
@@ -203,7 +203,7 @@ func (s *Service) SetPublished(ctx context.Context, id int64, published bool, ed
 	return s.q.SetContentPagePublished(ctx, db.SetContentPagePublishedParams{ID: id, Published: published, UpdatedBy: editor})
 }
 
-// Delete удаляет страницу — только незалоченную (черновик, не системная).
+// Delete удаляет страницу - только незалоченную (черновик, не системная).
 func (s *Service) Delete(ctx context.Context, id int64) error {
 	p, err := s.Get(ctx, id)
 	if err != nil {

@@ -11,7 +11,7 @@ import (
 	"tirestock/api/internal/db"
 )
 
-// WheelSyncStore — запись read-модели дисков синком. Полностью изолирована от шин:
+// WheelSyncStore - запись read-модели дисков синком. Полностью изолирована от шин:
 // свои таблицы wheels/wheel_offers, свой prune. Реализует selecttyres.WheelStore.
 type WheelSyncStore struct {
 	q *db.Queries

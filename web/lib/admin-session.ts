@@ -31,7 +31,7 @@ export async function clearSessionCookie(): Promise<void> {
   store.delete(SESSION_COOKIE);
 }
 
-// requireUser — гард серверных страниц админки: валидна ли сессия. При провале
+// requireUser - гард серверных страниц админки: валидна ли сессия. При провале
 // чистит куку и уводит на логин. Возвращает пользователя и токен для доп. запросов.
 export async function requireUser(): Promise<{ user: AdminUser; token: string }> {
   const token = await getSessionToken();

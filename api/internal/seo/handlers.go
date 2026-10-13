@@ -8,7 +8,7 @@ import (
 	"tirestock/api/internal/httpx"
 )
 
-// PublicHandlers — публичный HTTP-слой (без авторизации): эффективная мета
+// PublicHandlers - публичный HTTP-слой (без авторизации): эффективная мета
 // маршрута для generateMetadata на витрине.
 type PublicHandlers struct {
 	svc *Service

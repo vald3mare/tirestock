@@ -1,5 +1,5 @@
-// Package pickups — фича «Пункты выдачи»: пункты выдачи заказов витрины (страница
-// /points и /points/<slug>). Истина контента витрины — наша админка (CLAUDE.md):
+// Package pickups - фича «Пункты выдачи»: пункты выдачи заказов витрины (страница
+// /points и /points/<slug>). Истина контента витрины - наша админка (CLAUDE.md):
 // адрес/метро/часы, бейдж-акция и «основной адрес» редактируются, а не хардкодятся.
 package pickups
 
@@ -17,7 +17,7 @@ import (
 	"tirestock/api/internal/db"
 )
 
-// DefaultCity — город пунктов по умолчанию (СПб). Возврат Москвы — второй город.
+// DefaultCity - город пунктов по умолчанию (СПб). Возврат Москвы - второй город.
 const DefaultCity = "spb"
 
 // Sentinel-ошибки фичи.
@@ -26,8 +26,8 @@ var (
 	ErrAddressMissing = errors.New("pickups: адрес обязателен")
 )
 
-// Point — пункт выдачи. is_main — «основной адрес» (несколько; рендерятся крупной
-// карточкой с телефоном, первыми). slug — для отдельной страницы /points/<slug>.
+// Point - пункт выдачи. is_main - «основной адрес» (несколько; рендерятся крупной
+// карточкой с телефоном, первыми). slug - для отдельной страницы /points/<slug>.
 type Point struct {
 	ID        int64     `json:"id"`
 	Slug      string    `json:"slug"`
@@ -45,7 +45,7 @@ type Point struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-// row — общий интерфейс sqlc-строк пунктов (все SELECT одинаковой формы).
+// row - общий интерфейс sqlc-строк пунктов (все SELECT одинаковой формы).
 type row struct {
 	ID        int64
 	Slug      string
@@ -72,7 +72,7 @@ func mk(r row) Point {
 	}
 }
 
-// Input — редактируемые поля пункта.
+// Input - редактируемые поля пункта.
 type Input struct {
 	Slug      string
 	Address   string
@@ -87,7 +87,7 @@ type Input struct {
 	Published bool
 }
 
-// Service — бизнес-логика пунктов выдачи поверх sqlc.
+// Service - бизнес-логика пунктов выдачи поверх sqlc.
 type Service struct {
 	q *db.Queries
 }
@@ -108,7 +108,7 @@ func (s *Service) List(ctx context.Context) ([]Point, error) {
 	return out, nil
 }
 
-// ListPublished — опубликованные пункты города (пусто → DefaultCity).
+// ListPublished - опубликованные пункты города (пусто → DefaultCity).
 func (s *Service) ListPublished(ctx context.Context, city string) ([]Point, error) {
 	if city == "" {
 		city = DefaultCity
@@ -135,7 +135,7 @@ func (s *Service) Get(ctx context.Context, id int64) (Point, error) {
 	return mk(row(r)), nil
 }
 
-// BySlug — опубликованный пункт по slug (для отдельной страницы).
+// BySlug - опубликованный пункт по slug (для отдельной страницы).
 func (s *Service) BySlug(ctx context.Context, slug string) (Point, error) {
 	r, err := s.q.GetPickupPointBySlug(ctx, strings.TrimSpace(slug))
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -202,7 +202,7 @@ func cityOrDefault(c string) string {
 	return DefaultCity
 }
 
-// slugify — URL-slug из адреса (транслит кириллицы). Для новых пунктов из админки,
+// slugify - URL-slug из адреса (транслит кириллицы). Для новых пунктов из админки,
 // если slug не задан руками. Сид-пункты несут slug'и явно (миграция 0015).
 func slugify(s string) string {
 	var b strings.Builder

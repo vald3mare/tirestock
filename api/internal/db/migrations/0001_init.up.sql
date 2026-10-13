@@ -1,4 +1,4 @@
--- Read-модель каталога (истина — SelectTyres, заполняется синком; сейчас пусто, мок в памяти)
+-- Read-модель каталога (истина - SelectTyres, заполняется синком; сейчас пусто, мок в памяти)
 CREATE TABLE products (
     id         BIGSERIAL PRIMARY KEY,
     slug       TEXT        NOT NULL UNIQUE,
@@ -35,7 +35,7 @@ CREATE TABLE orders (
 
 -- Outbox: заказ/заявка пишется транзакционно со строкой outbox (status=pending).
 -- Воркер забирает через FOR UPDATE SKIP LOCKED, ретраи с экспонентой,
--- после N неудач — status=failed (виден в админке с кнопкой «повторить»).
+-- после N неудач - status=failed (виден в админке с кнопкой «повторить»).
 CREATE TABLE outbox (
     id            BIGSERIAL PRIMARY KEY,
     kind          TEXT        NOT NULL CHECK (kind IN ('order', 'callback')),

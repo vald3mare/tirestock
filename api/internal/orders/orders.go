@@ -1,4 +1,4 @@
-// Package orders — фича «заказы и заявки»: приём заказа/обратного звонка,
+// Package orders - фича «заказы и заявки»: приём заказа/обратного звонка,
 // outbox-очередь и воркер доставки в tradesk.
 package orders
 
@@ -22,25 +22,25 @@ const (
 	KindRequest  = "request" // заявка с формы услуги/хранения → tradesk /api/request
 )
 
-// OrderDelivery — доставка заказа/заявки во внешнюю учётную систему.
+// OrderDelivery - доставка заказа/заявки во внешнюю учётную систему.
 // Реализации: integrations/tradesk (прямой контур), oldsite (мост через Битрикс,
-// на выключение), mock. Интерфейс объявляет потребитель — orders.
+// на выключение), mock. Интерфейс объявляет потребитель - orders.
 //
-// Возвращает result — то, чем ответил приёмник (для заказа это НОМЕР записи в
+// Возвращает result - то, чем ответил приёмник (для заказа это НОМЕР записи в
 // tradesk). Воркер кладёт его в outbox.result, админка показывает менеджеру:
 // так мы не дублируем данные учётной системы, но всегда знаем, где искать заказ.
 type OrderDelivery interface {
 	Deliver(ctx context.Context, kind string, payload []byte) (result string, err error)
 }
 
-// ErrValidation — невалидный ввод (sentinel фичи).
+// ErrValidation - невалидный ввод (sentinel фичи).
 var ErrValidation = errors.New("orders: validation failed")
 
-// OrderItem — позиция заказа. Цена пока приходит с клиента (мок-этап);
+// OrderItem - позиция заказа. Цена пока приходит с клиента (мок-этап);
 // TODO: сверять цену с каталогом при подключении синк-БД.
-// Code — код товара в SelectTyres (напр. `t668559`); нужен приёмнику tradesk
+// Code - код товара в SelectTyres (напр. `t668559`); нужен приёмнику tradesk
 // (`/api/addorder?code=`). ВНИМАНИЕ: старый сайт слал туда СВОЙ код («Код товара»
-// на карточке, напр. 99302) — пространства кодов разные, см. ARCHITECTURE.md №2.
+// на карточке, напр. 99302) - пространства кодов разные, см. ARCHITECTURE.md №2.
 type OrderItem struct {
 	Slug  string `json:"slug"`
 	Code  string `json:"code"`
@@ -49,7 +49,7 @@ type OrderItem struct {
 	Qty   int    `json:"qty"`
 }
 
-// CreateOrderInput — вход POST /api/v1/orders.
+// CreateOrderInput - вход POST /api/v1/orders.
 // Города в контракте нет: магазин работает только по Санкт-Петербургу
 // (решение 11.08.2026), приёмник tradesk получает city=spb константой.
 type CreateOrderInput struct {
@@ -60,15 +60,15 @@ type CreateOrderInput struct {
 	Items          []OrderItem `json:"items"`
 }
 
-// CallbackInput — вход POST /api/v1/callbacks (обратный звонок).
+// CallbackInput - вход POST /api/v1/callbacks (обратный звонок).
 type CallbackInput struct {
 	Name    string `json:"name"`
 	Phone   string `json:"phone"`
 	Comment string `json:"comment"`
 }
 
-// RequestInput — вход POST /api/v1/requests (заявка с формы услуги).
-// Отличие от обратного звонка — тип услуги: он уходит в tradesk отдельным полем,
+// RequestInput - вход POST /api/v1/requests (заявка с формы услуги).
+// Отличие от обратного звонка - тип услуги: он уходит в tradesk отдельным полем,
 // менеджер сразу видит, на что заявка (шиномонтаж, хранение, покраска дисков…).
 type RequestInput struct {
 	Name    string `json:"name"`
@@ -77,7 +77,7 @@ type RequestInput struct {
 	Comment string `json:"comment"`
 }
 
-// Service — бизнес-логика заказов: транзакционная запись заказа вместе
+// Service - бизнес-логика заказов: транзакционная запись заказа вместе
 // со строкой outbox (заказ никогда не теряется).
 type Service struct {
 	pool *pgxpool.Pool

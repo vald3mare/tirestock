@@ -12,7 +12,7 @@ import (
 	"tirestock/api/internal/httpx"
 )
 
-// HTTP-слой раздела «Преимущества». Домен — internal/benefits; здесь парсинг,
+// HTTP-слой раздела «Преимущества». Домен - internal/benefits; здесь парсинг,
 // маппинг ошибок и подстановка автора правки.
 
 func benefitID(w http.ResponseWriter, r *http.Request) (int64, bool) {

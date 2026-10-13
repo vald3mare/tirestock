@@ -1,7 +1,7 @@
 -- Раздел «Преимущества» админки: строка офферов над каталогом на главной
--- (компонент BenefitsBar). Истина контента витрины — наша админка (CLAUDE.md),
+-- (компонент BenefitsBar). Истина контента витрины - наша админка (CLAUDE.md),
 -- поэтому вытаскиваем захардкоженные офферы в редактируемую таблицу.
--- Порядок вывода — sort_order (ASC), затем id.
+-- Порядок вывода - sort_order (ASC), затем id.
 CREATE TABLE benefits (
     id         BIGSERIAL PRIMARY KEY,
     icon       TEXT        NOT NULL DEFAULT '', -- путь к svg-иконке, напр. '/icons/benefit-mount.svg'

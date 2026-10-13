@@ -13,7 +13,7 @@ const (
 	WheelMinWidth, WheelMaxWidth       = 4.0, 14.0
 )
 
-// wheelSortOrders — белый список сортировок дисков → ORDER BY. Наличие всегда сверху.
+// wheelSortOrders - белый список сортировок дисков → ORDER BY. Наличие всегда сверху.
 var wheelSortOrders = map[string]string{
 	"":           "(wo.stock > 0) DESC, w.id",
 	"price_asc":  "(wo.stock > 0) DESC, wo.price ASC, w.id",
@@ -74,7 +74,7 @@ func ParseWheelFilters(q url.Values) (WheelFilters, int, int, error) {
 	return f, page, perPage, nil
 }
 
-// WhereSQL собирает условия фильтра (плейсхолдеры с startArg). Цена — из оффера города.
+// WhereSQL собирает условия фильтра (плейсхолдеры с startArg). Цена - из оффера города.
 func (f WheelFilters) WhereSQL(startArg int) (string, []any) {
 	var conds []string
 	var args []any

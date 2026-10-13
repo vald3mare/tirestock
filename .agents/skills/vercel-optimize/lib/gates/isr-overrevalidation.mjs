@@ -1,5 +1,5 @@
 // ISR writes re-execute the page render. A w/r ratio above 0.5 means writes are
-// happening at least once for every two reads — high enough for the default
+// happening at least once for every two reads - high enough for the default
 // audit to spend investigation budget. writes>100 avoids flapping on quiet routes.
 export const metadata = {
   id: 'isr_overrevalidation',
@@ -8,7 +8,7 @@ export const metadata = {
   scope: 'route',
   sourceCitation: 'https://vercel.com/docs/incremental-static-regeneration',
   description:
-    'ISR routes with > 1 write per 2 reads. The revalidate interval is too aggressive relative to read traffic — many reads pay to regenerate. Investigate whether the page can tolerate a longer revalidate window or on-demand revalidation via revalidateTag.',
+    'ISR routes with > 1 write per 2 reads. The revalidate interval is too aggressive relative to read traffic - many reads pay to regenerate. Investigate whether the page can tolerate a longer revalidate window or on-demand revalidation via revalidateTag.',
 };
 
 export function gate(signals) {
@@ -26,7 +26,7 @@ export function gate(signals) {
         confidence: 0.88,
         o11ySignal: `writes=${r.writes},reads=${r.reads},w/r=${ratio.toFixed(2)}`,
         reason: 'ISR revalidating faster than read traffic justifies',
-        question: `On ${r.route}, ${r.writes} ISR writes against ${r.reads} reads (${(ratio * 100).toFixed(0)} writes per 100 reads) — what is the current revalidate interval and can it be lengthened or switched to on-demand?`,
+        question: `On ${r.route}, ${r.writes} ISR writes against ${r.reads} reads (${(ratio * 100).toFixed(0)} writes per 100 reads) - what is the current revalidate interval and can it be lengthened or switched to on-demand?`,
         evidence: {
           metric: 'isrWritesByRoute',
           route: r.route,

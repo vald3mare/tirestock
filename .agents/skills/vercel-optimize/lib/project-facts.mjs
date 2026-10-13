@@ -1,7 +1,7 @@
 // Single source for "already on" project facts. Feeds report Strengths, sub-agent brief, and verifier contradiction check.
-// contradictPhrases must lowercase exactly — verifier does case-insensitive substring match.
+// contradictPhrases must lowercase exactly - verifier does case-insensitive substring match.
 
-// Stable order = byte-identical brief output. Empty result when project config didn't load — don't pretend.
+// Stable order = byte-identical brief output. Empty result when project config didn't load - don't pretend.
 export function deriveProjectFacts(signals) {
   const out = [];
   const cfg = signals?.project?.defaultResourceConfig;
@@ -11,7 +11,7 @@ export function deriveProjectFacts(signals) {
   if (cfg.fluid === true) {
     out.push({
       id: 'fluid_compute',
-      strength: 'Fluid Compute is enabled (`defaultResourceConfig.fluid=true`) — instance reuse + reduced cold starts active.',
+      strength: 'Fluid Compute is enabled (`defaultResourceConfig.fluid=true`) - instance reuse + reduced cold starts active.',
       briefLine: 'Fluid Compute is ENABLED on this project (`defaultResourceConfig.fluid=true`). Do not recommend toggling it on.',
       contradictPhrases: [
         'enable fluid compute',
@@ -26,7 +26,7 @@ export function deriveProjectFacts(signals) {
   if (cfg.elasticConcurrencyEnabled === true) {
     out.push({
       id: 'in_function_concurrency',
-      strength: 'In-function concurrency is enabled — multiple invocations share a single function instance, lowering active CPU costs on I/O-bound work.',
+      strength: 'In-function concurrency is enabled - multiple invocations share a single function instance, lowering active CPU costs on I/O-bound work.',
       briefLine: 'In-function concurrency is ENABLED. Do not recommend toggling it on.',
       contradictPhrases: [
         'enable in-function concurrency',
@@ -39,15 +39,15 @@ export function deriveProjectFacts(signals) {
   if (cfg.functionDefaultMemoryType === 'standard') {
     out.push({
       id: 'memory_standard',
-      strength: 'Function memory tier: Standard (2GB) — the cost-efficient default; upgrade to Performance (4GB) only with memory, CPU-bound, or latency-sensitive route evidence.',
+      strength: 'Function memory tier: Standard (2GB) - the cost-efficient default; upgrade to Performance (4GB) only with memory, CPU-bound, or latency-sensitive route evidence.',
       briefLine: 'Function memory tier is Standard (2GB), the cost-efficient default. Recommending an upgrade to Performance (4GB) requires memory, CPU-bound, or latency-sensitive route evidence.',
       contradictPhrases: [],
     });
   } else if (cfg.functionDefaultMemoryType === 'performance') {
     out.push({
       id: 'memory_performance',
-      strength: 'Function memory tier: **Performance (4GB)** — verify this is intentional; Performance costs ~2x Standard. If your routes don\'t saturate Standard\'s memory headroom, downgrade.',
-      briefLine: 'Function memory tier is Performance (4GB). Do not recommend upgrading further — the next valid tier change is downgrading to Standard.',
+      strength: 'Function memory tier: **Performance (4GB)** - verify this is intentional; Performance costs ~2x Standard. If your routes don\'t saturate Standard\'s memory headroom, downgrade.',
+      briefLine: 'Function memory tier is Performance (4GB). Do not recommend upgrading further - the next valid tier change is downgrading to Standard.',
       contradictPhrases: [
         'upgrade memory to performance',
         'upgrade to performance memory',
@@ -80,7 +80,7 @@ export function deriveProjectFacts(signals) {
   return out;
 }
 
-// `why` excluded — citing a fact as evidence ("fluid is on, so …") is legitimate, not contradiction.
+// `why` excluded - citing a fact as evidence ("fluid is on, so …") is legitimate, not contradiction.
 export function findRecContradictions(rec, facts) {
   if (!rec || typeof rec !== 'object') return [];
   if (!Array.isArray(facts) || facts.length === 0) return [];

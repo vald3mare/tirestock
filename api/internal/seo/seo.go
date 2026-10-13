@@ -1,6 +1,6 @@
-// Package seo — фича «SEO-мета»: title/description статических маршрутов витрины,
+// Package seo - фича «SEO-мета»: title/description статических маршрутов витрины,
 // редактируемые в админке. Истина SEO-меты витрины (кроме контентных страниц,
-// у которых своя) живёт здесь. SEO — священная корова (CLAUDE.md).
+// у которых своя) живёт здесь. SEO - священная корова (CLAUDE.md).
 package seo
 
 import (
@@ -17,7 +17,7 @@ import (
 	"tirestock/api/internal/db"
 )
 
-// DefaultRoute — зарезервированный ключ дефолт-шаблона (fallback по полям).
+// DefaultRoute - зарезервированный ключ дефолт-шаблона (fallback по полям).
 const DefaultRoute = "*"
 
 // Sentinel-ошибки фичи.
@@ -25,7 +25,7 @@ var (
 	ErrNotFound = errors.New("seo: маршрут не найден")
 )
 
-// Meta — SEO-мета одного маршрута.
+// Meta - SEO-мета одного маршрута.
 type Meta struct {
 	Route       string    `json:"route"`
 	Label       string    `json:"label"`
@@ -36,7 +36,7 @@ type Meta struct {
 	UpdatedAt   time.Time `json:"updated_at"`
 }
 
-// Resolved — эффективная мета маршрута (после подстановки дефолта по полям).
+// Resolved - эффективная мета маршрута (после подстановки дефолта по полям).
 type Resolved struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
@@ -49,13 +49,13 @@ func mk(route, label, title, desc string, isDefault bool, by string, at pgtype.T
 	}
 }
 
-// Input — редактируемые поля меты.
+// Input - редактируемые поля меты.
 type Input struct {
 	Title       string
 	Description string
 }
 
-// Service — бизнес-логика SEO-меты поверх sqlc.
+// Service - бизнес-логика SEO-меты поверх sqlc.
 type Service struct {
 	q *db.Queries
 }
@@ -64,7 +64,7 @@ func NewService(pool *pgxpool.Pool) *Service {
 	return &Service{q: db.New(pool)}
 }
 
-// List — все записи для админки (дефолт первым).
+// List - все записи для админки (дефолт первым).
 func (s *Service) List(ctx context.Context) ([]Meta, error) {
 	rows, err := s.q.ListSeoMeta(ctx)
 	if err != nil {
@@ -98,7 +98,7 @@ func (s *Service) Update(ctx context.Context, route string, in Input, editor str
 	})
 }
 
-// Resolve возвращает эффективную мету маршрута: значения роута, а по пустым полям —
+// Resolve возвращает эффективную мету маршрута: значения роута, а по пустым полям -
 // подстановка из дефолт-шаблона ('*'). Неизвестный маршрут → чистый дефолт.
 func (s *Service) Resolve(ctx context.Context, route string) (Resolved, error) {
 	def, err := s.Get(ctx, DefaultRoute)

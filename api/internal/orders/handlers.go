@@ -10,7 +10,7 @@ import (
 	"tirestock/api/internal/httpx"
 )
 
-// Handlers — тонкие HTTP-хендлеры: распарсить → провалидировать → сервис → DTO.
+// Handlers - тонкие HTTP-хендлеры: распарсить → провалидировать → сервис → DTO.
 type Handlers struct {
 	svc *Service
 }
@@ -25,7 +25,7 @@ func (h *Handlers) Mount(r chi.Router) {
 	r.Post("/requests", h.createRequest)
 }
 
-// CreateOrderResponse — ответ POST /api/v1/orders.
+// CreateOrderResponse - ответ POST /api/v1/orders.
 type CreateOrderResponse struct {
 	OrderID int64 `json:"order_id"`
 }
@@ -52,7 +52,7 @@ func (h *Handlers) createOrder(w http.ResponseWriter, r *http.Request) {
 	httpx.JSON(w, http.StatusCreated, CreateOrderResponse{OrderID: id})
 }
 
-// createRequest — заявка с формы услуги (шиномонтаж, хранение, ремонт дисков…).
+// createRequest - заявка с формы услуги (шиномонтаж, хранение, ремонт дисков…).
 // Отличается от обратного звонка типом услуги: в tradesk уходит отдельным полем.
 func (h *Handlers) createRequest(w http.ResponseWriter, r *http.Request) {
 	var in RequestInput

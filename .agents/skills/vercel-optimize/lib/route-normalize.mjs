@@ -2,7 +2,7 @@
 //
 // Next.js folds flag state into base64 prefix, dynamic placeholders into `$d$X`, route groups into `!K..p`, cache-lifecycle leaves into `__PAGE__.segment` / `_tree.segment` / `_index.segment`. ~4-10x dupes per page without canonicalization.
 //
-// This module is the ONLY place we touch Next.js metric path encoding — every gate calls canonicalizeRoute before aggregating.
+// This module is the ONLY place we touch Next.js metric path encoding - every gate calls canonicalizeRoute before aggregating.
 
 export const ROUTE_SHAPE_RE = /(?:^.{200,}$)|[\s'"`,;&=<>(){}!\\^|\u0000-\u001F]|%(?:22|5B|5C|7B|7D|20|3C|3E|26)|localhost:|https?:\/|\/\/(?!$)|[:,\$\s]$|\.segments?\/|__PAGE__|@[a-z]/i;
 
@@ -20,7 +20,7 @@ export function canonicalizeRoute(route) {
   if (idx < 0) return route;
   const segmentTail = route.slice(idx + '.segments'.length).replace(/^\//, '');
 
-  // _tree.segment / _index.segment have no per-segment tail — fall back to static head of prefix.
+  // _tree.segment / _index.segment have no per-segment tail - fall back to static head of prefix.
   if (segmentTail === '_tree.segment' || segmentTail === '_index.segment') {
     return canonicalizeBranchPrefix(route, idx);
   }
@@ -29,14 +29,14 @@ export function canonicalizeRoute(route) {
   if (parts.length === 0) return canonicalizeBranchPrefix(route, idx);
   const decoded = parts.map(decodeSegmentToken).filter(Boolean);
   if (decoded.length === 0) return canonicalizeBranchPrefix(route, idx);
-  // scan-codebase's routePath enumeration drops route groups — match it or the route→file lookup breaks.
+  // scan-codebase's routePath enumeration drops route groups - match it or the route→file lookup breaks.
   return stripRouteGroups('/' + decoded.join('/'));
 }
 
 function canonicalizeBranchPrefix(route, segmentsIdx) {
   const prefix = route.slice(0, segmentsIdx);
   const parts = prefix.split('/').filter(Boolean);
-  // Drop trailing dynamic value (e.g. "london") and base64 flag-state — neither is a route segment.
+  // Drop trailing dynamic value (e.g. "london") and base64 flag-state - neither is a route segment.
   const cleaned = parts
     .filter((p) => !isBase64FlagState(p))
     .slice(0, -1);
@@ -75,7 +75,7 @@ function replaceBase64WithDynamic(route) {
   return replaced.join('/') || '/';
 }
 
-// Route groups `(default)` never appear in rendered URLs — scan-codebase drops them, so canonical form must match.
+// Route groups `(default)` never appear in rendered URLs - scan-codebase drops them, so canonical form must match.
 function stripRouteGroups(route) {
   if (typeof route !== 'string' || !route.includes('(')) return route;
   const parts = route.split('/');

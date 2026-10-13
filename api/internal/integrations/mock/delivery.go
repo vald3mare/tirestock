@@ -6,12 +6,12 @@ import (
 	"sync"
 )
 
-// OrderDelivery — мок доставки заказов/заявок в tradesk: пишет в лог и запоминает
+// OrderDelivery - мок доставки заказов/заявок в tradesk: пишет в лог и запоминает
 // доставленное (для тестов). Реальный адаптер tradesk появится после разведки механизма.
 type OrderDelivery struct {
 	mu        sync.Mutex
 	delivered []DeliveredItem
-	failWith  error // если задано — Deliver всегда возвращает эту ошибку
+	failWith  error // если задано - Deliver всегда возвращает эту ошибку
 }
 
 type DeliveredItem struct {

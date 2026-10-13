@@ -12,7 +12,7 @@ How claims in recommendations are mechanically verified, and when the recommende
 
 ## Why mechanical verification
 
-The recommender is an LLM. LLMs hallucinate counts, miscount file occurrences, and confuse code snippets between similar-looking files. Mechanical verification — grep + filesystem reads + JSON checks against `signals.json` and `references/docs-library.json` — catches these failures before the customer sees them.
+The recommender is an LLM. LLMs hallucinate counts, miscount file occurrences, and confuse code snippets between similar-looking files. Mechanical verification - grep + filesystem reads + JSON checks against `signals.json` and `references/docs-library.json` - catches these failures before the customer sees them.
 
 The contract: every numeric claim, file reference, code snippet, citation URL, and contradiction-with-other-claims is verified. The LLM is not asked to judge whether its own output is correct.
 
@@ -24,7 +24,7 @@ The verifier extracts claims from `why`, `fix`, `currentBehavior`, `desiredBehav
 |---|---|---|---|
 | 1 | `pattern_count` | "N fetch() calls in file X" | grep/ast-grep in X, exact count match |
 | 2 | `pattern_exists` | "uses JSON.parse(JSON.stringify())" | grep, boolean |
-| 3 | `pattern_absent` | "no Cache-Control header" | grep, verify absence (with guards — see below) |
+| 3 | `pattern_absent` | "no Cache-Control header" | grep, verify absence (with guards - see below) |
 | 4 | `file_exists` | "app/not-found.tsx exists" | fs.access |
 | 5 | `finding_count` | "2 unoptimized images" | finding count vs `verifiedFindings.json` |
 | 6 | `contradiction` | Claim A vs Claim B | Substring conflict check |
@@ -97,6 +97,6 @@ If re-gen makes things worse, keep the original output unless the trigger was ha
 
 ## Verifier implementation
 
-`scripts/verify-and-regen.mjs` invokes `lib/extract-claims.mjs` and `lib/verify-claim.mjs` in-process for each verifiable claim. Pure functions, no network, no LLM — deterministic.
+`scripts/verify-and-regen.mjs` invokes `lib/extract-claims.mjs` and `lib/verify-claim.mjs` in-process for each verifiable claim. Pure functions, no network, no LLM - deterministic.
 
 For `citation_in_library` and `citation_applies_to_version`, the script uses `lib/citations.mjs`'s `isKnownUrl()` and `sanitizeCitations()` helpers (already tested). For everything else, it shells out to grep + ast-grep via execFile.

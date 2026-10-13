@@ -1,6 +1,6 @@
-// Типизированный клиент админского API. Серверный (токен сессии — из httpOnly-куки,
+// Типизированный клиент админского API. Серверный (токен сессии - из httpOnly-куки,
 // уходит в Go заголовком Authorization: Bearer). Данные ходят только через этот модуль
-// (CONVENTIONS.md → Next.js-2). Контракт — api/openapi.yaml (раздел admin).
+// (CONVENTIONS.md → Next.js-2). Контракт - api/openapi.yaml (раздел admin).
 
 import { ApiError } from "./client";
 
@@ -19,7 +19,7 @@ export type AdminOrderRow = {
   delivery_status: DeliveryStatus;
   attempts: number;
   last_error: string;
-  /** Номер записи в tradesk (ответ приёмника) — где искать заказ в учётке. */
+  /** Номер записи в tradesk (ответ приёмника) - где искать заказ в учётке. */
   tradesk_number: string;
 };
 
@@ -114,7 +114,7 @@ export type AdminOrderDetail = {
   last_error: string;
   tradesk_number: string;
   items: { slug: string; code: string; name: string; price: number; qty: number }[];
-  status: TradeskStatus | null; // живой статус из tradesk; null — номера нет / tradesk недоступен
+  status: TradeskStatus | null; // живой статус из tradesk; null - номера нет / tradesk недоступен
 };
 
 export function adminOrder(token: string, id: number): Promise<AdminOrderDetail> {
@@ -122,7 +122,7 @@ export function adminOrder(token: string, id: number): Promise<AdminOrderDetail>
 }
 
 // stock: "" (все) | "in" (в наличии) | "out" (нет в наличии). Распроданные не
-// удаляются синком (обнуляется остаток) — фильтр «out» позволяет их найти.
+// удаляются синком (обнуляется остаток) - фильтр «out» позволяет их найти.
 export function adminProducts(
   token: string,
   q?: string,

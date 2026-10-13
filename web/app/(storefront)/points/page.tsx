@@ -9,14 +9,14 @@ import { metadataFor } from "@/lib/seo";
 import { fallbackPickupPoints } from "@/lib/pickup-points";
 import { PickupMap } from "@/components/blocks/PickupMap";
 
-// Страница «Пункты выдачи». Server Component. Данные — из админки (раздел «Пункты
-// выдачи») по API; фолбэк на статику. Основные адреса (is_main) — крупными
-// карточками с телефоном и первыми; остальные — сеткой. Карточка кликабельна →
+// Страница «Пункты выдачи». Server Component. Данные - из админки (раздел «Пункты
+// выдачи») по API; фолбэк на статику. Основные адреса (is_main) - крупными
+// карточками с телефоном и первыми; остальные - сеткой. Карточка кликабельна →
 // отдельная страница пункта /points/<slug>.
 
 export function generateMetadata(): Promise<Metadata> {
   return metadataFor("/points", {
-    title: "Пункты выдачи — TireStock, шины в Санкт-Петербурге",
+    title: "Пункты выдачи - TireStock, шины в Санкт-Петербурге",
     description:
       "Пункты выдачи заказов TireStock в Санкт-Петербурге: адреса, метро, часы работы, на карте.",
   });
@@ -36,7 +36,7 @@ function MetaLine({ icon, alt, text }: { icon: string; alt: string; text: string
   );
 }
 
-// Обычная карточка пункта — вся кликабельна на страницу пункта.
+// Обычная карточка пункта - вся кликабельна на страницу пункта.
 function PointCard({ point }: { point: Point }) {
   return (
     <article className="flex flex-col rounded-card-lg border border-line bg-white transition-colors hover:border-grey">
@@ -55,7 +55,7 @@ function PointCard({ point }: { point: Point }) {
   );
 }
 
-// Основной адрес — крупная карточка с телефоном; вся кликабельна на страницу пункта.
+// Основной адрес - крупная карточка с телефоном; вся кликабельна на страницу пункта.
 function MainCard({ point }: { point: Point }) {
   return (
     <article className="flex flex-col gap-4 rounded-card-lg bg-light p-6 transition-colors hover:bg-line/50 sm:flex-row sm:items-center sm:justify-between">
@@ -112,7 +112,7 @@ export default async function PickupPointsPage() {
 
       {total === 0 ? (
         <p className="mt-8 rounded-card-lg border border-line bg-light p-10 text-center text-body text-grey">
-          Пункты выдачи в городе «{CITIES[city].label}» уточняются. Позвоните нам —
+          Пункты выдачи в городе «{CITIES[city].label}» уточняются. Позвоните нам -
           подскажем ближайший: {" "}
           <a href={CITIES[city].phoneHref} className="font-semibold text-blue hover:underline">
             {CITIES[city].phone}
@@ -122,12 +122,12 @@ export default async function PickupPointsPage() {
       ) : (
         <>
           <p className="mt-6 max-w-180 text-body text-dark">
-            Заберите заказ в удобном пункте выдачи. Обязательно бронируйте шины заранее —
+            Заберите заказ в удобном пункте выдачи. Обязательно бронируйте шины заранее -
             мы привезём их к вашему приезду.
           </p>
 
           {/* Интерактивная Яндекс-карта со ВСЕМИ пунктами города (ymaps, без ключа):
-              клик по пину → балун с адресом/часами. Данные — points (координаты
+              клик по пину → балун с адресом/часами. Данные - points (координаты
               по slug из POINT_COORDS). */}
           <div className="mt-8 overflow-hidden rounded-card-lg border border-line">
             <PickupMap points={points} heightClass="h-[360px] sm:h-[460px]" />

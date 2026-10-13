@@ -103,7 +103,7 @@ export function UiDemo() {
         <Stepper />
         <Stepper defaultValue={1} />
         <Stepper defaultValue={4} disabled />
-        <p className="w-full text-caption text-grey">Дефолт — 4: шины покупают комплектами.</p>
+        <p className="w-full text-caption text-grey">Дефолт - 4: шины покупают комплектами.</p>
       </Section>
 
       <Section title="Цены (tabular-nums)">
@@ -116,15 +116,15 @@ export function UiDemo() {
 
       <Section title="Типографика">
         <div className="flex w-full flex-col gap-3">
-          <span className="text-h1 text-black">H1 42 ExtraBold — Шины в наличии</span>
-          <span className="text-h2 text-black">H2 28 ExtraBold — Подбор по размеру</span>
-          <span className="text-subtitle text-grey">Subtitle 20 Medium — подзаголовок hero</span>
-          <span className="text-card-title text-dark">Card title 16 SemiBold — название товара в карточке</span>
+          <span className="text-h1 text-black">H1 42 ExtraBold - Шины в наличии</span>
+          <span className="text-h2 text-black">H2 28 ExtraBold - Подбор по размеру</span>
+          <span className="text-subtitle text-grey">Subtitle 20 Medium - подзаголовок hero</span>
+          <span className="text-card-title text-dark">Card title 16 SemiBold - название товара в карточке</span>
           <span className="text-nav text-dark">Nav/Button 16 SemiBold</span>
           <span className="text-field text-dark">Field 16 Medium</span>
-          <span className="text-body text-dark">Body 15 Medium — описания</span>
-          <span className="text-caption text-grey">Caption 13 Medium — подписи, наличие</span>
-          <span className="text-legal text-grey">Legal 12 Medium — дисклеймер</span>
+          <span className="text-body text-dark">Body 15 Medium - описания</span>
+          <span className="text-caption text-grey">Caption 13 Medium - подписи, наличие</span>
+          <span className="text-legal text-grey">Legal 12 Medium - дисклеймер</span>
         </div>
       </Section>
 

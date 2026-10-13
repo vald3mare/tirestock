@@ -17,12 +17,9 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 
 	"tirestock/api/internal/admin"
-	"tirestock/api/internal/catalog"
 	"tirestock/api/internal/benefits"
+	"tirestock/api/internal/catalog"
 	"tirestock/api/internal/content"
-	"tirestock/api/internal/orderstatus"
-	"tirestock/api/internal/pickups"
-	"tirestock/api/internal/seo"
 	"tirestock/api/internal/db"
 	"tirestock/api/internal/httpx"
 	"tirestock/api/internal/integrations/mock"
@@ -30,6 +27,9 @@ import (
 	"tirestock/api/internal/integrations/selecttyres"
 	"tirestock/api/internal/integrations/tradesk"
 	"tirestock/api/internal/orders"
+	"tirestock/api/internal/orderstatus"
+	"tirestock/api/internal/pickups"
+	"tirestock/api/internal/seo"
 )
 
 type config struct {
@@ -165,8 +165,8 @@ func main() {
 	}
 	catalogSvc := catalog.NewService(catSource)
 
-	// Каталог ДИСКОВ — отдельный изолированный контур (свои таблицы/синк/prune).
-	// Читаем из БД всегда; синк — если задан SELECTYRES_WHEELS_FEED_URL. Падение
+	// Каталог ДИСКОВ - отдельный изолированный контур (свои таблицы/синк/prune).
+	// Читаем из БД всегда; синк - если задан SELECTYRES_WHEELS_FEED_URL. Падение
 	// этого контура не влияет на шины (и наоборот).
 	wheelSvc := catalog.NewWheelService(catalog.NewDBWheelSource(pool))
 	var wheelSyncer *selecttyres.WheelSyncer
@@ -184,9 +184,9 @@ func main() {
 	} else {
 		log.Info("каталог дисков: синк выключен (SELECTYRES_WHEELS_FEED_URL не задан)")
 	}
-	// DELIVERY_TEST_MARK — пометка стенда в комментарии заявок и заказов.
+	// DELIVERY_TEST_MARK - пометка стенда в комментарии заявок и заказов.
 	// Задаётся на локальном/тестовом стенде, который шлёт в БОЕВОЙ tradesk, чтобы
-	// менеджер видел тестовые записи и не тратил звонок. На проде — пусто.
+	// менеджер видел тестовые записи и не тратил звонок. На проде - пусто.
 	ordersSvc := orders.NewService(pool).WithCommentPrefix(os.Getenv("DELIVERY_TEST_MARK"))
 	if m := os.Getenv("DELIVERY_TEST_MARK"); m != "" {
 		log.Warn("заявки помечаются как тестовые", "пометка", m)
@@ -197,7 +197,7 @@ func main() {
 	//
 	// Контракт приёмников вскрыт 11.08.2026 (docs/OLDSITE_AJAX.md), поэтому
 	// Битрикс из цепочки выведен: он был тонким прокси и больше не нужен.
-	// Мост оставлен как запасной путь на время параллельного запуска — если
+	// Мост оставлен как запасной путь на время параллельного запуска - если
 	// прямой контур вдруг откажет, достаточно задать OLDSITE_BASE_URL и снять
 	// TRADESK_BASE_URL.
 	var delivery orders.OrderDelivery
@@ -222,7 +222,7 @@ func main() {
 			os.Exit(1)
 		}
 		delivery = oc
-		log.Warn("доставка: АВАРИЙНЫЙ мост через Битрикс — задайте TRADESK_BASE_URL", "base_url", cfg.OldSite.BaseURL)
+		log.Warn("доставка: АВАРИЙНЫЙ мост через Битрикс - задайте TRADESK_BASE_URL", "base_url", cfg.OldSite.BaseURL)
 	default:
 		delivery = mock.NewOrderDelivery()
 		log.Info("доставка: мок (OLDSITE_BASE_URL/TRADESK_BASE_URL не заданы)")
@@ -263,14 +263,14 @@ func main() {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(30 * time.Second))
 	// Хардтенинг: лимит размера тела (DoS большим JSON) + rate-limit по IP.
-	// loginLimiter жёсткий (брутфорс пароля), formLimiter — публичные формы/заказы
+	// loginLimiter жёсткий (брутфорс пароля), formLimiter - публичные формы/заказы
 	// (спам в tradesk). Оба in-memory, IP берётся из X-Forwarded-For (за Traefik).
-	r.Use(httpx.MaxBodyBytes(1 << 20)) // 1 МБ на запрос
-	loginLimiter := httpx.NewRateLimiter("login", 0.1, 5)   // ~6/мин, пачка 5
-	formLimiter := httpx.NewRateLimiter("form", 0.5, 10)    // ~30/мин, пачка 10
+	r.Use(httpx.MaxBodyBytes(1 << 20))                    // 1 МБ на запрос
+	loginLimiter := httpx.NewRateLimiter("login", 0.1, 5) // ~6/мин, пачка 5
+	formLimiter := httpx.NewRateLimiter("form", 0.5, 10)  // ~30/мин, пачка 10
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-			// Прицельно: жёстко на вход в админку, средне — на публичные POST-формы.
+			// Прицельно: жёстко на вход в админку, средне - на публичные POST-формы.
 			switch {
 			case req.Method == http.MethodPost && req.URL.Path == "/api/v1/admin/login":
 				loginLimiter.Middleware(next).ServeHTTP(w, req)

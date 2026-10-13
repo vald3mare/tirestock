@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# ПОЛНЫЙ релиз-smoke: проверяет КАЖДЫЙ эндпоинт перед сдачей заказчику —
+# ПОЛНЫЙ релиз-smoke: проверяет КАЖДЫЙ эндпоинт перед сдачей заказчику -
 # публичные (read), пишущие формы (orders/callbacks/requests), обратную интеграцию
 # и весь админ-контур (login → read → CRUD с самоочисткой).
 #
 # ⚠️ Пишущие запросы В tradesk (orders/callbacks/requests) помечены в payload
-# «ТЕСТ ПЕРЕД РЕЛИЗОМ — НЕ ОБРАБАТЫВАТЬ», чтобы менеджер tradesk сразу видел тест.
+# «ТЕСТ ПЕРЕД РЕЛИЗОМ - НЕ ОБРАБАТЫВАТЬ», чтобы менеджер tradesk сразу видел тест.
 # Админ-CRUD создаёт и тут же удаляет тестовую запись (после себя не мусорит).
 #
 # Использование:
@@ -14,7 +14,7 @@ set -uo pipefail
 BASE="${API_BASE:-http://localhost:8080}/api/v1"
 ADMIN_USER="${ADMIN_USER:-admin}"
 ADMIN_PASSWORD="${ADMIN_PASSWORD:-}"
-MARK="‼ ТЕСТ ПЕРЕД РЕЛИЗОМ — НЕ ОБРАБАТЫВАТЬ"
+MARK="‼ ТЕСТ ПЕРЕД РЕЛИЗОМ - НЕ ОБРАБАТЫВАТЬ"
 PASS=0; FAIL=0
 
 jqget() { python3 -c "import sys,json;d=json.load(sys.stdin);print(d$1)" 2>/dev/null; }
@@ -36,19 +36,19 @@ check() {
   body=$(curl "${args[@]}" -w $'\n%{http_code}' "$url" 2>/dev/null)
   code="${body##*$'\n'}"; body="${body%$'\n'*}"
   if [ "$code" != "$want" ]; then
-    echo "  ✗ $name — код $code, ждали $want ${data:+[payload помечен ТЕСТ]}"; FAIL=$((FAIL+1)); return 1
+    echo "  ✗ $name - код $code, ждали $want ${data:+[payload помечен ТЕСТ]}"; FAIL=$((FAIL+1)); return 1
   fi
   for f in "${fields[@]}"; do
     if ! echo "$body" | python3 -c "import sys,json;d=json.load(sys.stdin);k='$f'.split('.');v=d
 for p in k: v=v[int(p)] if p.lstrip('-').isdigit() else v[p]" 2>/dev/null; then
-      echo "  ✗ $name — нет поля '$f'"; FAIL=$((FAIL+1)); return 1
+      echo "  ✗ $name - нет поля '$f'"; FAIL=$((FAIL+1)); return 1
     fi
   done
   echo "  ✓ $name"; PASS=$((PASS+1)); LAST_BODY="$body"; return 0
 }
 
 echo "════════════════════════════════════════════════════════"
-echo " РЕЛИЗ-SMOKE TireStock — $BASE"
+echo " РЕЛИЗ-SMOKE TireStock - $BASE"
 echo " Пишущие запросы помечены: «$MARK»"
 echo "════════════════════════════════════════════════════════"
 
@@ -93,13 +93,13 @@ check "POST /requests"  POST "$BASE/requests"  201 --data "$(python3 -c "import 
 
 echo; echo "── 4. Админка: авторизация ──"
 if [ -z "$ADMIN_PASSWORD" ]; then
-  echo "  ⚠ ADMIN_PASSWORD не задан — админ-часть пропущена (задай ADMIN_PASSWORD=...)"
+  echo "  ⚠ ADMIN_PASSWORD не задан - админ-часть пропущена (задай ADMIN_PASSWORD=...)"
 else
   LOGIN=$(curl -s -m 15 -X POST "$BASE/admin/login" -H 'Content-Type: application/json' \
     -d "$(python3 -c "import json;print(json.dumps({'username':'$ADMIN_USER','password':'$ADMIN_PASSWORD'}))")")
   TOKEN=$(echo "$LOGIN" | jqget '["token"]')
   if [ -z "$TOKEN" ]; then
-    echo "  ✗ admin login — токен не получен: $(echo "$LOGIN" | head -c 120)"; FAIL=$((FAIL+1))
+    echo "  ✗ admin login - токен не получен: $(echo "$LOGIN" | head -c 120)"; FAIL=$((FAIL+1))
   else
     echo "  ✓ admin login (токен получен)"; PASS=$((PASS+1))
     check "GET /admin/me"            GET "$BASE/admin/me" 200 --auth username
@@ -131,6 +131,6 @@ fi
 
 echo; echo "════════════════════════════════════════════════════════"
 echo " ИТОГ: $PASS ok, $FAIL ошибок"
-echo " ⚠ Тестовые заказы/заявки помечены «$MARK» — можно удалить в tradesk."
+echo " ⚠ Тестовые заказы/заявки помечены «$MARK» - можно удалить в tradesk."
 echo "════════════════════════════════════════════════════════"
 [ "$FAIL" -eq 0 ]

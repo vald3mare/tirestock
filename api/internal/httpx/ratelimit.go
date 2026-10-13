@@ -8,16 +8,16 @@ import (
 	"time"
 )
 
-// RateLimiter — простой in-memory лимитер по IP (token bucket), без внешних
+// RateLimiter - простой in-memory лимитер по IP (token bucket), без внешних
 // зависимостей (проект их минимизирует). Защищает от брутфорса логина и спама
 // публичных форм/заказов. Для одной ноды достаточно; при масштабировании на
-// несколько инстансов лимит станет per-instance — тогда выносить в Redis/шлюз.
+// несколько инстансов лимит станет per-instance - тогда выносить в Redis/шлюз.
 type RateLimiter struct {
-	mu       sync.Mutex
-	buckets  map[string]*bucket
-	rate     float64 // токенов в секунду (устойчивая скорость)
-	burst    float64 // ёмкость ведра (пиковая пачка)
-	name     string
+	mu      sync.Mutex
+	buckets map[string]*bucket
+	rate    float64 // токенов в секунду (устойчивая скорость)
+	burst   float64 // ёмкость ведра (пиковая пачка)
+	name    string
 }
 
 type bucket struct {
@@ -25,7 +25,7 @@ type bucket struct {
 	last   time.Time
 }
 
-// NewRateLimiter: rate — запросов/сек в среднем, burst — максимальная пачка.
+// NewRateLimiter: rate - запросов/сек в среднем, burst - максимальная пачка.
 // name используется в заголовке для отладки. Запускает фоновую очистку.
 func NewRateLimiter(name string, rate, burst float64) *RateLimiter {
 	rl := &RateLimiter{
@@ -76,7 +76,7 @@ func (rl *RateLimiter) gc() {
 }
 
 // MaxBodyBytes ограничивает размер тела запроса (защита от DoS большим JSON).
-// Оборачивает r.Body в http.MaxBytesReader — при превышении Decode вернёт ошибку,
+// Оборачивает r.Body в http.MaxBytesReader - при превышении Decode вернёт ошибку,
 // которую хендлеры уже трактуют как validation_failed (400).
 func MaxBodyBytes(limit int64) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -89,7 +89,7 @@ func MaxBodyBytes(limit int64) func(http.Handler) http.Handler {
 	}
 }
 
-// Middleware — chi-совместимый middleware: на превышение отдаёт 429.
+// Middleware - chi-совместимый middleware: на превышение отдаёт 429.
 func (rl *RateLimiter) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !rl.allow(clientIP(r)) {

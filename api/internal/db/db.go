@@ -1,4 +1,4 @@
-// Package db — pgx-пул, миграции (golang-migrate) и sqlc-генерация.
+// Package db - pgx-пул, миграции (golang-migrate) и sqlc-генерация.
 package db
 
 import (

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Pure-JS deterministic gate. Reads merged signals.json, emits
 // {toLaunch, platform, gated}. Same input → byte-identical output (modulo
-// appliedAt). Sort keys are stable and explicit — never change without
+// appliedAt). Sort keys are stable and explicit - never change without
 // a co-located golden-output test update.
 
 import { readFile } from 'node:fs/promises';
@@ -67,7 +67,7 @@ async function main() {
     })),
     ...dropped.map((d) => ({
       ...d.candidate,
-      gatedReason: `coveredBy (${d.mergedInto}) — ${d.reason}`,
+      gatedReason: `coveredBy (${d.mergedInto}) - ${d.reason}`,
     })),
   ];
 

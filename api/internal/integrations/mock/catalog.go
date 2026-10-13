@@ -1,4 +1,4 @@
-// Package mock — мок-реализации внешних интеграций (SelectTyres, tradesk)
+// Package mock - мок-реализации внешних интеграций (SelectTyres, tradesk)
 // для разработки витрины до выяснения реальных механизмов обмена.
 package mock
 
@@ -9,7 +9,7 @@ import (
 	"tirestock/api/internal/catalog"
 )
 
-// CatalogSource — мок каталога в памяти. Товары — реальные модели брендов
+// CatalogSource - мок каталога в памяти. Товары - реальные модели брендов
 // из DESIGN_SYSTEM.md «Контентные данные», цены реалистичные.
 type CatalogSource struct {
 	products []catalog.Product
@@ -28,7 +28,7 @@ func (s *CatalogSource) List(_ context.Context, f catalog.Filters, page, perPage
 			matched = append(matched, p)
 		}
 	}
-	// Наличие всегда сверху; внутри — выбранная сортировка (дефолт: цена ↑).
+	// Наличие всегда сверху; внутри - выбранная сортировка (дефолт: цена ↑).
 	sort.SliceStable(matched, func(i, j int) bool {
 		ai, aj := matched[i].Stock > 0, matched[j].Stock > 0
 		if ai != aj {

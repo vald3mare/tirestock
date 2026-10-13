@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { submitServiceRequest } from "@/app/(storefront)/services/actions";
 
-// Блок «Онлайн запись» сервисных страниц — тот же паттерн, что форма
+// Блок «Онлайн запись» сервисных страниц - тот же паттерн, что форма
 // на /services/storage: server action без клиентского JS, состояние через
 // query-параметры sent/error.
 
@@ -25,12 +25,12 @@ export function ServiceSignup({
             Онлайн запись
           </h2>
           <p className="mt-2 text-body text-grey">
-            Оставьте телефон — перезвоним, подберём удобное время.
+            Оставьте телефон - перезвоним, подберём удобное время.
           </p>
         </div>
         {sent === "1" ? (
           <p className="text-subtitle font-semibold text-dark">
-            Заявка отправлена — перезвоним в рабочее время.
+            Заявка отправлена - перезвоним в рабочее время.
           </p>
         ) : (
           <form
@@ -60,7 +60,7 @@ export function ServiceSignup({
         {error && (
           <p className="text-body text-dark">
             {error === "phone"
-              ? "Укажите телефон — без него не сможем перезвонить."
+              ? "Укажите телефон - без него не сможем перезвонить."
               : "Не получилось отправить заявку. Позвоните нам: +7 (812) 614-64-42."}
           </p>
         )}

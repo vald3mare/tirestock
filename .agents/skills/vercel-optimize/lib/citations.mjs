@@ -1,4 +1,4 @@
-// Curated doc library — the allow-list for recommender citations.
+// Curated doc library - the allow-list for recommender citations.
 
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
@@ -93,7 +93,7 @@ function compareVersion(a, b) {
   return 0;
 }
 
-// Filtered subset embedded in recommender prompt — LLM never sees URLs for features not in user's stack.
+// Filtered subset embedded in recommender prompt - LLM never sees URLs for features not in user's stack.
 export async function libraryForStack(framework, version) {
   const lib = await loadLibrary();
   const matches = (frameworks) =>

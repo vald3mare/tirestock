@@ -51,14 +51,14 @@ export function scan({ files }) {
           subtype: 'global-unoptimized',
           file: path,
           line: lineOf(content, match.index),
-          evidence: 'images: { unoptimized: true } — disables Vercel image optimization for the entire project',
+          evidence: 'images: { unoptimized: true } - disables Vercel image optimization for the entire project',
           // Config-level flag affects every image regardless of route.
           trafficIndependent: true,
         });
       }
     }
 
-    // Only fire if next/image is imported — otherwise `Image` is some
+    // Only fire if next/image is imported - otherwise `Image` is some
     // other component.
     if (isJsxLike(path) && NEXT_IMAGE_IMPORT_RE.test(content)) {
       let m;

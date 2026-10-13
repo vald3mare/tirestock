@@ -1,5 +1,5 @@
 # Прод-развёртывание TireStock на Yandex Cloud (Compute VM + Managed PostgreSQL).
-# Postgres здесь НЕ поднимается — используется управляемая БД (DATABASE_URL в .env.prod).
+# Postgres здесь НЕ поднимается - используется управляемая БД (DATABASE_URL в .env.prod).
 # Traefik терминирует TLS (Let's Encrypt) и публикует ТОЛЬКО витрину (web);
 # api остаётся внутренним в docker-сети (браузер в него не ходит напрямую).
 #
@@ -19,7 +19,7 @@ services:
       - --entrypoints.web.http.redirections.entrypoint.to=websecure
       - --entrypoints.web.http.redirections.entrypoint.scheme=https
       # TLS + certResolver заданы на РОУТЕРЕ (traefik/dynamic-tls.yml) с конкретным
-      # доменом — иначе ACME не знает, для чего выпускать сертификат. Здесь — только
+      # доменом - иначе ACME не знает, для чего выпускать сертификат. Здесь - только
       # определение резолвера «le».
       # Let's Encrypt (HTTP-01 challenge через 80-й порт).
       - --certificatesresolvers.le.acme.email=${ACME_EMAIL}
@@ -40,12 +40,12 @@ services:
     build: ../api
     restart: always
     environment:
-      # Managed PostgreSQL: эндпоинт из консоли Yandex Cloud. sslmode=require —
+      # Managed PostgreSQL: эндпоинт из консоли Yandex Cloud. sslmode=require -
       # шифрование канала; для верификации CA поднять до verify-full + смонтировать
       # сертификат Yandex (см. README). Миграции накатываются автоматически при старте.
       DATABASE_URL: ${DATABASE_URL}
       API_ADDR: ":8080"
-      # Доставка заявок/заказов — боевой tradesk.
+      # Доставка заявок/заказов - боевой tradesk.
       TRADESK_BASE_URL: ${TRADESK_BASE_URL}
       TRADESK_USERNAME: ${TRADESK_USERNAME:-}
       TRADESK_PASSWORD: ${TRADESK_PASSWORD:-}
@@ -61,7 +61,7 @@ services:
       ADMIN_BOOTSTRAP_USER: ${ADMIN_BOOTSTRAP_USER}
       ADMIN_BOOTSTRAP_PASSWORD: ${ADMIN_BOOTSTRAP_PASSWORD}
       ADMIN_BOOTSTRAP_NAME: ${ADMIN_BOOTSTRAP_NAME:-Администратор}
-    # Порт наружу НЕ публикуем — api доступен только web'у по внутренней сети.
+    # Порт наружу НЕ публикуем - api доступен только web'у по внутренней сети.
     expose:
       - "8080"
     healthcheck:
@@ -78,7 +78,7 @@ services:
       API_URL: http://api:8080
       HOSTNAME: "0.0.0.0"
       # Индексация: включаем глобально, но реально индексируется ТОЛЬКО боевой хост
-      # SITE_PRIMARY_HOST (tirestock.ru). Тестовый tirestock.website остаётся noindex —
+      # SITE_PRIMARY_HOST (tirestock.ru). Тестовый tirestock.website остаётся noindex -
       # оба домена на одном контейнере, гейт по хосту (см. web/lib/site-env.ts).
       SITE_INDEXABLE: ${SITE_INDEXABLE:-true}
       SITE_PRIMARY_HOST: ${SITE_PRIMARY_HOST:-}
@@ -88,9 +88,9 @@ services:
       api:
         condition: service_healthy
     # Маршрут задан в traefik/dynamic-tls.yml (файловый провайдер), docker-labels
-    # не нужны — Traefik их не читает (docker-провайдер отключён из-за Docker v29).
+    # не нужны - Traefik их не читает (docker-провайдер отключён из-за Docker v29).
     volumes:
-      # Кэш оптимизированных фото — переживает пересборку образа.
+      # Кэш оптимизированных фото - переживает пересборку образа.
       - web-image-cache:/app/.next/cache/images
 
 volumes:

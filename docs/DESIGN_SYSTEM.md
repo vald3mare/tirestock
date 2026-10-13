@@ -1,4 +1,4 @@
-# TireStock — дизайн-система (источник: Figma OgPQsbsSrM4rLklgkdtaLO)
+# TireStock - дизайн-система (источник: Figma OgPQsbsSrM4rLklgkdtaLO)
 
 ## Палитра
 | Токен | Значение | Использование |
@@ -11,7 +11,7 @@
 | `--green` | #34C759 | точка «в наличии» |
 | black #000 | H1, цены |
 
-## Типографика — Manrope (preload, swap)
+## Типографика - Manrope (preload, swap)
 | Стиль | Размер/вес | line-height | Где |
 |---|---|---|---|
 | Heading/H1 | 42 ExtraBold | 130% | заголовки страниц, hero |
@@ -36,33 +36,33 @@
 Тень только у дропдаун-панели: 0 8px 24px rgba(0,0,0,.08) + бордер line.
 
 ## Компоненты (мастера в Figma «🧩 Components»)
-- **Button/Primary** — blue, radius 10, px40 py14, текст 16 SemiBold white. Hover: темнее ~8%
-- **Button/Secondary** — white, бордер line, текст dark
-- **Field/Dropdown** — white, бордер line, radius 10, px20 py14 (выс. 52), плейсхолдер grey, шеврон 16
-- **Tab** — active: blue bg/white text; inactive: white bg/grey text; px20 py10
-- **Chip** — white, radius 8, px12 py6, 14 Medium (тач-таргет добить до 44 паддингом на мобиле)
-- **Badge/Season** — white + бордер, иконка солнца #E8A13B 14px + текст 12
-- **Checkbox** — 20×20, radius 5, бордер line 1.5
-- **ProductCard (264)** — фото-зона 232×172 white + бордер line radius 12 (фото товара —
+- **Button/Primary** - blue, radius 10, px40 py14, текст 16 SemiBold white. Hover: темнее ~8%
+- **Button/Secondary** - white, бордер line, текст dark
+- **Field/Dropdown** - white, бордер line, radius 10, px20 py14 (выс. 52), плейсхолдер grey, шеврон 16
+- **Tab** - active: blue bg/white text; inactive: white bg/grey text; px20 py10
+- **Chip** - white, radius 8, px12 py6, 14 Medium (тач-таргет добить до 44 паддингом на мобиле)
+- **Badge/Season** - white + бордер, иконка солнца #E8A13B 14px + текст 12
+- **Checkbox** - 20×20, radius 5, бордер line 1.5
+- **ProductCard (264)** - фото-зона 232×172 white + бордер line radius 12 (фото товара -
   белый фон, object-fit: contain, центр), бейдж сезона 8,8; наличие (зел. точка + 13 grey);
   название 16 SemiBold clamp-2 (резерв 45px); типоразмер 14 grey; цена 22 XB + «/ шт.»;
-  CTA «В корзину» на всю ширину. Состояние «нет в наличии»: серый бейдж, disabled CTA — TODO
-- **BenefitCard (264)** — light bg radius 12, иконка 24 blue + заголовок 15 SB + подпись 13 grey
-- **ServiceCard** — white + бордер, radius 16; bento: featured 544×296 (Хранение — приоритет
+  CTA «В корзину» на всю ширину. Состояние «нет в наличии»: серый бейдж, disabled CTA - TODO
+- **BenefitCard (264)** - light bg radius 12, иконка 24 blue + заголовок 15 SB + подпись 13 grey
+- **ServiceCard** - white + бордер, radius 16; bento: featured 544×296 (Хранение - приоритет
   бизнеса!) + 4×(264×140)
 - **Header** = topbar (light: адрес+город слева; часы, телефон SemiBold справа) + основная
   строка (white, нижний бордер): лого, нав (дропдауны у Шины/Диски/Сервис с шевронами),
   корзина blue. Sticky при скролле (запрос сеошника): topbar схлопывается, строка остаётся
-- **Footer** — white, верхний бордер: 4 колонки 264 (бренд / контакты / часы двух отделов /
+- **Footer** - white, верхний бордер: 4 колонки 264 (бренд / контакты / часы двух отделов /
   ссылки) + нижняя строка: дисклеймер-оферта 12px + копирайт
-- **Stepper** — бордер line radius 10, ячейки 40–44px, кнопки aria-label, input inputmode=numeric
+- **Stepper** - бордер line radius 10, ячейки 40–44px, кнопки aria-label, input inputmode=numeric
 
-## Поиск (hero) = фильтр (каталог) — один компонент
+## Поиск (hero) = фильтр (каталог) - один компонент
 Hero: контейнер light radius 20 padding 40; табы «По размеру / По авто / Поиск по каталогу»;
 4 поля fill + CTA; строка чипов («Популярно: 205/55 R16…» / машины / частые запросы).
 Состояния (фреймы 1–4 в Figma): пустой; по авто (Марка/Модель/Год/Модификация);
 по каталогу (один инпут с лупой, плейсхолдер «Например: Nokian Hakkapeliitta 10 или артикул…»);
-заполненный — значения dark SemiBold, CTA «Показать 340 шин →» (N живое, tabular-nums).
+заполненный - значения dark SemiBold, CTA «Показать 340 шин →» (N живое, tabular-nums).
 Каталог: тот же набор вертикально в сайдбаре 264 + Производитель, цена от/до, чекбоксы
 Шипы/RunFlat, CTA «Показать N шин», Сбросить. Параметры ↔ URL query params в обе стороны.
 

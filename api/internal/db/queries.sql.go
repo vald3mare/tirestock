@@ -669,7 +669,7 @@ type GetPickupPointBySlugRow struct {
 	UpdatedAt pgtype.Timestamptz
 }
 
-// Опубликованный пункт по slug — для отдельной страницы /points/<slug>.
+// Опубликованный пункт по slug - для отдельной страницы /points/<slug>.
 func (q *Queries) GetPickupPointBySlug(ctx context.Context, slug string) (GetPickupPointBySlugRow, error) {
 	row := q.db.QueryRow(ctx, getPickupPointBySlug, slug)
 	var i GetPickupPointBySlugRow
@@ -817,7 +817,7 @@ type ListBenefitsRow struct {
 	UpdatedAt pgtype.Timestamptz
 }
 
-// Раздел «Преимущества» админки (строка офферов BenefitsBar). Правила — в сервисе.
+// Раздел «Преимущества» админки (строка офферов BenefitsBar). Правила - в сервисе.
 // Все офферы для админки (любой статус), в порядке вывода.
 func (q *Queries) ListBenefits(ctx context.Context) ([]ListBenefitsRow, error) {
 	rows, err := q.db.Query(ctx, listBenefits)
@@ -871,7 +871,7 @@ type ListContentPagesRow struct {
 	UpdatedAt       pgtype.Timestamptz
 }
 
-// Контентные страницы админки. Правила блокировки — в сервисе internal/content.
+// Контентные страницы админки. Правила блокировки - в сервисе internal/content.
 func (q *Queries) ListContentPages(ctx context.Context) ([]ListContentPagesRow, error) {
 	rows, err := q.db.Query(ctx, listContentPages)
 	if err != nil {
@@ -1029,7 +1029,7 @@ type ListPickupPointsRow struct {
 	UpdatedAt pgtype.Timestamptz
 }
 
-// Раздел «Пункты выдачи» админки. Правила — в сервисе internal/pickups.
+// Раздел «Пункты выдачи» админки. Правила - в сервисе internal/pickups.
 // Все пункты для админки (любой статус), основные первыми, затем по порядку.
 func (q *Queries) ListPickupPoints(ctx context.Context) ([]ListPickupPointsRow, error) {
 	rows, err := q.db.Query(ctx, listPickupPoints)
@@ -1138,7 +1138,7 @@ type ListPublishedByPrefixRow struct {
 	UpdatedAt       pgtype.Timestamptz
 }
 
-// Опубликованные страницы под префиксом URL (напр. '/news/') — для раздела-листинга.
+// Опубликованные страницы под префиксом URL (напр. '/news/') - для раздела-листинга.
 // Сам префикс-индекс (slug = префикс) исключаем. Свежие сверху.
 func (q *Queries) ListPublishedByPrefix(ctx context.Context, dollar_1 *string) ([]ListPublishedByPrefixRow, error) {
 	rows, err := q.db.Query(ctx, listPublishedByPrefix, dollar_1)
@@ -1239,7 +1239,7 @@ FROM seo_meta
 ORDER BY is_default DESC, route
 `
 
-// Раздел «SEO-мета» админки. Правила резолва (роут ∥ дефолт) — в сервисе.
+// Раздел «SEO-мета» админки. Правила резолва (роут ∥ дефолт) - в сервисе.
 // Все записи для админки; дефолт-шаблон ('*') первым.
 func (q *Queries) ListSeoMeta(ctx context.Context) ([]SeoMetum, error) {
 	rows, err := q.db.Query(ctx, listSeoMeta)
@@ -1335,7 +1335,7 @@ type RenameContentPageParams struct {
 	UpdatedBy string
 }
 
-// Смена URL — только для черновиков (проверяется в сервисе).
+// Смена URL - только для черновиков (проверяется в сервисе).
 func (q *Queries) RenameContentPage(ctx context.Context, arg RenameContentPageParams) error {
 	_, err := q.db.Exec(ctx, renameContentPage, arg.ID, arg.Slug, arg.UpdatedBy)
 	return err
@@ -1609,8 +1609,8 @@ type UpsertProductParams struct {
 	ImageUrl  string
 }
 
-// Upsert товара из синка SelectTyres (ключ — code). Динамические выборки каталога
-// (листинг с фильтрами) идут сырым pgx через Filters.WhereSQL — здесь только статика.
+// Upsert товара из синка SelectTyres (ключ - code). Динамические выборки каталога
+// (листинг с фильтрами) идут сырым pgx через Filters.WhereSQL - здесь только статика.
 func (q *Queries) UpsertProduct(ctx context.Context, arg UpsertProductParams) error {
 	_, err := q.db.Exec(ctx, upsertProduct,
 		arg.Code,
@@ -1646,7 +1646,7 @@ type UpsertProductOfferParams struct {
 	Stock       int32
 }
 
-// Цена/остаток товара в городе (мультигород). Ключ — (product_code, city).
+// Цена/остаток товара в городе (мультигород). Ключ - (product_code, city).
 func (q *Queries) UpsertProductOffer(ctx context.Context, arg UpsertProductOfferParams) error {
 	_, err := q.db.Exec(ctx, upsertProductOffer,
 		arg.ProductCode,
@@ -1663,7 +1663,7 @@ WHERE updated_at < $1 AND stock <> 0
 `
 
 // Офферы, не обновлённые в текущем прогоне синка (товар пропал со складов города),
-// гасим до нуля остатка. Строки не удаляем — заказы/URL могут ссылаться.
+// гасим до нуля остатка. Строки не удаляем - заказы/URL могут ссылаться.
 func (q *Queries) ZeroStaleOffers(ctx context.Context, updatedAt pgtype.Timestamptz) (int64, error) {
 	result, err := q.db.Exec(ctx, zeroStaleOffers, updatedAt)
 	if err != nil {

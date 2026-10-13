@@ -1,4 +1,4 @@
-// Vercel CLI helpers. All shell-outs use execFile (not exec) — no shell injection. Error detection: exit code + JSON-parse first; stderr grep only as fallback (CLI error strings aren't a stable contract).
+// Vercel CLI helpers. All shell-outs use execFile (not exec) - no shell injection. Error detection: exit code + JSON-parse first; stderr grep only as fallback (CLI error strings aren't a stable contract).
 
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
@@ -10,7 +10,7 @@ import { getMetricThrottle, isDailyQuotaExceeded, retryOnRateLimit } from './thr
 const exec = promisify(execFile);
 
 // On Windows, execFile cannot run the `vercel.cmd` shim directly: PATHEXT is not
-// applied by execFile, and .cmd/.bat require `shell: true` since Node 20 — but a
+// applied by execFile, and .cmd/.bat require `shell: true` since Node 20 - but a
 // shell would mangle args containing spaces or URL query strings (e.g.
 // `vercel api '/v9/projects/:id?teamId=:org'`, `-f 'http_status ge 500'`). So we
 // resolve the Vercel package's JS entry from PATH and run it via `node` directly:
@@ -155,7 +155,7 @@ export async function readProjectJson(cwd = process.cwd()) {
   return null;
 }
 
-// Does NOT auto-run `vercel link` — interactive surprises bad.
+// Does NOT auto-run `vercel link` - interactive surprises bad.
 export async function resolveProjectId(explicit, cwd = process.cwd()) {
   if (explicit) {
     const linked = process.env.VERCEL_ORG_ID
@@ -305,7 +305,7 @@ async function getTeamInfo(teamIdOrSlug) {
   };
 }
 
-// Some commands emit `{error: {...}}` on stdout AND exit non-zero — parse stdout first; embedded `error` is the most reliable signal.
+// Some commands emit `{error: {...}}` on stdout AND exit non-zero - parse stdout first; embedded `error` is the most reliable signal.
 // 32 MiB buffer: 14d function-duration timeseries across many routes exceeds Node's 1 MiB default.
 export async function runVercelJson(args, opts = {}) {
   let stdout = '';
@@ -371,7 +371,7 @@ export function redactSensitiveText(value) {
     .replace(/("token"\s*:\s*")[^"]{8,}(")/gi, '$1[REDACTED]$2');
 }
 
-// CLI doesn't emit machine-readable error codes for these states — stderr substring is fallback only.
+// CLI doesn't emit machine-readable error codes for these states - stderr substring is fallback only.
 function categorizeError(exitCode, stderr) {
   const lc = (stderr || '').toLowerCase();
   if (isDailyQuotaExceeded({ ok: false, stderr })) return 'DAILY_QUOTA_EXCEEDED';
@@ -386,7 +386,7 @@ function categorizeError(exitCode, stderr) {
   return `EXIT_${exitCode}`;
 }
 
-// Schema is global per team — pass scope so we hit the right team rather than user's currentTeam.
+// Schema is global per team - pass scope so we hit the right team rather than user's currentTeam.
 export async function hasObservabilityPlus(scope) {
   const r = await runVercelJson(scopedArgs(['metrics', 'schema', '--format', 'json'], scope));
   return r.ok;
@@ -697,7 +697,7 @@ export function inferPlan(contract, opts = {}) {
 
   if (commits.length > 0) {
     const c0 = commits[0] ?? {};
-    // category field names are tentative — try several.
+    // category field names are tentative - try several.
     const category = c0.category ?? c0.commitmentCategory ?? c0.type ?? null;
     if (category === 'Spend' || category === 'spend') {
       return { plan: 'pro', reason: `commitment category=${category}` };
@@ -712,7 +712,7 @@ export function inferPlan(contract, opts = {}) {
   if (typeof totalCost === 'number' && totalCost > 0) {
     return {
       plan: 'pro',
-      reason: `commitments=[] but usage=$${totalCost.toFixed(2)}/window — Pro pay-as-you-go (Hobby teams don't bill)`,
+      reason: `commitments=[] but usage=$${totalCost.toFixed(2)}/window - Pro pay-as-you-go (Hobby teams don't bill)`,
     };
   }
 

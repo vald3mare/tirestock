@@ -12,11 +12,11 @@ import (
 	"tirestock/api/internal/db"
 )
 
-// WorkerConfig — параметры воркера доставки outbox.
+// WorkerConfig - параметры воркера доставки outbox.
 type WorkerConfig struct {
 	Interval    time.Duration // период опроса очереди
 	BatchSize   int32         // сколько записей забирать за проход
-	MaxAttempts int32         // после стольких неудач — status=failed
+	MaxAttempts int32         // после стольких неудач - status=failed
 	BaseDelay   time.Duration // база экспоненциального ретрая: BaseDelay * 2^attempts
 }
 
@@ -29,8 +29,8 @@ func DefaultWorkerConfig() WorkerConfig {
 	}
 }
 
-// Worker — фоновая доставка записей outbox во внешнюю систему (tradesk).
-// Забирает pending-записи через FOR UPDATE SKIP LOCKED — безопасно
+// Worker - фоновая доставка записей outbox во внешнюю систему (tradesk).
+// Забирает pending-записи через FOR UPDATE SKIP LOCKED - безопасно
 // при нескольких экземплярах.
 type Worker struct {
 	pool     *pgxpool.Pool
@@ -62,7 +62,7 @@ func (w *Worker) Run(ctx context.Context) {
 	}
 }
 
-// ProcessOnce — один проход: забрать батч под блокировкой, доставить, отметить.
+// ProcessOnce - один проход: забрать батч под блокировкой, доставить, отметить.
 // Возвращает число обработанных записей (доставленных или перепланированных).
 func (w *Worker) ProcessOnce(ctx context.Context) (int, error) {
 	tx, err := w.pool.Begin(ctx)
@@ -81,7 +81,7 @@ func (w *Worker) ProcessOnce(ctx context.Context) (int, error) {
 		result, deliverErr := w.delivery.Deliver(ctx, item.Kind, item.Payload)
 		switch {
 		case deliverErr == nil:
-			// result — ответ приёмника (для заказа это номер записи в tradesk):
+			// result - ответ приёмника (для заказа это номер записи в tradesk):
 			// храним его, чтобы админка показала, где искать заказ в учётке.
 			if err := qtx.MarkOutboxDelivered(ctx, db.MarkOutboxDeliveredParams{
 				ID: item.ID, Result: result,

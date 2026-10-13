@@ -21,7 +21,7 @@ type fakeTradesk struct {
 	dataCalls  atomic.Int32
 	lastQuery  url.Values
 	orderCalls []url.Values
-	orderReply string // ответ /api/addorder; по умолчанию — номер заказа
+	orderReply string // ответ /api/addorder; по умолчанию - номер заказа
 
 	lastRequestForm url.Values // поля последнего POST /api/request
 
@@ -32,7 +32,7 @@ func newFakeTradesk(t *testing.T) *fakeTradesk {
 	t.Helper()
 	f := &fakeTradesk{mux: http.NewServeMux()}
 
-	// Приёмник заявок: как в /ajax/call.php — GET с query, без кук и токенов.
+	// Приёмник заявок: как в /ajax/call.php - GET с query, без кук и токенов.
 	f.mux.HandleFunc("/data/backcall", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
 			http.Error(w, "want GET", http.StatusMethodNotAllowed)
@@ -155,7 +155,7 @@ func TestDeliverCallbackEmptyPhone(t *testing.T) {
 }
 
 // Заказ: GET /api/addorder, по одному вызову на позицию, город всегда spb.
-// Ответ приёмника — номер заказа в кавычках.
+// Ответ приёмника - номер заказа в кавычках.
 func TestDeliverOrder(t *testing.T) {
 	fake := newFakeTradesk(t)
 	srv := httptest.NewServer(fake.mux)
@@ -194,13 +194,13 @@ func TestDeliverOrder(t *testing.T) {
 	if got := first.Get("comment"); !strings.Contains(got, "#7") || !strings.Contains(got, "позиция 1/2") {
 		t.Errorf("comment без опознавательных знаков: %q", got)
 	}
-	// Логин для доставки заказа не нужен — приёмник публичный.
+	// Логин для доставки заказа не нужен - приёмник публичный.
 	if got := fake.logins.Load(); got != 0 {
 		t.Errorf("логинов: got %d, want 0", got)
 	}
 }
 
-// Номера, которые вернул приёмник, отдаются наверх — воркер кладёт их в outbox,
+// Номера, которые вернул приёмник, отдаются наверх - воркер кладёт их в outbox,
 // админка показывает менеджеру, где искать заказ в учётке.
 func TestDeliverOrderReturnsTradeskNumbers(t *testing.T) {
 	fake := newFakeTradesk(t)
@@ -296,7 +296,7 @@ func TestDeliverUnknownKind(t *testing.T) {
 }
 
 // Админ-контур (вход + CSRF) доставкой не используется, но остаётся для служебных
-// действий — проверяем, что он жив и что без кредов вход честно отказывает.
+// действий - проверяем, что он жив и что без кредов вход честно отказывает.
 func TestAdminLogin(t *testing.T) {
 	fake := newFakeTradesk(t)
 	srv := httptest.NewServer(fake.mux)

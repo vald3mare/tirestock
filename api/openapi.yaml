@@ -46,7 +46,7 @@ paths:
         - { name: price_max, in: query, schema: { type: integer, minimum: 0 }, description: "Цена до, ₽" }
         - { name: spikes,    in: query, schema: { type: boolean }, description: "Шипы" }
         - { name: runflat,   in: query, schema: { type: boolean }, description: "RunFlat" }
-        - { name: sort,      in: query, schema: { type: string, enum: [price_asc, price_desc, name] }, description: "Сортировка (по умолчанию — наличие + релевантность)" }
+        - { name: sort,      in: query, schema: { type: string, enum: [price_asc, price_desc, name] }, description: "Сортировка (по умолчанию - наличие + релевантность)" }
         - { name: city,      in: query, schema: { type: string, enum: [spb, msk], default: spb }, description: "Город (мультигород): цена/остаток и ассортимент по городу" }
         - { name: page,      in: query, schema: { type: integer, minimum: 1, default: 1 } }
         - { name: per_page,  in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 24 } }
@@ -83,7 +83,7 @@ paths:
       summary: Статус заказа по номеру (обратная интеграция tradesk)
       description: >
         Читает статус заказа ИЗ tradesk (GET /data/status?order_code=). Страница
-        /status/ витрины. found=false — заказ не найден или tradesk-приём выключен.
+        /status/ витрины. found=false - заказ не найден или tradesk-приём выключен.
       parameters:
         - { name: code, in: query, required: true, schema: { type: string }, description: "Номер заказа" }
       responses:
@@ -100,8 +100,8 @@ paths:
       summary: Опубликованные пункты выдачи (страница /points)
       description: >
         Пункты выдачи заказов витрины города (city, по умолчанию spb). Контент
-        редактируется в админке: адрес, метро, часы, бейдж-акция у каждого — свои.
-        is_main — «основной адрес» (крупная карточка, первым).
+        редактируется в админке: адрес, метро, часы, бейдж-акция у каждого - свои.
+        is_main - «основной адрес» (крупная карточка, первым).
       parameters:
         - { name: city, in: query, schema: { type: string, default: spb }, description: "Город пунктов (spb|msk)" }
       responses:
@@ -199,7 +199,7 @@ paths:
       summary: Оформление заказа
       description: >
         Заказ пишется в БД транзакционно со строкой outbox; воркер доставляет
-        его в tradesk с ретраями — заказ никогда не теряется. Idempotency-key
+        его в tradesk с ретраями - заказ никогда не теряется. Idempotency-key
         (заголовок или поле тела) защищает от даблклика «Оформить заказ».
       parameters:
         - name: Idempotency-Key
@@ -233,7 +233,7 @@ paths:
       summary: Заявка с формы услуги
       description: >
         Формы сервисных страниц (шиномонтаж, хранение, ремонт и покраска дисков).
-        Уходит в tradesk `POST /api/request` через outbox — с типом услуги,
+        Уходит в tradesk `POST /api/request` через outbox - с типом услуги,
         в отличие от обратного звонка.
       requestBody:
         required: true
@@ -304,7 +304,7 @@ components:
       properties:
         id: { type: integer, format: int64 }
         slug: { type: string, example: nokian-hakkapeliitta-10p-205-55-r16 }
-        code: { type: string, example: t668559, description: "Код товара в SelectTyres — уходит в заказ tradesk" }
+        code: { type: string, example: t668559, description: "Код товара в SelectTyres - уходит в заказ tradesk" }
         brand: { type: string, example: Nokian }
         model: { type: string, example: Hakkapeliitta 10p }
         name: { type: string, example: Nokian Hakkapeliitta 10p 205/55 R16 }
@@ -337,10 +337,10 @@ components:
       required: [slug, name, price, qty]
       properties:
         slug: { type: string }
-        code: { type: string, example: t668559, description: "Код товара в SelectTyres — уходит в приёмник заказа tradesk" }
+        code: { type: string, example: t668559, description: "Код товара в SelectTyres - уходит в приёмник заказа tradesk" }
         name: { type: string }
         price: { type: integer, description: "Рубли за штуку" }
-        qty: { type: integer, minimum: 1, default: 4, description: "Шины покупают комплектами — дефолт 4" }
+        qty: { type: integer, minimum: 1, default: 4, description: "Шины покупают комплектами - дефолт 4" }
 
     CreateOrderInput:
       type: object
@@ -384,7 +384,7 @@ components:
         code: { type: string, example: C288416 }
         status: { type: string, description: "Сырой код статуса tradesk", example: ready }
         status_text: { type: string, example: "Готов к выдаче" }
-        step: { type: integer, description: "Этап прогресса 0..4 (0 — без полосы)" }
+        step: { type: integer, description: "Этап прогресса 0..4 (0 - без полосы)" }
         date: { type: string, description: "Дата исполнения dd-mm-yyyy или пусто" }
         point: { type: string, description: "Пункт выдачи" }
         products:
@@ -423,7 +423,7 @@ components:
         icon: { type: string, description: "Путь к svg-иконке", example: /icons/benefit-mount.svg }
         title: { type: string, example: "−15% на шиномонтаж" }
         note: { type: string, example: при покупке шин }
-        href: { type: string, description: "Ссылка на страницу сервиса (пусто — не кликабелен)", example: /mounting/ }
+        href: { type: string, description: "Ссылка на страницу сервиса (пусто - не кликабелен)", example: /mounting/ }
         sort_order: { type: integer }
         published: { type: boolean }
 
@@ -431,7 +431,7 @@ components:
       type: object
       required: [title, description]
       properties:
-        title: { type: string, example: "Шины — купить в Санкт-Петербурге | TireStock" }
+        title: { type: string, example: "Шины - купить в Санкт-Петербурге | TireStock" }
         description: { type: string }
 
     RequestInput:
@@ -440,7 +440,7 @@ components:
       properties:
         name: { type: string, example: Иван }
         phone: { type: string, example: "+7 (921) 123-45-67" }
-        type: { type: string, example: Шиномонтаж, description: "Тип заявки — уходит в tradesk отдельным полем" }
+        type: { type: string, example: Шиномонтаж, description: "Тип заявки - уходит в tradesk отдельным полем" }
         comment: { type: string }
 
     CallbackInput:

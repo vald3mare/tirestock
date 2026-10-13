@@ -26,7 +26,7 @@ func testPool(t *testing.T) *pgxpool.Pool {
 	t.Helper()
 	url := os.Getenv("TEST_DATABASE_URL")
 	if url == "" {
-		t.Skip("TEST_DATABASE_URL не задан — пропуск интеграционных тестов outbox")
+		t.Skip("TEST_DATABASE_URL не задан - пропуск интеграционных тестов outbox")
 	}
 	if err := db.Migrate(url); err != nil {
 		t.Fatalf("migrate: %v", err)
@@ -125,7 +125,7 @@ func TestCreateOrderIdempotent(t *testing.T) {
 }
 
 // Неудачная доставка: attempts растёт, next_retry_at уходит в будущее (экспонента),
-// после MaxAttempts — status=failed.
+// после MaxAttempts - status=failed.
 func TestWorkerRetriesAndFails(t *testing.T) {
 	pool := testPool(t)
 	ctx := context.Background()

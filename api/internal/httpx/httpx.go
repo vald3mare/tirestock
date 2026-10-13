@@ -1,4 +1,4 @@
-// Package httpx — общие HTTP-помощники: единый формат ошибок и JSON-ответы.
+// Package httpx - общие HTTP-помощники: единый формат ошибок и JSON-ответы.
 package httpx
 
 import (
@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-// ErrorBody — единый формат ошибки API: {"error": {"code", "message"}}.
+// ErrorBody - единый формат ошибки API: {"error": {"code", "message"}}.
 type ErrorBody struct {
 	Error ErrorInfo `json:"error"`
 }

@@ -1,11 +1,11 @@
-## Step 4 — Score and report
+## Step 4 - Score and report
 
 This reference covers everything that happens after recommendations are drafted: quality floor, impact framing, sort order, the customer-facing report template, and the playbook selection matrix.
 
 ## Table of contents
 
 - [Quality floor and prune rules](#quality-floor-and-prune-rules)
-- [Impact framing — the magnitude rule](#impact-framing--the-magnitude-rule)
+- [Impact framing - the magnitude rule](#impact-framing--the-magnitude-rule)
 - [`impactLabel` schema](#impactlabel-schema)
 - [Sort order and platform-rec cap](#sort-order-and-platform-rec-cap)
 - [The customer-facing report template](#the-customer-facing-report-template)
@@ -21,13 +21,13 @@ This reference covers everything that happens after recommendations are drafted:
 | Quick-wins definition | `effort === 'low' AND priority > 40` | Surfaces fixes the user can ship in a single PR |
 | Savings floor (internal ranking only) | $5/mo equivalent | Below this, even a "high" tier impact translates to "negligible" magnitude |
 
-## Impact framing — the magnitude rule
+## Impact framing - the magnitude rule
 
 **Performance: be precise.** Use observed numbers. Example:
 
 > "Reduce /api/products p95 from 850ms toward ~250-400ms; cache hit would lift from 0% toward ~60% based on similar cached routes."
 
-Performance numbers come from `signals.json.metrics.*` — they're observed, not extrapolated. Cite the exact route + metric value.
+Performance numbers come from `signals.json.metrics.*` - they're observed, not extrapolated. Cite the exact route + metric value.
 
 **Dollar cost: never precise.** Use MAGNITUDE BUCKETS via `lib/impact-magnitude.mjs`'s `impactMagnitude({currentCost, impactTier})`:
 
@@ -39,7 +39,7 @@ Performance numbers come from `signals.json.metrics.*` — they're observed, not
 | $500 – $5,000 | `large` | "low-thousands of dollars per month at current traffic" |
 | > $5,000 | `very-large` | "thousands+ of dollars per month at current traffic" |
 
-Reduction is computed as `currentCost × fraction` where `fraction = {high: 0.4, medium: 0.2, low: 0.1}[impactTier]`. The fraction is intentionally conservative — we'd rather under-promise than mislead.
+Reduction is computed as `currentCost × fraction` where `fraction = {high: 0.4, medium: 0.2, low: 0.1}[impactTier]`. The fraction is intentionally conservative - we'd rather under-promise than mislead.
 
 ### Discountable vs non-discountable SKUs
 
@@ -74,13 +74,13 @@ type ImpactLabel = {
   costMagnitude?: 'negligible' | 'small' | 'medium' | 'large' | 'very-large';
   costPhrase?: string;
   billingDimension?: string;   // 'Edge Requests' | 'Function Duration' | ...
-  fractionReduced?: number;    // 0.2 = ~20% — internal only, NOT rendered
+  fractionReduced?: number;    // 0.2 = ~20% - internal only, NOT rendered
 };
 ```
 
 Cost recs render `costPhrase`. Performance recs render `performance`. Reliability recs frame impact as observed error/timeout reduction (e.g., "Cuts 5xx rate from 0.4% to <0.1% based on current traffic").
 
-When a rec spans buckets — e.g., a caching fix that reduces both cost AND latency — render both lines.
+When a rec spans buckets - e.g., a caching fix that reduces both cost AND latency - render both lines.
 
 ## Sort order and platform-rec cap
 
@@ -93,7 +93,7 @@ The list of recs the customer sees is sorted by this priority. The platform reco
 The agent renders this as the final output of Step 4. The shape is fixed; the content comes from the merged signals + verified recommendations + the `gated[]` list from Step 2.
 
 ```markdown
-# Vercel Optimization Report — {projectName}
+# Vercel Optimization Report - {projectName}
 
 **Stack**: {framework}@{frameworkVersion} | {router} | {orm}
 **Plan**: {plan.plan} ({plan.reason})
@@ -106,25 +106,25 @@ The agent renders this as the final output of Step 4. The shape is fixed; the co
 |---|---|---|
 | (non-zero rows from usage.services, sorted by billedCost desc) |
 
-Total billed: {usage.totals.billedCost} (we render the precise current cost — we just don't project future precise savings)
+Total billed: {usage.totals.billedCost} (we render the precise current cost - we just don't project future precise savings)
 
 Omit zero-cost service rows from the table at the same cent precision shown to customers. If every row has `$0.00` billed cost but `effectiveCost` / USD `pricingQuantity` is non-zero, explain that net billed cost is `$0.00` after included credits or allotments and show the effective usage cost table instead. If both billed and effective costs are `$0.00`, replace the table with a concise note that `vercel usage` returned a billing payload but every reported service cost was `$0.00` for the window.
 
-If `vercel usage` was queried and unavailable, the cost breakdown is replaced by an observability-derived cost ranking from `metrics.fnGbHrByRoute` + `metrics.fnCpuMsByRoute` + `metrics.fdtByRoute` when those metrics exist. These don't translate directly to dollars — they show *which routes consume the billable units* so the user knows what to attack first. If `usageError` is `NOT_COLLECTED_OBSERVABILITY_BLOCKED` or another `NOT_COLLECTED_*` value, say usage was not collected; do not describe it as a billing-plan or Costs-feature finding.
+If `vercel usage` was queried and unavailable, the cost breakdown is replaced by an observability-derived cost ranking from `metrics.fnGbHrByRoute` + `metrics.fnCpuMsByRoute` + `metrics.fdtByRoute` when those metrics exist. These don't translate directly to dollars - they show *which routes consume the billable units* so the user knows what to attack first. If `usageError` is `NOT_COLLECTED_OBSERVABILITY_BLOCKED` or another `NOT_COLLECTED_*` value, say usage was not collected; do not describe it as a billing-plan or Costs-feature finding.
 
 Render Observability status from the actual collection state:
-- `Observability Plus enabled — per-route metrics included` when `observabilityPlusUsable=true`.
-- `Per-route metrics unavailable — audit paused before metric-backed route ranking` when an Observability Plus blocker stopped the run before billing/scanner collection.
-- `Per-route metrics unavailable — analysis based on billing + scanner findings` when the user accepted a limited audit and billing/scanner signals were collected.
-- `Per-route metrics unavailable — limited analysis based on scanner findings` when the user accepted a limited audit but billing usage was queried and unavailable.
-- `Not checked — audit paused at unsupported-framework preflight` when framework support stopped the run before the Observability Plus check.
-- `Not enabled — analysis based on billing + scanner findings` only for legacy/limited reports where Observability Plus is known false and billing/scanner signals exist.
+- `Observability Plus enabled - per-route metrics included` when `observabilityPlusUsable=true`.
+- `Per-route metrics unavailable - audit paused before metric-backed route ranking` when an Observability Plus blocker stopped the run before billing/scanner collection.
+- `Per-route metrics unavailable - analysis based on billing + scanner findings` when the user accepted a limited audit and billing/scanner signals were collected.
+- `Per-route metrics unavailable - limited analysis based on scanner findings` when the user accepted a limited audit but billing usage was queried and unavailable.
+- `Not checked - audit paused at unsupported-framework preflight` when framework support stopped the run before the Observability Plus check.
+- `Not enabled - analysis based on billing + scanner findings` only for legacy/limited reports where Observability Plus is known false and billing/scanner signals exist.
 
 ## Highest-impact recommendations
 
 For each high-priority rec, in order:
-1. **{route or file}** — {o11ySignal}
-1. **{readable candidate label}** — {readable metric labels}
+1. **{route or file}** - {o11ySignal}
+1. **{readable candidate label}** - {readable metric labels}
    - **What to do**: {rec.what}
    - **Impact**: {impactLabel.performance ?? impactLabel.costPhrase}
    - **Effort**: {rec.effort}
@@ -169,11 +169,11 @@ This section earns the user's trust. For every metric signal we considered but d
 
 ## Strengths
 
-(what the project is doing right — caching is healthy on routes X/Y/Z; Fluid Compute is enabled; etc.)
+(what the project is doing right - caching is healthy on routes X/Y/Z; Fluid Compute is enabled; etc.)
 
 ## Data gaps
 
-(what we couldn't measure — Observability Plus disabled means no per-route latency, etc.)
+(what we couldn't measure - Observability Plus disabled means no per-route latency, etc.)
 ```
 
 Common data gaps to call out when the underlying metric returned empty rows. If the metric query failed (`ok=false`), say the metric was not usable with the code; do not convert failed queries into "no measurements" or "not used" claims.
@@ -182,7 +182,7 @@ Common data gaps to call out when the underlying metric returned empty rows. If 
 - **ISR empty.** Project doesn't use Incremental Static Regeneration. The `isr_overrevalidation` gate stayed dormant.
 - **Middleware empty.** No `middleware.ts` (or matcher excludes all observed traffic). The `middleware_heavy` gate stayed dormant.
 - **Image transformations empty.** No `next/image` usage or no images served in the window.
-- **BotID checks empty.** BotID is disabled — see the `platform_bot_protection` recommendation for the toggle.
+- **BotID checks empty.** BotID is disabled - see the `platform_bot_protection` recommendation for the toggle.
 - **Cold-start data near-zero.** Fluid Compute may already be enabled, or the project's traffic pattern keeps warm instances available; the `cold_start` gate evaluates the data but emits no candidate.
 
 The "Not investigated in this run" section is critical. It comes directly from `gate.json` produced by the gate. It tells the user we considered everything; we didn't just pick the easy targets.
@@ -200,6 +200,6 @@ The recommender selects 0-2 playbooks based on the project's `stack.applicationP
 | `content-site` (blog, docs, mostly static) | Edge Requests, Image Optimization | `playbooks/content-site.md` |
 | `marketing` (landing pages, A/B tests) | Edge Requests, ISR Reads | `playbooks/marketing.md` |
 
-`ai-application` is checked first in `inferPlaybook()` — an AI-heavy SaaS or AI commerce app shares the AI playbook's billing shape (AI Gateway dominant) and gotchas, not the dashboard or cart-checkout patterns.
+`ai-application` is checked first in `inferPlaybook()` - an AI-heavy SaaS or AI commerce app shares the AI playbook's billing shape (AI Gateway dominant) and gotchas, not the dashboard or cart-checkout patterns.
 
-Playbooks shape phrasing and ordering of recommendations. They never invent claims — every rec must still trace back to verified findings.
+Playbooks shape phrasing and ordering of recommendations. They never invent claims - every rec must still trace back to verified findings.

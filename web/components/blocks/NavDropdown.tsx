@@ -7,7 +7,7 @@ export type NavItem = { label: string; href: string };
 
 // Пункт навигации с необязательной выпадающей панелью (Figma → «Header - Dropdown_open»).
 // A11y по чеклисту: Enter/Space открывают, Escape закрывает, aria-expanded/haspopup,
-// hover-мостик к панели (padding-обёртка без разрыва). Анимация — opacity+translateY,
+// hover-мостик к панели (padding-обёртка без разрыва). Анимация - opacity+translateY,
 // отключается при prefers-reduced-motion.
 export function NavDropdown({
   label,
@@ -74,7 +74,7 @@ export function NavDropdown({
         />
       </Link>
 
-      {/* Обёртка с pt-3 — hover-мостик от пункта к панели без разрыва. */}
+      {/* Обёртка с pt-3 - hover-мостик от пункта к панели без разрыва. */}
       <div
         className={
           "absolute left-1/2 top-full z-50 -translate-x-1/2 pt-3 transition duration-200 ease-out " +

@@ -1,4 +1,4 @@
-// Форматирование чисел/цен — единое место (ru-RU, неразрывные группы).
+// Форматирование чисел/цен - единое место (ru-RU, неразрывные группы).
 const fmt = new Intl.NumberFormat("ru-RU");
 
 export function formatPrice(rub: number): string {

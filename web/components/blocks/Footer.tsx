@@ -5,8 +5,8 @@ import Link from "next/link";
 import { CallbackModal } from "@/components/blocks/CallbackModal";
 import { SHOP } from "@/lib/shop";
 
-// Оплата/Доставка/Гарантия/Контакты — статические роуты по URL старого сайта
-// (SEO 1:1); О магазине/Отзывы/Пункты выдачи — контентные страницы (catch-all).
+// Оплата/Доставка/Гарантия/Контакты - статические роуты по URL старого сайта
+// (SEO 1:1); О магазине/Отзывы/Пункты выдачи - контентные страницы (catch-all).
 const links: { label: string; href: string }[] = [
   { label: "О магазине", href: "/about/" },
   { label: "Отзывы", href: "/reviews/" },
@@ -80,7 +80,7 @@ export function Footer() {
       </div>
 
       {/* SEO-перелинковка (рекомендация сеошника #4): ссылки на посадочные каталога
-          по сезону/размеру/бренду — с уникальными мета. */}
+          по сезону/размеру/бренду - с уникальными мета. */}
       <div className="border-t border-line">
         <nav aria-label="Популярные запросы" className="mx-auto max-w-content px-4 py-6">
           <p className="text-caption font-semibold text-dark">Популярные запросы</p>

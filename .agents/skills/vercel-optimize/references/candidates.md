@@ -61,7 +61,7 @@ External API hostnames with p75 latency above 2 seconds AND at least 500 calls i
 - **Scope**: route
 - **Source citation**: `https://vercel.com/docs/incremental-static-regeneration`
 
-ISR routes with > 1 write per 2 reads. The revalidate interval is too aggressive relative to read traffic — many reads pay to regenerate. Investigate whether the page can tolerate a longer revalidate window or on-demand revalidation via revalidateTag.
+ISR routes with > 1 write per 2 reads. The revalidate interval is too aggressive relative to read traffic - many reads pay to regenerate. Investigate whether the page can tolerate a longer revalidate window or on-demand revalidation via revalidateTag.
 
 ---
 
@@ -94,7 +94,7 @@ Observability Events line item exceeds 20% of total billed cost. High share usua
 - **Scope**: account
 - **Source citation**: `vercel-optimize gate threshold`
 
-When BotID is disabled AND there is evidence (observed bot bandwidth share, edge cost, or substantial request volume) that bot traffic is non-trivial. Bot traffic inflates edge request counts without delivering user value; staged bot protection can reduce waste on bot-heavy projects. Skipped on quiet projects with no bot evidence — the recommendation would be noise.
+When BotID is disabled AND there is evidence (observed bot bandwidth share, edge cost, or substantial request volume) that bot traffic is non-trivial. Bot traffic inflates edge request counts without delivering user value; staged bot protection can reduce waste on bot-heavy projects. Skipped on quiet projects with no bot evidence - the recommendation would be noise.
 
 ---
 
@@ -105,7 +105,7 @@ When BotID is disabled AND there is evidence (observed bot bandwidth share, edge
 - **Scope**: account
 - **Source citation**: `vercel-optimize gate threshold`
 
-When Fluid Compute is disabled on a project that shows cold-start pressure (high cold-start rate) or sustained slow function p95 on hot routes. Fluid Compute reduces cold starts via instance reuse — recommend turning it on at the project level rather than per-route.
+When Fluid Compute is disabled on a project that shows cold-start pressure (high cold-start rate) or sustained slow function p95 on hot routes. Fluid Compute reduces cold starts via instance reuse - recommend turning it on at the project level rather than per-route.
 
 ---
 
@@ -116,7 +116,7 @@ When Fluid Compute is disabled on a project that shows cold-start pressure (high
 - **Scope**: account
 - **Source citation**: `vercel-optimize gate threshold`
 
-A single function region is pinned in `vercel.json` or per-route `preferredRegion`. Without per-region TTFB data (data gap), the gate can't quantify the geographic latency cost — but a single-region pin on a project with 20+ routes is worth auditing against Speed Insights traffic geo.
+A single function region is pinned in `vercel.json` or per-route `preferredRegion`. Without per-region TTFB data (data gap), the gate can't quantify the geographic latency cost - but a single-region pin on a project with 20+ routes is worth auditing against Speed Insights traffic geo.
 
 ---
 
@@ -149,7 +149,7 @@ Configured kinds emitted from scanner output. Each requires a minimum match coun
 - **Scope**: route
 - **Source citation**: `vercel-optimize gate threshold`
 
-Routes with p95 function duration above 500ms at meaningful traffic (>=1,400 invocations in window), OR catastrophically slow routes (>1500ms p95 at any volume >=250). High duration drives both function-duration cost and user-perceived latency. Investigate sequential awaits, slow external APIs, missing caching, N+1 patterns. Routes with >50% 5xx rate are disqualified — those are reliability problems, not performance tuning targets, and surface via route_errors instead. Vercel Workflow runtime endpoints (`/.well-known/workflow/v1/*`) are hard-gated before launch because long-running step/flow requests are expected orchestration, not app-route bottlenecks.
+Routes with p95 function duration above 500ms at meaningful traffic (>=1,400 invocations in window), OR catastrophically slow routes (>1500ms p95 at any volume >=250). High duration drives both function-duration cost and user-perceived latency. Investigate sequential awaits, slow external APIs, missing caching, N+1 patterns. Routes with >50% 5xx rate are disqualified - those are reliability problems, not performance tuning targets, and surface via route_errors instead. Vercel Workflow runtime endpoints (`/.well-known/workflow/v1/*`) are hard-gated before launch because long-running step/flow requests are expected orchestration, not app-route bottlenecks.
 
 ---
 
@@ -160,7 +160,7 @@ Routes with p95 function duration above 500ms at meaningful traffic (>=1,400 inv
 - **Scope**: route
 - **Source citation**: `vercel-optimize gate threshold`
 
-Routes serving > 500 requests/period at < 50% cache hit AND at least 20% GET traffic. Each uncached GET request reaches the function, costing edge requests + function duration. Routes that are mostly POST/PUT/DELETE (Server Actions, mutations) are skipped — 0% cache is correct behavior there. Routes with missing method-share data are gated instead of launched. Auth-gated routes are disqualified separately.
+Routes serving > 500 requests/period at < 50% cache hit AND at least 20% GET traffic. Each uncached GET request reaches the function, costing edge requests + function duration. Routes that are mostly POST/PUT/DELETE (Server Actions, mutations) are skipped - 0% cache is correct behavior there. Routes with missing method-share data are gated instead of launched. Auth-gated routes are disqualified separately.
 
 ---
 

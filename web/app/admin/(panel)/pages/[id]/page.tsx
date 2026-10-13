@@ -13,7 +13,7 @@ const fieldCls =
 
 function fmtDate(iso: string): string {
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("ru-RU");
+  return Number.isNaN(d.getTime()) ? "-" : d.toLocaleDateString("ru-RU");
 }
 
 export default async function AdminPageEditor({ params }: { params: Promise<{ id: string }> }) {
@@ -59,14 +59,14 @@ export default async function AdminPageEditor({ params }: { params: Promise<{ id
                   <img src="/icons/lock.svg" alt="" width={14} height={14} className="size-3.5" />
                 </div>
                 <p className="mt-1.5 text-legal text-grey">
-                  URL менять нельзя — страница проиндексирована, изменение обрушит SEO-трафик
+                  URL менять нельзя - страница проиндексирована, изменение обрушит SEO-трафик
                 </p>
               </>
             ) : (
               <>
                 <input name="slug" defaultValue={page.slug} className={`${fieldCls} tnum`} />
                 <p className="mt-1.5 text-legal text-grey">
-                  Черновик — URL можно менять до публикации
+                  Черновик - URL можно менять до публикации
                 </p>
               </>
             )}

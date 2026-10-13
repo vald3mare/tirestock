@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Контрактный smoke-тест публичного API: прогоняет каждый эндпоинт витрины и
 # проверяет код ответа + обязательные поля JSON (по OpenAPI required). Ловит
-# регрессии контракта («запрос не обработался»). Ничего не пишет в БД/tradesk —
+# регрессии контракта («запрос не обработался»). Ничего не пишет в БД/tradesk -
 # только GET и один idempotent-безопасный POST на мок НЕ шлём.
 #
 # Использование: API_BASE=http://localhost:8080 deploy/smoke-api.sh
@@ -17,12 +17,12 @@ check() {
   body=$(curl -s -m 15 -w $'\n%{http_code}' "$url" 2>/dev/null)
   code="${body##*$'\n'}"; body="${body%$'\n'*}"
   if [ "$code" != "$want" ]; then
-    echo "  ✗ $name — код $code, ждали $want"; FAIL=$((FAIL+1)); return
+    echo "  ✗ $name - код $code, ждали $want"; FAIL=$((FAIL+1)); return
   fi
   for field in "$@"; do
     if ! echo "$body" | python3 -c "import sys,json; d=json.load(sys.stdin); k='$field'.split('.'); v=d
 for p in k: v=v[int(p)] if p.lstrip('-').isdigit() else v[p]" 2>/dev/null; then
-      echo "  ✗ $name — нет обязательного поля '$field'"; FAIL=$((FAIL+1)); return
+      echo "  ✗ $name - нет обязательного поля '$field'"; FAIL=$((FAIL+1)); return
     fi
   done
   echo "  ✓ $name"; PASS=$((PASS+1))
@@ -45,7 +45,7 @@ check "products плохой width" "$BASE/products?width=abc" 400 error
 check "facets spb"          "$BASE/catalog/facets?city=spb" 200 brands widths profiles diameters popular_sizes
 check "facets msk"          "$BASE/catalog/facets?city=msk" 200 brands popular_sizes
 
-# товар по slug — берём реальный slug из листинга
+# товар по slug - берём реальный slug из листинга
 SLUG=$(curl -s -m 15 "$BASE/products?per_page=1" | python3 -c 'import sys,json;print(json.load(sys.stdin)["items"][0]["slug"])' 2>/dev/null)
 if [ -n "$SLUG" ]; then
   check "product by slug"   "$BASE/products/$SLUG" 200 id slug brand model name size_label price stock badge_hit

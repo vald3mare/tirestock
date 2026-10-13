@@ -5,7 +5,7 @@ import { createServiceRequest } from "@/lib/api/client";
 
 // Общая заявка «Онлайн запись» сервисных страниц (шиномонтаж, ремонт/покраска
 // дисков, мотошиномонтаж, хранение) → POST /api/v1/requests → outbox →
-// tradesk `POST /api/request`. Тип услуги уходит отдельным полем — менеджер
+// tradesk `POST /api/request`. Тип услуги уходит отдельным полем - менеджер
 // видит, на что заявка, без разбора текста комментария.
 // service/back приходят hidden-полями формы (см. ServiceSignup).
 export async function submitServiceRequest(formData: FormData) {

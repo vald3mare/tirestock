@@ -1,4 +1,4 @@
-// Package catalog — фича «каталог»: модель товара, фильтры, источник данных, HTTP.
+// Package catalog - фича «каталог»: модель товара, фильтры, источник данных, HTTP.
 package catalog
 
 import (
@@ -6,7 +6,7 @@ import (
 	"errors"
 )
 
-// Season — сезонность шины.
+// Season - сезонность шины.
 type Season string
 
 const (
@@ -15,11 +15,11 @@ const (
 	SeasonAllSeason Season = "allseason"
 )
 
-// Product — read-модель товара (истина — SelectTyres, у нас только чтение).
+// Product - read-модель товара (истина - SelectTyres, у нас только чтение).
 type Product struct {
 	ID   int64  `json:"id"`
 	Slug string `json:"slug"`
-	// Code — код товара в SelectTyres (напр. `t668559`). Нужен оформлению заказа:
+	// Code - код товара в SelectTyres (напр. `t668559`). Нужен оформлению заказа:
 	// уходит в приёмник tradesk, чтобы менеджер видел, какая именно позиция.
 	Code      string `json:"code"`
 	Brand     string `json:"brand"`
@@ -39,13 +39,13 @@ type Product struct {
 }
 
 // Магазин работает только по Санкт-Петербургу (решение владельца 11.08.2026):
-// мультигород и городские поддомены отменены. Цена и остаток в каталоге —
+// мультигород и городские поддомены отменены. Цена и остаток в каталоге -
 // агрегат петербургских складов SelectTyres, хранятся прямо в products.
 
-// ErrNotFound — товар не найден (sentinel фичи).
+// ErrNotFound - товар не найден (sentinel фичи).
 var ErrNotFound = errors.New("catalog: product not found")
 
-// Facets — реальные значения фильтров, присутствующие в каталоге (не статика).
+// Facets - реальные значения фильтров, присутствующие в каталоге (не статика).
 // Витрина строит из них опции фильтра и hero-поиска, чтобы всё подтягивалось
 // из выгрузки SelectTyres автоматически, а не хардкодилось. Числовые значения
 // отфильтрованы санитарными диапазонами (мусор из фида вроде width=7 не попадает).
@@ -57,7 +57,7 @@ type Facets struct {
 	PopularSizes []Size   `json:"popular_sizes"` // топ размеров по числу товаров в наличии
 }
 
-// Size — типоразмер (для чипов «Популярно» в hero). Label — «205/55 R16».
+// Size - типоразмер (для чипов «Популярно» в hero). Label - «205/55 R16».
 type Size struct {
 	Width    int    `json:"width"`
 	Profile  int    `json:"profile"`
@@ -73,15 +73,15 @@ const (
 	MinDiameter, MaxDiameter = 10, 30
 )
 
-// CatalogSource — источник каталога. Реализации: integrations/mock (сейчас),
-// synced-БД / selecttyres (позже). Интерфейс объявляет потребитель — catalog.
+// CatalogSource - источник каталога. Реализации: integrations/mock (сейчас),
+// synced-БД / selecttyres (позже). Интерфейс объявляет потребитель - catalog.
 type CatalogSource interface {
 	List(ctx context.Context, f Filters, page, perPage int) (items []Product, total int, err error)
 	BySlug(ctx context.Context, slug, city string) (Product, error)
 	Facets(ctx context.Context, city string) (Facets, error)
 }
 
-// Service — бизнес-логика каталога поверх источника.
+// Service - бизнес-логика каталога поверх источника.
 type Service struct {
 	src CatalogSource
 }

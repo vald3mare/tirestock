@@ -291,13 +291,13 @@ function tryExtractFromBroadPass(spec, merged) {
     }
     rows.push(out);
   }
-  // Zero rows ≠ "no data" — broad-pass row limit may have truncated the route.
+  // Zero rows ≠ "no data" - broad-pass row limit may have truncated the route.
   // Fall through to CLI so the caller gets a definitive answer.
   if (rows.length === 0) return null;
   return { rows };
 }
 
-// Two specs sharing this key answer the same question — one CLI call serves both.
+// Two specs sharing this key answer the same question - one CLI call serves both.
 // Must include everything that affects the CLI's arg list.
 function queryKey(spec, scope) {
   const groupBy = [...(spec.groupBy ?? [])].sort();

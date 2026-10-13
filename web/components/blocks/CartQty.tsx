@@ -5,7 +5,7 @@ import { Stepper } from "@/components/ui/Stepper";
 import { setCartQty } from "@/app/(storefront)/cart/actions";
 
 // Количество в строке корзины. Степпер клиентский (мгновенная реакция), но
-// источник правды — кука на сервере: каждое изменение уходит server action'ом,
+// источник правды - кука на сервере: каждое изменение уходит server action'ом,
 // после чего суммы пересчитываются серверным рендером.
 export function CartQty({ slug, qty, max }: { slug: string; qty: number; max: number }) {
   const [pending, startTransition] = useTransition();

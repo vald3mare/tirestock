@@ -12,11 +12,11 @@ import (
 	"tirestock/api/internal/catalog"
 )
 
-// Диски — отдельный фид SelectTyres (секция wheels). Клиент переиспользует
+// Диски - отдельный фид SelectTyres (секция wheels). Клиент переиспользует
 // агрегацию офферов по городам (aggregateCity) и cookiejar/HTTP шин, но парсит
 // секцию wheels и мапит в catalog.SyncWheel. Полностью изолировано от шинного пути.
 
-// feedWheel — нужные поля диска из фида (секция wheels).
+// feedWheel - нужные поля диска из фида (секция wheels).
 type feedWheel struct {
 	Code       string      `json:"code"`
 	FullName   string      `json:"p_full_name"`
@@ -107,7 +107,7 @@ func (c *Client) FetchWheels(ctx context.Context, fn func(catalog.SyncWheel) err
 	return parsed, kept, nil
 }
 
-// mapWheel агрегирует предложения диска по городам. ok=false — ни в одном городе.
+// mapWheel агрегирует предложения диска по городам. ok=false - ни в одном городе.
 func (c *Client) mapWheel(w feedWheel) (catalog.SyncWheel, bool) {
 	var offers []catalog.CityOffer
 	for city, subs := range c.cfg.CityStocks {

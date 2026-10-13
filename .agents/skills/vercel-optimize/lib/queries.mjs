@@ -1,13 +1,13 @@
 // Declarative metric-query registry. Single source for every `vercel metrics ...` call.
 //
-// CLI default --since is 1h. Mixing 1h with 14d windows silently produces incompatible rollups — every query MUST pass since: TIME_WINDOW. test/time-window.test.mjs enforces this.
+// CLI default --since is 1h. Mixing 1h with 14d windows silently produces incompatible rollups - every query MUST pass since: TIME_WINDOW. test/time-window.test.mjs enforces this.
 // 14d: long enough for weekly cycles, short enough to surface recent regressions before stale data dilutes them.
 
 import { normalizeSummary } from './vercel.mjs';
 
 export const TIME_WINDOW = '14d';
 
-// CLI default cardinality cap is 10 — too small for a typical app.
+// CLI default cardinality cap is 10 - too small for a typical app.
 const ROUTE_LIMIT = 200;
 const HOST_LIMIT = 50;
 const DIM_LIMIT = 50;

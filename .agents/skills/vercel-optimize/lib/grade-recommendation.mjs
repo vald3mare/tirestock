@@ -1,5 +1,5 @@
 // 4-axis rubric (specificity, actionability, grounding, evidence) → bucket. See references/recommendations.md.
-// Account-scope (platform_*) recs use a separate grounding/evidence pair — they structurally cannot produce file:line.
+// Account-scope (platform_*) recs use a separate grounding/evidence pair - they structurally cannot produce file:line.
 
 const HEDGE_WORDS = /\b(consider|might|may|could|perhaps|maybe|likely|probably)\b/gi;
 const VERB_OPENERS = /^\s*(?:[-*]\s+|\d+[.)]\s+|[*_]+)?(?:add|set|enable|disable|replace|remove|move|wrap|cache|defer|parallelize|introduce|configure|update|change|switch|opt[-\s]?in|opt[-\s]?out|export|import|install|run|delete|rename)/im;
@@ -9,7 +9,7 @@ const CODE_FENCE_RE = /```[\s\S]*?```/g;
 const INLINE_CODE_RE = /`[^`\n]{10,}`/g;
 const FILE_LINE_RE = /[\w/.\-()\[\]]+\.\w+:\d+/g;
 
-// Grounding + evidence are lie-detectors — weighted higher than specificity/actionability, which LLMs can game with fluff.
+// Grounding + evidence are lie-detectors - weighted higher than specificity/actionability, which LLMs can game with fluff.
 const W = { grounding: 0.35, evidence: 0.30, specificity: 0.20, actionability: 0.15 };
 
 export function gradeRecommendation(rec, ctx = {}) {
@@ -105,7 +105,7 @@ function scoreEvidence(rec) {
   return Math.min(1, roundTo(s, 4));
 }
 
-// No findingRefs/code fences possible — grade structural tie to gate + signal-quoting.
+// No findingRefs/code fences possible - grade structural tie to gate + signal-quoting.
 function scoreGroundingAccount(rec) {
   let s = 0;
   if (typeof rec.candidateRef === 'string' && rec.candidateRef.startsWith('platform_')) s += 0.4;
@@ -122,7 +122,7 @@ function scoreGroundingAccount(rec) {
   return Math.min(1, roundTo(s, 4));
 }
 
-// Heavily weighted toward magnitude quoting — vague platform recs should score low.
+// Heavily weighted toward magnitude quoting - vague platform recs should score low.
 function scoreEvidenceAccount(rec) {
   const text = [rec.what, rec.why, rec.fix, rec.verify]
     .filter((x) => typeof x === 'string').join('\n');
@@ -131,7 +131,7 @@ function scoreEvidenceAccount(rec) {
   COUNT_WORDS_RE.lastIndex = 0;
   const units = (text.match(UNIT_RE) ?? []).length;
   UNIT_RE.lastIndex = 0;
-  // Higher weight than route-scope variant — file:line gold standard isn't available.
+  // Higher weight than route-scope variant - file:line gold standard isn't available.
   let s = Math.min(0.55, units * 0.15) + Math.min(0.35, counts * 0.08);
   if (typeof rec.o11ySignal === 'string' && rec.o11ySignal.length > 0) s += 0.1;
   return Math.min(1, roundTo(s, 4));

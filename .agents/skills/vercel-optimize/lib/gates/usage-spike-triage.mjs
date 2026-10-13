@@ -1,7 +1,7 @@
 // Detects per-day billing spikes by inspecting usage.breakdown.data[] (daily granularity).
 // Fires when any single day's total bill > 2× the window mean, OR a single SKU's day value > 3× its window mean.
 // Emits one candidate per spiking SKU (or 'total' when the spike is broad).
-// Degrades gracefully when daily data is unavailable — common path because the skill prefers --group-by project, which omits daily breakdown.
+// Degrades gracefully when daily data is unavailable - common path because the skill prefers --group-by project, which omits daily breakdown.
 export const metadata = {
   id: 'usage_spike_triage',
   threshold: 'any-day total > 2x mean OR any-day SKU > 3x SKU mean',
@@ -58,7 +58,7 @@ export function gate(signals) {
       confidence: 0.78,
       o11ySignal: `total_spike day_idx=${peak.idx} day_billed=${peak.value.toFixed(2)} window_mean=${mean.toFixed(2)} mult=${(peak.value / mean).toFixed(1)}x`,
       reason: 'total billed cost on one day exceeds 2× the window mean',
-      question: 'Which workload generated the day-over-day spike — bot or AI-crawler traffic on a cacheable route, a viral event, a pricing-model migration, or a code regression?',
+      question: 'Which workload generated the day-over-day spike - bot or AI-crawler traffic on a cacheable route, a viral event, a pricing-model migration, or a code regression?',
       evidence: {
         metric: 'usage.breakdown.data.total',
         spikeDay: peak.idx,

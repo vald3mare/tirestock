@@ -6,7 +6,7 @@ import { logoutAction } from "@/app/admin/actions";
 
 type NavItem = { href?: string; label: string; soon?: boolean };
 
-// Заказы/Товары — Фаза 1. Остальные разделы из макета — Фаза 2 (помечены «скоро»).
+// Заказы/Товары - Фаза 1. Остальные разделы из макета - Фаза 2 (помечены «скоро»).
 const nav: NavItem[] = [
   { href: "/admin/orders", label: "Заказы" },
   { href: "/admin/products", label: "Товары" },

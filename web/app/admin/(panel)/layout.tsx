@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-// Каркас панели: тёмный сайдбар + область контента. Гард — requireUser
+// Каркас панели: тёмный сайдбар + область контента. Гард - requireUser
 // (валидирует сессию в Go на каждый рендер; при провале уводит на /admin/login).
 export default async function PanelLayout({ children }: { children: React.ReactNode }) {
   const { user } = await requireUser();

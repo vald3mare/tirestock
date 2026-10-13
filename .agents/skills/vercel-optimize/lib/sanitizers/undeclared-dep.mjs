@@ -1,5 +1,5 @@
 // Prepend `npm i <pkg>` when the fix imports a package missing from
-// package.json — otherwise pasted code hits a runtime error.
+// package.json - otherwise pasted code hits a runtime error.
 
 const IMPORT_RE = /\bimport\s+(?:[\w*{}\s,]+\s+from\s+)?["']([^"']+)["']/g;
 const REQUIRE_RE = /\brequire\s*\(\s*["']([^"']+)["']\s*\)/g;

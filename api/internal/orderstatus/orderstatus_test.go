@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// stubSource — источник с заранее заданным ответом.
+// stubSource - источник с заранее заданным ответом.
 type stubSource struct {
 	raw *Raw
 	err error

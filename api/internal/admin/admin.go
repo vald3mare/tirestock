@@ -1,6 +1,6 @@
-// Package admin — фича «контентная админка»: авторизация (сессии в БД),
+// Package admin - фича «контентная админка»: авторизация (сессии в БД),
 // монитор заказов (проекция outbox), оверрайды товаров поверх read-модели.
-// Границы истины не нарушаются: цены/остатки — только чтение из каталога,
+// Границы истины не нарушаются: цены/остатки - только чтение из каталога,
 // заказы уходят в tradesk воркером, здесь лишь наблюдение и «повторить».
 package admin
 
@@ -28,17 +28,17 @@ var (
 	ErrUnauthorized       = errors.New("admin: нет активной сессии")
 )
 
-// SessionTTL — срок жизни сессии админки.
+// SessionTTL - срок жизни сессии админки.
 const SessionTTL = 30 * 24 * time.Hour
 
-// User — авторизованный пользователь админки.
+// User - авторизованный пользователь админки.
 type User struct {
 	ID          int64  `json:"id"`
 	Username    string `json:"username"`
 	DisplayName string `json:"display_name"`
 }
 
-// Service — бизнес-логика админки поверх БД и каталога.
+// Service - бизнес-логика админки поверх БД и каталога.
 type Service struct {
 	pool    *pgxpool.Pool
 	q       *db.Queries
@@ -128,7 +128,7 @@ func (s *Service) Authenticate(ctx context.Context, token string) (User, error) 
 
 const ordersPerPage = 50
 
-// OrderRow — строка списка заказов админки.
+// OrderRow - строка списка заказов админки.
 type OrderRow struct {
 	ID             int64     `json:"id"`
 	CustomerName   string    `json:"customer_name"`
@@ -138,20 +138,20 @@ type OrderRow struct {
 	DeliveryStatus string    `json:"delivery_status"` // pending|delivered|failed
 	Attempts       int       `json:"attempts"`
 	LastError      string    `json:"last_error"`
-	// Номер записи в tradesk (ответ приёмника). Данные заказа живут в tradesk —
+	// Номер записи в tradesk (ответ приёмника). Данные заказа живут в tradesk -
 	// у себя держим только номер, чтобы менеджер знал, где искать, и мы не
 	// дублировали учётную систему.
 	TradeskNumber string `json:"tradesk_number"`
 }
 
-// OrderStats — счётчики над списком заказов (для подзаголовка).
+// OrderStats - счётчики над списком заказов (для подзаголовка).
 type OrderStats struct {
 	Today  int `json:"today"`
 	Queued int `json:"queued"`
 	Failed int `json:"failed"`
 }
 
-// OrdersPage — ответ монитора заказов.
+// OrdersPage - ответ монитора заказов.
 type OrdersPage struct {
 	Items []OrderRow `json:"items"`
 	Stats OrderStats `json:"stats"`
@@ -199,25 +199,25 @@ func (s *Service) Orders(ctx context.Context, status string, page int) (OrdersPa
 	}, nil
 }
 
-// OrderDetail — детальная карточка заказа: наши данные + живой статус из tradesk.
+// OrderDetail - детальная карточка заказа: наши данные + живой статус из tradesk.
 type OrderDetail struct {
-	ID             int64             `json:"id"`
-	CustomerName   string            `json:"customer_name"`
-	Phone          string            `json:"phone"`
-	Comment        string            `json:"comment"`
-	Total          int               `json:"total"`
-	CreatedAt      time.Time         `json:"created_at"`
-	DeliveryStatus string            `json:"delivery_status"` // доставка В tradesk: pending|delivered|failed
-	Attempts       int               `json:"attempts"`
-	LastError      string            `json:"last_error"`
-	TradeskNumber  string            `json:"tradesk_number"`
-	Items          []OrderItem       `json:"items"`
-	// Status — живой статус ИЗ tradesk (обратная интеграция) по tradesk_number.
+	ID             int64       `json:"id"`
+	CustomerName   string      `json:"customer_name"`
+	Phone          string      `json:"phone"`
+	Comment        string      `json:"comment"`
+	Total          int         `json:"total"`
+	CreatedAt      time.Time   `json:"created_at"`
+	DeliveryStatus string      `json:"delivery_status"` // доставка В tradesk: pending|delivered|failed
+	Attempts       int         `json:"attempts"`
+	LastError      string      `json:"last_error"`
+	TradeskNumber  string      `json:"tradesk_number"`
+	Items          []OrderItem `json:"items"`
+	// Status - живой статус ИЗ tradesk (обратная интеграция) по tradesk_number.
 	// nil, если номера ещё нет (заказ не доставлен) или tradesk недоступен.
 	Status *orderstatus.Status `json:"status"`
 }
 
-// OrderItem — позиция заказа (снимок на момент оформления).
+// OrderItem - позиция заказа (снимок на момент оформления).
 type OrderItem struct {
 	Slug  string `json:"slug"`
 	Code  string `json:"code"`
@@ -226,7 +226,7 @@ type OrderItem struct {
 	Qty   int    `json:"qty"`
 }
 
-// ErrOrderNotFound — заказ не найден.
+// ErrOrderNotFound - заказ не найден.
 var ErrOrderNotFound = errors.New("admin: заказ не найден")
 
 // Order возвращает детальную карточку заказа с живым статусом из tradesk.
@@ -245,9 +245,9 @@ func (s *Service) Order(ctx context.Context, id int64) (OrderDetail, error) {
 		Items: []OrderItem{},
 	}
 	if len(r.Items) > 0 {
-		_ = json.Unmarshal(r.Items, &d.Items) // items — jsonb-снимок; ошибка → пустой состав
+		_ = json.Unmarshal(r.Items, &d.Items) // items - jsonb-снимок; ошибка → пустой состав
 	}
-	// Живой статус из tradesk по номеру (если доставлен). Ошибку глушим —
+	// Живой статус из tradesk по номеру (если доставлен). Ошибку глушим -
 	// карточка заказа должна открываться даже при недоступном tradesk.
 	if r.TradeskNumber != "" {
 		if st, err := s.status.Lookup(ctx, r.TradeskNumber); err == nil {
@@ -264,7 +264,7 @@ func (s *Service) RetryOrder(ctx context.Context, orderID int64) error {
 
 // ── Товары (read-модель + оверрайды) ────────────────────────────────────────
 
-// ProductAdmin — товар в админке: read-only поля из каталога + наши оверрайды.
+// ProductAdmin - товар в админке: read-only поля из каталога + наши оверрайды.
 type ProductAdmin struct {
 	Slug     string `json:"slug"`
 	Name     string `json:"name"`
@@ -274,11 +274,11 @@ type ProductAdmin struct {
 	BadgeHit bool   `json:"badge_hit"`
 }
 
-// Products листает каталог (read-модель) с наложенными оверрайдами; query —
+// Products листает каталог (read-модель) с наложенными оверрайдами; query -
 // подстрока по названию/бренду/модели (без учёта регистра).
-// Products — список товаров для админки. availability: "" (все) | "in" | "out".
+// Products - список товаров для админки. availability: "" (все) | "in" | "out".
 // Потолок 1000: распроданных ~500, они должны попадать в выборку «Нет в наличии»
-// (иначе не видны — наличие сортируется вверх). Поиск q — доп. фильтр по названию.
+// (иначе не видны - наличие сортируется вверх). Поиск q - доп. фильтр по названию.
 func (s *Service) Products(ctx context.Context, query, availability string) ([]ProductAdmin, error) {
 	list, _, err := s.catalog.List(ctx, catalog.Filters{Availability: availability}, 1, 1000)
 	if err != nil {

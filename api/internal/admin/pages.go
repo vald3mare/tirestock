@@ -12,7 +12,7 @@ import (
 	"tirestock/api/internal/httpx"
 )
 
-// HTTP-слой раздела «Страницы». Домен и правила блокировки — в internal/content;
+// HTTP-слой раздела «Страницы». Домен и правила блокировки - в internal/content;
 // здесь только парсинг, маппинг ошибок и подстановка автора правки (updated_by).
 
 type pagesListResponse struct {

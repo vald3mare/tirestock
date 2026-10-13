@@ -42,7 +42,7 @@ export function apply(rec, ctx = {}) {
 
 function rewriteCount(rec, token, oldCount, replacement) {
   const fields = ['what', 'why', 'fix', 'currentBehavior', 'desiredBehavior'];
-  // Matches "60", "~60", and "60+" — LLM commonly writes "60+ icons".
+  // Matches "60", "~60", and "60+" - LLM commonly writes "60+ icons".
   const oldEsc = escapeRegex(String(oldCount));
   const re = new RegExp(`\\b~?${oldEsc}\\+?\\s+${escapeRegex(token)}\\b`, 'g');
   for (const f of fields) {
